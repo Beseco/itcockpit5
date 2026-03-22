@@ -106,11 +106,6 @@ class StelleController extends Controller
             'user_id'        => 'nullable|exists:users,id',
             'tvod_bewertung' => 'nullable|string|max:10',
             'stunden'        => 'nullable|numeric|min:0|max:50',
-            'arbeitsvorgaenge'              => 'nullable|array',
-            'arbeitsvorgaenge.*.id'         => 'nullable|integer',
-            'arbeitsvorgaenge.*.betreff'    => 'required|string|max:255',
-            'arbeitsvorgaenge.*.beschreibung' => 'nullable|string',
-            'arbeitsvorgaenge.*.anteil'     => 'required|integer|min:0|max:100',
         ]);
 
         $stelle->update([
@@ -122,22 +117,44 @@ class StelleController extends Controller
             'stunden'        => $validated['stunden'] ?? null,
         ]);
 
-        // Sync Arbeitsvorgänge: delete all, re-insert
-        $stelle->arbeitsvorgaenge()->delete();
-        foreach (($validated['arbeitsvorgaenge'] ?? []) as $i => $av) {
-            Arbeitsvorgang::create([
-                'stelle_id'    => $stelle->id,
-                'betreff'      => $av['betreff'],
-                'beschreibung' => $av['beschreibung'] ?? null,
-                'anteil'       => (int) $av['anteil'],
-                'sort_order'   => $i,
-            ]);
-        }
-
         $this->auditLogger->log('stellen', 'update', ['message' => "Stelle '{$stelle->bezeichnung}' aktualisiert"]);
 
-        return redirect()->route('stellen.index')
+        return redirect()->route('stellen.edit', $stelle)
             ->with('success', "Stelle \"{$stelle->bezeichnung}\" wurde gespeichert.");
+    }
+
+    public function createArbeitsvorgang(Stelle $stelle)
+    {
+        $this->authorize('base.stellen.edit');
+        $nextNumber = $stelle->arbeitsvorgaenge()->count() + 1;
+        $avLabel = 'AV' . $nextNumber;
+        $av = new Arbeitsvorgang();
+        return view('stellen.arbeitsvorgang_edit', compact('stelle', 'av', 'avLabel'));
+    }
+
+    public function storeArbeitsvorgang(Request $request, Stelle $stelle)
+    {
+        $this->authorize('base.stellen.edit');
+
+        $validated = $request->validate([
+            'betreff'      => 'required|string|max:255',
+            'beschreibung' => 'nullable|string',
+            'anteil'       => 'required|integer|min:0|max:100',
+        ]);
+
+        $stelle->arbeitsvorgaenge()->create([
+            'betreff'      => $validated['betreff'],
+            'beschreibung' => $validated['beschreibung'] ?? null,
+            'anteil'       => (int) $validated['anteil'],
+            'sort_order'   => $stelle->arbeitsvorgaenge()->count(),
+        ]);
+
+        $this->auditLogger->log('stellen', 'update', [
+            'message' => "Arbeitsvorgang '{$validated['betreff']}' zu Stelle '{$stelle->bezeichnung}' hinzugefügt",
+        ]);
+
+        return redirect()->route('stellen.edit', $stelle)
+            ->with('success', "Arbeitsvorgang \"{$validated['betreff']}\" wurde hinzugefügt.");
     }
 
     public function editArbeitsvorgang(Stelle $stelle, Arbeitsvorgang $av)
@@ -169,6 +186,20 @@ class StelleController extends Controller
 
         return redirect()->route('stellen.edit', $stelle)
             ->with('success', "Arbeitsvorgang \"{$av->betreff}\" wurde gespeichert.");
+    }
+
+    public function destroyArbeitsvorgang(Stelle $stelle, Arbeitsvorgang $av)
+    {
+        $this->authorize('base.stellen.edit');
+        $betreff = $av->betreff;
+        $av->delete();
+
+        $this->auditLogger->log('stellen', 'update', [
+            'message' => "Arbeitsvorgang '{$betreff}' aus Stelle '{$stelle->bezeichnung}' gelöscht",
+        ]);
+
+        return redirect()->route('stellen.edit', $stelle)
+            ->with('success', "Arbeitsvorgang \"{$betreff}\" wurde gelöscht.");
     }
 
     public function destroy(Stelle $stelle)

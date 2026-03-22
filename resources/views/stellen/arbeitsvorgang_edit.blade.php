@@ -24,8 +24,13 @@
 
     <div class="py-6 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="bg-white shadow rounded-lg">
+            @if($av->exists)
             <form action="{{ route('stellen.av.update', [$stelle, $av]) }}" method="POST">
                 @csrf @method('PUT')
+            @else
+            <form action="{{ route('stellen.av.store', $stelle) }}" method="POST">
+                @csrf
+            @endif
 
                 <div class="p-6 space-y-6">
 

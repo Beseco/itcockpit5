@@ -14,16 +14,21 @@
 
         {{-- Arbeitsvorgänge (Read-only Liste) --}}
         <div class="bg-white shadow rounded-lg p-6">
+            @php $totalAnteil = $stelle->arbeitsvorgaenge->sum('anteil'); @endphp
+
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-base font-semibold text-gray-800">Stellenbeschreibung (Arbeitsvorgänge)</h3>
-                @php
-                    $totalAnteil = $stelle->arbeitsvorgaenge->sum('anteil');
-                @endphp
-                <span class="text-sm font-semibold px-2 py-0.5 rounded
-                    {{ $totalAnteil === 100 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-700' }}">
-                    Gesamt: {{ $totalAnteil }}%
-                    @if($totalAnteil !== 100) ⚠️ @endif
-                </span>
+                <div class="flex items-center gap-4">
+                    <h3 class="text-base font-semibold text-gray-800">Stellenbeschreibung (Arbeitsvorgänge)</h3>
+                    <span class="text-sm font-semibold px-2 py-0.5 rounded
+                        {{ $totalAnteil === 100 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-700' }}">
+                        Gesamt: {{ $totalAnteil }}%
+                        @if($totalAnteil !== 100) ⚠️ @endif
+                    </span>
+                </div>
+                <a href="{{ route('stellen.av.create', $stelle) }}"
+                   class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded">
+                    + Hinzufügen
+                </a>
             </div>
 
             <div class="border border-gray-200 rounded-md overflow-hidden">
@@ -32,25 +37,31 @@
                         <tr>
                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase w-16">#</th>
                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Betreff</th>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase w-24">Anteil %</th>
-                            <th class="px-3 py-2 w-24"></th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase w-24 text-center">Anteil %</th>
+                            <th class="px-3 py-2 w-36"></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 bg-white">
-                        @forelse($stelle->arbeitsvorgaenge->sortBy('sort_order') as $i => $av)
+                        @forelse($stelle->arbeitsvorgaenge->sortBy('sort_order')->values() as $i => $av)
                             <tr class="hover:bg-gray-50">
                                 <td class="px-3 py-3 text-gray-500 font-medium">AV{{ $i + 1 }}</td>
                                 <td class="px-3 py-3 text-gray-800">{{ $av->betreff }}</td>
                                 <td class="px-3 py-3 text-gray-700 text-center">{{ $av->anteil }}%</td>
                                 <td class="px-3 py-3 text-right">
-                                    <a href="{{ route('stellen.av.edit', [$stelle, $av]) }}"
-                                       class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-800 border border-indigo-200 hover:border-indigo-400 rounded">
-                                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                        </svg>
-                                        Bearbeiten
-                                    </a>
+                                    <div class="flex justify-end gap-2">
+                                        <a href="{{ route('stellen.av.edit', [$stelle, $av]) }}"
+                                           class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-indigo-600 hover:text-indigo-800 border border-indigo-200 hover:border-indigo-400 rounded">
+                                            Bearbeiten
+                                        </a>
+                                        <form method="POST" action="{{ route('stellen.av.destroy', [$stelle, $av]) }}"
+                                              onsubmit="return confirm('Arbeitsvorgang löschen?')">
+                                            @csrf @method('DELETE')
+                                            <button type="submit"
+                                                    class="inline-flex items-center px-2.5 py-1 text-xs font-medium text-red-500 hover:text-red-700 border border-red-200 hover:border-red-400 rounded">
+                                                Löschen
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         @empty

@@ -49,8 +49,11 @@ Route::middleware('auth')->group(function () {
     Route::resource('stellen', StelleController::class, [
         'parameters' => ['stellen' => 'stelle'],
     ]);
+    Route::get('/stellen/{stelle}/arbeitsvorgaenge/create', [StelleController::class, 'createArbeitsvorgang'])->name('stellen.av.create');
+    Route::post('/stellen/{stelle}/arbeitsvorgaenge', [StelleController::class, 'storeArbeitsvorgang'])->name('stellen.av.store');
     Route::get('/stellen/{stelle}/arbeitsvorgaenge/{av}/edit', [StelleController::class, 'editArbeitsvorgang'])->name('stellen.av.edit');
     Route::put('/stellen/{stelle}/arbeitsvorgaenge/{av}', [StelleController::class, 'updateArbeitsvorgang'])->name('stellen.av.update');
+    Route::delete('/stellen/{stelle}/arbeitsvorgaenge/{av}', [StelleController::class, 'destroyArbeitsvorgang'])->name('stellen.av.destroy');
     Route::get('/personal', [PersonalController::class, 'index'])->name('personal.index');
 
     // Aufgaben / Rollen & Aufgaben
