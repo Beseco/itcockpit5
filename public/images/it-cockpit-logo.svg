@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 100" width="480" height="100">
+  <defs>
+    <linearGradient id="iconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563eb"/>
+      <stop offset="100%" style="stop-color:#0ea5e9"/>
+    </linearGradient>
+  </defs>
+
+  <!-- === ICON: Cockpit Gauge === -->
+  <path d="M 18 58 A 32 32 0 0 1 82 58" fill="none" stroke="#cbd5e1" stroke-width="5.5" stroke-linecap="round"/>
+  <path d="M 18 58 A 32 32 0 0 1 73 37" fill="none" stroke="url(#iconGrad)" stroke-width="5.5" stroke-linecap="round"/>
+
+  <!-- Tick marks -->
+  <g stroke="#94a3b8" stroke-width="2" stroke-linecap="round">
+    <line x1="18" y1="58" x2="23.5" y2="58"/>
+    <line x1="82" y1="58" x2="76.5" y2="58"/>
+    <line x1="50" y1="26" x2="50" y2="31.5"/>
+    <line x1="27.7" y1="35" x2="31.4" y2="38.7"/>
+    <line x1="72.3" y1="35" x2="68.6" y2="38.7"/>
+  </g>
+
+  <!-- Needle -->
+  <line x1="50" y1="54" x2="71" y2="33" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Center cap -->
+  <circle cx="50" cy="54" r="6.5" fill="url(#iconGrad)"/>
+  <circle cx="50" cy="54" r="3" fill="white"/>
+
+  <!-- Traffic light dots -->
+  <circle cx="33" cy="78" r="5.5" fill="#ef4444"/>
+  <circle cx="50" cy="78" r="5.5" fill="#f59e0b"/>
+  <circle cx="67" cy="78" r="5.5" fill="#22c55e"/>
+
+  <!-- === TEXT === -->
+  <text x="100" y="55"
+    font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
+    font-size="38" font-weight="800"
+    fill="#0f172a" letter-spacing="-1">IT</text>
+
+  <text x="142" y="55"
+    font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
+    font-size="38" font-weight="300"
+    fill="#2563eb" letter-spacing="0">COCKPIT</text>
+
+  <!-- Version badge -->
+  <rect x="100" y="61" width="34" height="15" rx="4" fill="#2563eb"/>
+  <text x="117" y="73"
+    font-family="'Segoe UI', Arial, sans-serif"
+    font-size="9" font-weight="700"
+    fill="white" text-anchor="middle" letter-spacing="0.5">v 5.0</text>
+
+  <!-- Subtitle — starts after badge with enough room -->
+  <text x="144" y="73"
+    font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
+    font-size="10.5" font-weight="400"
+    fill="#64748b" letter-spacing="1.8">CENTRALIZED IT INFRASTRUCTURE MANAGEMENT</text>
+</svg>

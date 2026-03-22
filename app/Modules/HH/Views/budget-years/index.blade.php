@@ -1,0 +1,98 @@
+<x-app-layout>
+    <x-slot name="header">
+        <div class="flex items-center justify-between">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                Haushaltsplanung – Haushaltsjahre
+            </h2>
+            <button onclick="document.getElementById('modal-create').classList.remove('hidden')"
+                    class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded hover:bg-indigo-700 transition">
+                + Neues Haushaltsjahr
+            </button>
+        </div>
+    </x-slot>
+
+    <div class="py-8">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+
+            @if(session('success'))
+                <div class="mb-4 px-4 py-3 bg-green-100 text-green-800 rounded">{{ session('success') }}</div>
+            @endif
+            @if(session('error'))
+                <div class="mb-4 px-4 py-3 bg-red-100 text-red-800 rounded">{{ session('error') }}</div>
+            @endif
+
+            <div class="bg-white shadow rounded-lg overflow-hidden">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jahr</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Versionen</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @forelse($budgetYears as $by)
+                        <tr>
+                            <td class="px-6 py-4 text-sm font-semibold text-gray-900">{{ $by->year }}</td>
+                            <td class="px-6 py-4">
+                                <span class="px-2 py-1 text-xs rounded-full
+                                    {{ $by->status === 'approved' ? 'bg-green-100 text-green-800' : ($by->status === 'preliminary' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800') }}">
+                                    {{ match($by->status) { 'draft' => 'Entwurf', 'preliminary' => 'Vorläufig', 'approved' => 'Genehmigt', default => $by->status } }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-600">{{ $by->versions->count() }}</td>
+                            <td class="px-6 py-4 text-sm space-x-2">
+                                @if($by->versions->isNotEmpty())
+                                <a href="{{ route('hh.dashboard.show', $by) }}"
+                                   class="text-indigo-600 hover:underline">Dashboard</a>
+                                @endif
+                                <a href="{{ route('hh.budget-years.export.excel', $by) }}"
+                                   class="text-green-600 hover:underline">Excel</a>
+                                <a href="{{ route('hh.budget-years.export.pdf', $by) }}"
+                                   class="text-red-600 hover:underline">PDF</a>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="4" class="px-6 py-8 text-center text-gray-500">
+                                Noch keine Haushaltsjahre vorhanden.
+                            </td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    {{-- Modal: Neues Haushaltsjahr --}}
+    <div id="modal-create" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Neues Haushaltsjahr anlegen</h3>
+            <form method="POST" action="{{ route('hh.budget-years.store') }}">
+                @csrf
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Jahr</label>
+                    <input type="number" name="year" min="2020" max="2099"
+                           value="{{ date('Y') + 1 }}"
+                           class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                           required>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button type="button"
+                            onclick="document.getElementById('modal-create').classList.add('hidden')"
+                            class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">
+                        Abbrechen
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700">
+                        Anlegen
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</x-app-layout>

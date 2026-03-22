@@ -1,0 +1,7 @@
+{
+    "name": "Network",
+    "slug": "network",
+    "version": "1.0.0",
+    "description": "Network and VLAN management module for IT Cockpit",
+    "author": "IT Cockpit Team"
+}

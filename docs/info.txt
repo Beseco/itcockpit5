@@ -1,0 +1,112 @@
+1. Das Architektur-Dokument (docs/architecture.md)
+Markdown
+
+# IT Cockpit v5.0 - Systemarchitektur & Spezifikation
+
+Dieses Dokument dient als zentrale Wissensbasis für die Entwicklung des IT Cockpits. Es beschreibt die technische Struktur, die Datenmodelle und die Logik der Kernanwendung.
+
+## 1. Technischer Stack
+* **Framework:** Laravel 11 (PHP 8.2+)
+* **Frontend:** Tailwind CSS (Styling), Blade (Templating), Alpine.js (Interaktivität)
+* **Datenbank:** MySQL 8.0+
+* **E-Mail:** SMTP-basiert (Laravel Mail-System)
+
+## 2. Benutzer- & Rechtesystem (IAM)
+Das System unterstützt mehrere Administratoren und eine feingranulare Rechtevergabe.
+
+### 2.1 Rollen
+1.  **Super-Admin:** Hat globalen Zugriff auf alle Einstellungen, System-Logs und die Modulverwaltung.
+2.  **Admin:** Kann Benutzer innerhalb seines Zuständigkeitsbereichs verwalten und hat Zugriff auf administrative Funktionen freigeschalteter Module.
+3.  **User:** Standard-Anwender mit Zugriff auf die für ihn freigegebenen Module.
+
+### 2.2 Berechtigungs-Logik (RBAC)
+Berechtigungen werden pro Modul vergeben:
+- `module.{slug}.view`: Erlaubt den Zugriff auf das Modul und die Anzeige der Dashboard-Kachel.
+- `module.{slug}.edit`: Erlaubt Schreibrechte/Konfiguration innerhalb des Moduls.
+
+## 4. Dashboard-Logik ("Traffic Light")
+Das Dashboard ist das Herzstück der App.
+- **Kritische Störungen (Rot):** Werden oben fixiert. Button "Störung behoben" setzt `is_fixed = true`.
+- **Wartungsarbeiten (Gelb):** Erscheinen automatisch im definierten Zeitraum.
+- **Behobene Meldungen (Grün):** Sobald `is_fixed` aktiv ist, wechselt die Farbe zu Grün. Nach exakt **8 Stunden** wird die Meldung über einen Query-Filter vom Dashboard entfernt.
+- **Modul-Kacheln:** Jedes Modul kann eine Info-Kachel (Widget) injizieren, sofern der User das `view`-Recht besitzt.
+
+## 5. Modul-Integrität
+Die Basis-Anwendung scannt das Verzeichnis `/app/Modules`. Ein Modul wird über einen `Service-Provider` registriert. Die Basis stellt Hooks für:
+1.  **Sidebar-Navigation**
+2.  **Dashboard-Grid**
+3.  **Rechte-Verwaltung**
+zur Verfügung.
+2. Die Entwickler-Richtlinie (docs/module_guidelines.md)
+Markdown
+
+# Entwickler-Richtlinie für IT-Cockpit Module
+
+Diese Anleitung beschreibt, wie neue Funktionen (Module) entwickelt werden müssen, damit sie nahtlos in die Basis integriert werden können, ohne den Core-Code zu verändern.
+
+## 1. Ordnerstruktur
+Jedes Modul muss in einem eigenen Unterordner in `app/Modules/` liegen:
+
+```text
+/app/Modules/Inventory/
+├── Providers/
+│   └── InventoryServiceProvider.php  # Registrierung im System
+├── Http/
+│   └── Controllers/                  # Modul-Logik
+├── Views/
+│   ├── index.blade.php               # Hauptansicht
+│   └── widget.blade.php              # Dashboard-Kachel
+├── Routes/
+│   └── web.php                       # Modul-Routen
+└── module.json                       # Metadaten
+2. Die module.json
+Jedes Modul muss sich selbst beschreiben:
+
+JSON
+
+{
+    "name": "Inventar-Verwaltung",
+    "slug": "inventory",
+    "version": "1.0.0",
+    "description": "Verwaltung von Hardware-Assets",
+    "icon": "heroicon-o-computer-desktop"
+}
+3. Integration in die Basis
+3.1 Sidebar-Hook
+Das Modul registriert seinen Menüpunkt im boot-Prozess des ServiceProviders:
+
+PHP
+
+Navigation::add([
+    'label' => 'Inventar',
+    'route' => 'modules.inventory.index',
+    'icon' => 'inventory-icon',
+    'permission' => 'module.inventory.view'
+]);
+3.2 Dashboard-Kachel
+Wenn ein Modul Infos auf dem Dashboard anzeigen will, muss es eine Komponente bereitstellen:
+
+PHP
+
+Dashboard::registerWidget('inventory::widget');
+Hinweis: Die Kachel sollte schlicht gehalten sein (z.B. "15 PCs online / 2 offline").
+
+4. Logging & Sicherheit
+Sicherheit: Jede Route muss durch die Middleware checkModuleAccess:inventory geschützt sein.
+
+Logging: Nutze die globale Hilfsfunktion:
+it_log('inventory', 'Asset hinzugefügt: Laptop-001');
+
+5. UI-Standard
+Verwende ausschließlich Tailwind CSS Klassen. Vermeide eigene CSS-Dateien, um das Design konsistent ("schlicht und funktional") zu halten.
+
+
+---
+
+
+
+### Nächster Schritt für uns
+
+Diese Dokumente bilden nun das "Gehirn" deines Projekts. Damit die Anwendung nicht nur auf dem Papier existiert, sollten wir jetzt die Basis aufbauen.
+
+**Soll ich dir als Nächstes die `Migration-Dateien` (für die Datenbank-Tabellen aus der Architektur) und den Code für das `Login-System` mit Laravel erstellen?**

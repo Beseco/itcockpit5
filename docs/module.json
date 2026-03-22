@@ -1,0 +1,7 @@
+{
+    "name": "Inventar-Verwaltung",
+    "slug": "inventory",
+    "version": "1.0.0",
+    "description": "Verwaltung von Hardware-Assets",
+    "icon": "heroicon-o-computer-desktop"
+}

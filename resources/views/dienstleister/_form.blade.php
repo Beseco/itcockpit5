@@ -1,0 +1,211 @@
+{{-- Gemeinsames Formular-Partial für create und edit --}}
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+    {{-- LINKE SPALTE --}}
+    <div class="space-y-6">
+
+        {{-- Adress & Kontaktdaten --}}
+        <div class="bg-gray-50 rounded-lg p-5">
+            <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">Adress- & Kontaktdaten</h3>
+            <div class="space-y-4">
+
+                <div>
+                    <x-input-label for="firmenname" value="Firmenname *" />
+                    <x-text-input id="firmenname" name="firmenname" type="text" class="mt-1 block w-full"
+                                  value="{{ old('firmenname', $dienstleister->firmenname ?? '') }}" required />
+                    <x-input-error :messages="$errors->get('firmenname')" class="mt-1" />
+                </div>
+
+                <div>
+                    <x-input-label for="strasse" value="Straße" />
+                    <x-text-input id="strasse" name="strasse" type="text" class="mt-1 block w-full"
+                                  value="{{ old('strasse', $dienstleister->strasse ?? '') }}" />
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <x-input-label for="plz" value="PLZ" />
+                        <x-text-input id="plz" name="plz" type="text" class="mt-1 block w-full"
+                                      value="{{ old('plz', $dienstleister->plz ?? '') }}" />
+                    </div>
+                    <div class="col-span-2">
+                        <x-input-label for="ort" value="Ort" />
+                        <x-text-input id="ort" name="ort" type="text" class="mt-1 block w-full"
+                                      value="{{ old('ort', $dienstleister->ort ?? '') }}" />
+                    </div>
+                </div>
+
+                <div>
+                    <x-input-label for="land" value="Land" />
+                    <x-text-input id="land" name="land" type="text" class="mt-1 block w-full"
+                                  value="{{ old('land', $dienstleister->land ?? 'Deutschland') }}" />
+                </div>
+
+                <div>
+                    <x-input-label for="telefon" value="Telefon" />
+                    <x-text-input id="telefon" name="telefon" type="text" class="mt-1 block w-full"
+                                  value="{{ old('telefon', $dienstleister->telefon ?? '') }}" />
+                </div>
+
+                <div>
+                    <x-input-label for="email" value="E-Mail" />
+                    <x-text-input id="email" name="email" type="email" class="mt-1 block w-full"
+                                  value="{{ old('email', $dienstleister->email ?? '') }}" />
+                    <x-input-error :messages="$errors->get('email')" class="mt-1" />
+                </div>
+
+                <div>
+                    <x-input-label for="website" value="Website" />
+                    <x-text-input id="website" name="website" type="text" class="mt-1 block w-full"
+                                  placeholder="https://..." value="{{ old('website', $dienstleister->website ?? '') }}" />
+                </div>
+            </div>
+        </div>
+
+        {{-- Dienstleistung & Typ --}}
+        <div class="bg-gray-50 rounded-lg p-5">
+            <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">Dienstleistung & Typ</h3>
+            <div class="space-y-4">
+
+                <div>
+                    <x-input-label for="dienstleister_typ" value="Typ / Kategorie" />
+                    <select id="dienstleister_typ" name="dienstleister_typ"
+                            class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                        <option value="">– Bitte wählen –</option>
+                        @foreach ($typen as $value => $label)
+                            <option value="{{ $value }}"
+                                {{ old('dienstleister_typ', $dienstleister->dienstleister_typ ?? '') === $value ? 'selected' : '' }}>
+                                {{ $label }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <x-input-label for="fachgebiet" value="Fachgebiet" />
+                    <x-text-input id="fachgebiet" name="fachgebiet" type="text" class="mt-1 block w-full"
+                                  placeholder="z.B. Netzwerktechnik, Brandschutz..."
+                                  value="{{ old('fachgebiet', $dienstleister->fachgebiet ?? '') }}" />
+                </div>
+
+                <div>
+                    <x-input-label for="leistungsbeschreibung" value="Leistungsbeschreibung" />
+                    <textarea id="leistungsbeschreibung" name="leistungsbeschreibung" rows="3"
+                              class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">{{ old('leistungsbeschreibung', $dienstleister->leistungsbeschreibung ?? '') }}</textarea>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <input type="hidden" name="kritischer_dienstleister" value="0">
+                    <input type="checkbox" id="kritischer_dienstleister" name="kritischer_dienstleister" value="1"
+                           class="rounded border-gray-300 text-red-600 shadow-sm focus:ring-red-500"
+                           {{ old('kritischer_dienstleister', $dienstleister->kritischer_dienstleister ?? false) ? 'checked' : '' }}>
+                    <label for="kritischer_dienstleister" class="text-sm font-medium text-red-600">
+                        Kritischer Dienstleister (Ausfallrisiko hoch)
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- RECHTE SPALTE --}}
+    <div class="space-y-6">
+
+        {{-- DSGVO --}}
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-5">
+            <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">Datenschutz (DSGVO)</h3>
+            <div class="space-y-3">
+
+                <div class="flex items-center gap-2">
+                    <input type="hidden" name="verarbeitet_personenbezogene_daten" value="0">
+                    <input type="checkbox" id="verarbeitet_personenbezogene_daten" name="verarbeitet_personenbezogene_daten" value="1"
+                           class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500"
+                           {{ old('verarbeitet_personenbezogene_daten', $dienstleister->verarbeitet_personenbezogene_daten ?? false) ? 'checked' : '' }}>
+                    <label for="verarbeitet_personenbezogene_daten" class="text-sm text-gray-700">
+                        Verarbeitet personenbezogene Daten
+                    </label>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <input type="hidden" name="av_vertrag_vorhanden" value="0">
+                    <input type="checkbox" id="av_vertrag_vorhanden" name="av_vertrag_vorhanden" value="1"
+                           class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500"
+                           {{ old('av_vertrag_vorhanden', $dienstleister->av_vertrag_vorhanden ?? false) ? 'checked' : '' }}>
+                    <label for="av_vertrag_vorhanden" class="text-sm font-medium text-gray-700">
+                        AV-Vertrag liegt vor
+                    </label>
+                </div>
+
+                <div>
+                    <x-input-label for="av_vertrag_datum" value="Datum Vertrag" />
+                    <x-text-input id="av_vertrag_datum" name="av_vertrag_datum" type="date" class="mt-1 block w-full"
+                                  value="{{ old('av_vertrag_datum', isset($dienstleister->av_vertrag_datum) ? $dienstleister->av_vertrag_datum->format('Y-m-d') : '') }}" />
+                </div>
+
+                <div>
+                    <x-input-label for="av_bemerkungen" value="Bemerkung (Ablageort etc.)" />
+                    <x-text-input id="av_bemerkungen" name="av_bemerkungen" type="text" class="mt-1 block w-full"
+                                  value="{{ old('av_bemerkungen', $dienstleister->av_bemerkungen ?? '') }}" />
+                </div>
+            </div>
+        </div>
+
+        {{-- Status & Bewertung --}}
+        <div class="bg-gray-50 rounded-lg p-5">
+            <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">Status & Bewertung</h3>
+            <div class="space-y-4">
+
+                <div>
+                    <x-input-label for="status" value="Status *" />
+                    <select id="status" name="status"
+                            class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                        @foreach ($status as $value => $label)
+                            <option value="{{ $value }}"
+                                {{ old('status', $dienstleister->status ?? 'aktiv') === $value ? 'selected' : '' }}>
+                                {{ $label }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <x-input-label for="bewertung_gesamt" value="Gesamtbewertung (1–5 Sterne)" />
+                    <select id="bewertung_gesamt" name="bewertung_gesamt"
+                            class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                        <option value="">– Keine Bewertung –</option>
+                        @foreach ([1 => '1 Stern (Mangelhaft)', 2 => '2 Sterne', 3 => '3 Sterne (Durchschnitt)', 4 => '4 Sterne', 5 => '5 Sterne (Exzellent)'] as $val => $lbl)
+                            <option value="{{ $val }}"
+                                {{ old('bewertung_gesamt', $dienstleister->bewertung_gesamt ?? '') == $val ? 'selected' : '' }}>
+                                {{ $lbl }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <input type="hidden" name="empfehlung" value="0">
+                    <input type="checkbox" id="empfehlung" name="empfehlung" value="1"
+                           class="rounded border-gray-300 text-green-600 shadow-sm focus:ring-green-500"
+                           {{ old('empfehlung', $dienstleister->empfehlung ?? false) ? 'checked' : '' }}>
+                    <label for="empfehlung" class="text-sm text-gray-700">
+                        👍 Würde ich weiterempfehlen
+                    </label>
+                </div>
+
+                <div>
+                    <x-input-label for="bewertungsnotiz" value="Bewertungsnotiz" />
+                    <textarea id="bewertungsnotiz" name="bewertungsnotiz" rows="2"
+                              class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                              placeholder="Kurznotiz zur Bewertung...">{{ old('bewertungsnotiz', $dienstleister->bewertungsnotiz ?? '') }}</textarea>
+                </div>
+            </div>
+        </div>
+
+        {{-- Allgemeine Bemerkungen --}}
+        <div class="bg-gray-50 rounded-lg p-5">
+            <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">Allgemeine Bemerkungen</h3>
+            <textarea name="bemerkungen" rows="4"
+                      class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">{{ old('bemerkungen', $dienstleister->bemerkungen ?? '') }}</textarea>
+        </div>
+    </div>
+</div>

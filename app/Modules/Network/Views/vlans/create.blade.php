@@ -1,0 +1,324 @@
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+            {{ __('Create New VLAN') }}
+        </h2>
+    </x-slot>
+
+    <div class="py-12">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <form method="POST" action="{{ route('network.vlans.store') }}" id="vlan-form">
+                @csrf
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                    <!-- Left Column (2/3): Form Fields -->
+                    <div class="lg:col-span-2 space-y-6">
+
+                        <!-- Basis-Daten -->
+                        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                            <div class="px-6 py-4 bg-gray-100 border-b border-gray-200">
+                                <h3 class="font-semibold text-gray-700">{{ __('VLAN Daten') }}</h3>
+                            </div>
+                            <div class="p-6 space-y-4">
+
+                                <!-- VLAN ID -->
+                                <div>
+                                    <x-input-label for="vlan_id" :value="__('VLAN ID')" />
+                                    <x-text-input id="vlan_id" class="block mt-1 w-full" type="number" name="vlan_id" :value="old('vlan_id')" required autofocus min="1" max="4094" placeholder="1 - 4094" />
+                                    <x-input-error :messages="$errors->get('vlan_id')" class="mt-2" />
+                                </div>
+
+                                <!-- VLAN Name -->
+                                <div>
+                                    <x-input-label for="vlan_name" :value="__('VLAN Name')" />
+                                    <x-text-input id="vlan_name" class="block mt-1 w-full" type="text" name="vlan_name" :value="old('vlan_name')" required placeholder="z.B. Management Network" />
+                                    <x-input-error :messages="$errors->get('vlan_name')" class="mt-2" />
+                                </div>
+
+                                <!-- Network Address + CIDR in einer Zeile -->
+                                <div>
+                                    <x-input-label :value="__('Netzwerkadresse / CIDR')" />
+                                    <div class="flex gap-2 mt-1">
+                                        <x-text-input id="network_address" class="flex-1" type="text" name="network_address" :value="old('network_address')" required placeholder="z.B. 192.168.1.0" oninput="calculateNetwork()" />
+                                        <select id="cidr_suffix" name="cidr_suffix" required onchange="calculateNetwork()"
+                                                class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
+                                            @for($i = 1; $i <= 32; $i++)
+                                                <option value="{{ $i }}" {{ old('cidr_suffix', 24) == $i ? 'selected' : '' }}>/{{ $i }}</option>
+                                            @endfor
+                                        </select>
+                                    </div>
+                                    <x-input-error :messages="$errors->get('network_address')" class="mt-2" />
+                                    <x-input-error :messages="$errors->get('cidr_suffix')" class="mt-2" />
+                                </div>
+
+                                <!-- Gateway -->
+                                <div>
+                                    <x-input-label for="gateway" :value="__('Gateway (optional)')" />
+                                    <x-text-input id="gateway" class="block mt-1 w-full" type="text" name="gateway" :value="old('gateway')" placeholder="z.B. 192.168.1.1" oninput="validateGateway()" />
+                                    <p id="gateway-error" class="mt-1 text-sm text-red-600 hidden"></p>
+                                    <x-input-error :messages="$errors->get('gateway')" class="mt-2" />
+                                </div>
+
+                                <!-- DHCP in einer Zeile -->
+                                <div>
+                                    <x-input-label :value="__('DHCP Bereich (optional)')" />
+                                    <div class="flex gap-2 mt-1 items-center">
+                                        <x-text-input id="dhcp_from" class="flex-1" type="text" name="dhcp_from" :value="old('dhcp_from')" placeholder="Von z.B. 192.168.1.100" oninput="validateDhcp()" />
+                                        <span class="text-gray-500 text-sm">–</span>
+                                        <x-text-input id="dhcp_to" class="flex-1" type="text" name="dhcp_to" :value="old('dhcp_to')" placeholder="Bis z.B. 192.168.1.200" oninput="validateDhcp()" />
+                                    </div>
+                                    <p id="dhcp-error" class="mt-1 text-sm text-red-600 hidden"></p>
+                                    <x-input-error :messages="$errors->get('dhcp_from')" class="mt-2" />
+                                    <x-input-error :messages="$errors->get('dhcp_to')" class="mt-2" />
+                                </div>
+
+                                <!-- Description -->
+                                <div>
+                                    <x-input-label for="description" :value="__('Beschreibung (optional)')" />
+                                    <textarea id="description" name="description" rows="3"
+                                              class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
+                                              placeholder="Beschreibung für dieses VLAN">{{ old('description') }}</textarea>
+                                    <x-input-error :messages="$errors->get('description')" class="mt-2" />
+                                </div>
+
+                                <!-- Checkboxen -->
+                                <div class="flex gap-6">
+                                    <label class="inline-flex items-center">
+                                        <input id="internes_netz" type="checkbox" name="internes_netz" value="1" {{ old('internes_netz') ? 'checked' : '' }}
+                                               class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                        <span class="ml-2 text-sm text-gray-600">{{ __('Internes Netz') }}</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input id="ipscan" type="checkbox" name="ipscan" value="1" {{ old('ipscan') ? 'checked' : '' }}
+                                               class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                        <span class="ml-2 text-sm text-gray-600">{{ __('IP Scanning aktivieren') }}</span>
+                                    </label>
+                                </div>
+
+                                <!-- Scan Interval -->
+                                <div>
+                                    <x-input-label for="scan_interval_minutes" :value="__('Scan-Intervall (Minuten)')" />
+                                    <x-text-input id="scan_interval_minutes" class="block mt-1 w-32" type="number" name="scan_interval_minutes" :value="old('scan_interval_minutes', 60)" min="1" placeholder="60" />
+                                    <x-input-error :messages="$errors->get('scan_interval_minutes')" class="mt-2" />
+                                </div>
+
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Right Column (1/3): VLAN Rechner + Aktionen -->
+                    <div class="lg:col-span-1 space-y-6">
+
+                        <!-- Aktionen -->
+                        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                            <div class="px-6 py-4 bg-gray-100 border-b border-gray-200">
+                                <h3 class="font-semibold text-gray-700">{{ __('Aktionen') }}</h3>
+                            </div>
+                            <div class="p-6 space-y-3">
+                                <button type="submit"
+                                        class="block w-full text-center px-4 py-2 bg-blue-600 border border-blue-600 rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700">
+                                    {{ __('VLAN erstellen') }}
+                                </button>
+                                <a href="{{ route('network.index') }}"
+                                   class="block w-full text-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50">
+                                    {{ __('Abbrechen') }}
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- VLAN Rechner -->
+                        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                            <div class="px-6 py-4 bg-blue-50 border-b border-blue-100">
+                                <h3 class="font-semibold text-gray-700">{{ __('Netzrechner') }}</h3>
+                            </div>
+                            <div class="p-6 space-y-2" id="network-calc">
+                                <div class="text-sm text-gray-400 italic" id="calc-placeholder">
+                                    Netzwerkadresse und CIDR eingeben...
+                                </div>
+                                <div id="calc-results" class="hidden space-y-2">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="font-medium text-gray-600">Netzadresse:</span>
+                                        <span id="calc-network" class="text-gray-900 font-mono"></span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="font-medium text-gray-600">Broadcast:</span>
+                                        <span id="calc-broadcast" class="text-gray-900 font-mono"></span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="font-medium text-gray-600">Erste IP:</span>
+                                        <span id="calc-first" class="text-gray-900 font-mono"></span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="font-medium text-gray-600">Letzte IP:</span>
+                                        <span id="calc-last" class="text-gray-900 font-mono"></span>
+                                    </div>
+                                    <div class="flex justify-between text-sm">
+                                        <span class="font-medium text-gray-600">Subnetzmaske:</span>
+                                        <span id="calc-mask" class="text-gray-900 font-mono"></span>
+                                    </div>
+                                    <div class="flex justify-between text-sm border-t border-gray-200 pt-2 mt-2">
+                                        <span class="font-medium text-gray-600">Verfügbare IPs:</span>
+                                        <span id="calc-available" class="text-gray-900 font-semibold"></span>
+                                    </div>
+                                    <div id="calc-warning" class="hidden mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+<script>
+function ip2long(ip) {
+    const parts = ip.split('.');
+    if (parts.length !== 4) return null;
+    for (const p of parts) {
+        if (isNaN(p) || p < 0 || p > 255) return null;
+    }
+    return ((parseInt(parts[0]) << 24) | (parseInt(parts[1]) << 16) | (parseInt(parts[2]) << 8) | parseInt(parts[3])) >>> 0;
+}
+
+function long2ip(long) {
+    return [
+        (long >>> 24) & 255,
+        (long >>> 16) & 255,
+        (long >>> 8) & 255,
+        long & 255
+    ].join('.');
+}
+
+function calculateNetwork() {
+    const ip = document.getElementById('network_address').value.trim();
+    const cidr = parseInt(document.getElementById('cidr_suffix').value);
+
+    const placeholder = document.getElementById('calc-placeholder');
+    const results = document.getElementById('calc-results');
+    const warning = document.getElementById('calc-warning');
+
+    const ipLong = ip2long(ip);
+    if (ipLong === null || isNaN(cidr) || cidr < 1 || cidr > 32) {
+        placeholder.classList.remove('hidden');
+        results.classList.add('hidden');
+        return;
+    }
+
+    const mask = cidr === 0 ? 0 : (0xFFFFFFFF << (32 - cidr)) >>> 0;
+    const network = (ipLong & mask) >>> 0;
+    const broadcast = (network | (~mask >>> 0)) >>> 0;
+    const first = cidr < 31 ? network + 1 : network;
+    const last = cidr < 31 ? broadcast - 1 : broadcast;
+    const available = cidr >= 31 ? (cidr === 32 ? 1 : 2) : broadcast - network - 1;
+
+    // Subnetzmaske
+    const maskIp = long2ip(mask);
+
+    document.getElementById('calc-network').textContent = long2ip(network);
+    document.getElementById('calc-broadcast').textContent = long2ip(broadcast);
+    document.getElementById('calc-first').textContent = long2ip(first);
+    document.getElementById('calc-last').textContent = long2ip(last);
+    document.getElementById('calc-mask').textContent = maskIp;
+    document.getElementById('calc-available').textContent = available.toLocaleString('de-DE');
+
+    // Warnung wenn IP nicht die Netzadresse ist
+    if (ipLong !== network) {
+        warning.textContent = 'Hinweis: Die eingegebene IP ist kein Netzwerk-Start. Netzadresse wäre: ' + long2ip(network);
+        warning.classList.remove('hidden');
+    } else {
+        warning.classList.add('hidden');
+    }
+
+    placeholder.classList.add('hidden');
+    results.classList.remove('hidden');
+
+    // Re-validate gateway and DHCP
+    validateGateway();
+    validateDhcp();
+}
+
+function getSubnetBounds() {
+    const ip = document.getElementById('network_address').value.trim();
+    const cidr = parseInt(document.getElementById('cidr_suffix').value);
+    const ipLong = ip2long(ip);
+    if (ipLong === null || isNaN(cidr)) return null;
+    const mask = cidr === 0 ? 0 : (0xFFFFFFFF << (32 - cidr)) >>> 0;
+    const network = (ipLong & mask) >>> 0;
+    const broadcast = (network | (~mask >>> 0)) >>> 0;
+    return { network, broadcast };
+}
+
+function validateGateway() {
+    const gw = document.getElementById('gateway').value.trim();
+    const err = document.getElementById('gateway-error');
+    if (!gw) { err.classList.add('hidden'); return; }
+
+    const gwLong = ip2long(gw);
+    if (gwLong === null) {
+        err.textContent = 'Keine gültige IP-Adresse.';
+        err.classList.remove('hidden');
+        return;
+    }
+
+    const bounds = getSubnetBounds();
+    if (bounds && (gwLong < bounds.network || gwLong > bounds.broadcast)) {
+        err.textContent = 'Gateway liegt nicht im Netzbereich.';
+        err.classList.remove('hidden');
+    } else {
+        err.classList.add('hidden');
+    }
+}
+
+function validateDhcp() {
+    const from = document.getElementById('dhcp_from').value.trim();
+    const to = document.getElementById('dhcp_to').value.trim();
+    const err = document.getElementById('dhcp-error');
+
+    if (!from && !to) { err.classList.add('hidden'); return; }
+
+    const fromLong = ip2long(from);
+    const toLong = ip2long(to);
+
+    if (from && fromLong === null) {
+        err.textContent = 'DHCP Von: Keine gültige IP-Adresse.';
+        err.classList.remove('hidden');
+        return;
+    }
+    if (to && toLong === null) {
+        err.textContent = 'DHCP Bis: Keine gültige IP-Adresse.';
+        err.classList.remove('hidden');
+        return;
+    }
+
+    const bounds = getSubnetBounds();
+    if (bounds) {
+        if (fromLong && (fromLong < bounds.network || fromLong > bounds.broadcast)) {
+            err.textContent = 'DHCP Von liegt nicht im Netzbereich.';
+            err.classList.remove('hidden');
+            return;
+        }
+        if (toLong && (toLong < bounds.network || toLong > bounds.broadcast)) {
+            err.textContent = 'DHCP Bis liegt nicht im Netzbereich.';
+            err.classList.remove('hidden');
+            return;
+        }
+    }
+
+    if (fromLong && toLong && fromLong > toLong) {
+        err.textContent = 'DHCP Von muss kleiner oder gleich DHCP Bis sein.';
+        err.classList.remove('hidden');
+        return;
+    }
+
+    err.classList.add('hidden');
+}
+
+// Init on page load if old values exist
+document.addEventListener('DOMContentLoaded', function() {
+    calculateNetwork();
+});
+</script>
+
+</x-app-layout>

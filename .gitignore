@@ -1,0 +1,33 @@
+/.phpunit.cache
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/storage/*.key
+/vendor
+.env
+.env.backup
+.env.production
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+auth.json
+npm-debug.log
+yarn-error.log
+/.fleet
+/.idea
+/.vscode
+
+# Interne Infrastruktur-Daten (VLANs, IPs, DB-Dumps)
+/docs/olddb
+
+# Entwicklungs-Artefakte (temporäre Skripte, Snippets)
+/_patch.py
+/_patch2.py
+/_route_snippet.txt
+/fix_bom.ps1
+/write_dashboard.ps1
+/sidebar.blade.php
+
+# Claude Code Projektdaten
+/.claude
