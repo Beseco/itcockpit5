@@ -140,6 +140,11 @@ class GruppeController extends Controller
             return back()->with('error', 'Diese Gruppe hat noch Mitglieder und kann nicht gelöscht werden.');
         }
 
+        if ($gruppe->stellen()->exists()) {
+            $count = $gruppe->stellen()->count();
+            return back()->with('error', "Diese Gruppe ist noch {$count} Stelle(n) zugewiesen und kann nicht gelöscht werden.");
+        }
+
         $name = $gruppe->name;
         $gruppe->roles()->detach();
         $gruppe->delete();
