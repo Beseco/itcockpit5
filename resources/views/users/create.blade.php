@@ -130,7 +130,7 @@
                         <!-- Send Credentials -->
                         <div class="mb-4">
                             <label for="send_credentials" class="inline-flex items-center">
-                                <input id="send_credentials" type="checkbox" name="send_credentials" value="1" {{ old('send_credentials') ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                <input id="send_credentials" type="checkbox" name="send_credentials" value="1" {{ old('send_credentials', '1') ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
                                 <span class="ml-2 text-sm text-gray-600">{{ __('Zugangsdaten per E-Mail senden') }}</span>
                             </label>
                             <x-input-error :messages="$errors->get('send_credentials')" class="mt-2" />
@@ -139,7 +139,7 @@
                         <!-- Is Active -->
                         <div class="mb-4">
                             <label for="is_active" class="inline-flex items-center">
-                                <input id="is_active" type="checkbox" name="is_active" value="1" {{ old('is_active') ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                <input id="is_active" type="checkbox" name="is_active" value="1" {{ old('is_active', '1') ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
                                 <span class="ml-2 text-sm text-gray-600">{{ __('Active') }}</span>
                             </label>
                             <x-input-error :messages="$errors->get('is_active')" class="mt-2" />

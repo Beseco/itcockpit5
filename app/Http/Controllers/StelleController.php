@@ -140,6 +140,37 @@ class StelleController extends Controller
             ->with('success', "Stelle \"{$stelle->bezeichnung}\" wurde gespeichert.");
     }
 
+    public function editArbeitsvorgang(Stelle $stelle, Arbeitsvorgang $av)
+    {
+        $this->authorize('base.stellen.edit');
+
+        $stelle->load('arbeitsvorgaenge');
+        $avIndex = $stelle->arbeitsvorgaenge->sortBy('sort_order')->search(fn($a) => $a->id === $av->id);
+        $avLabel = 'AV' . ($avIndex + 1);
+
+        return view('stellen.arbeitsvorgang_edit', compact('stelle', 'av', 'avLabel'));
+    }
+
+    public function updateArbeitsvorgang(Request $request, Stelle $stelle, Arbeitsvorgang $av)
+    {
+        $this->authorize('base.stellen.edit');
+
+        $validated = $request->validate([
+            'betreff'      => 'required|string|max:255',
+            'beschreibung' => 'nullable|string',
+            'anteil'       => 'required|integer|min:0|max:100',
+        ]);
+
+        $av->update($validated);
+
+        $this->auditLogger->log('stellen', 'update', [
+            'message' => "Arbeitsvorgang '{$av->betreff}' in Stelle '{$stelle->bezeichnung}' aktualisiert",
+        ]);
+
+        return redirect()->route('stellen.edit', $stelle)
+            ->with('success', "Arbeitsvorgang \"{$av->betreff}\" wurde gespeichert.");
+    }
+
     public function destroy(Stelle $stelle)
     {
         $this->authorize('base.stellen.delete');

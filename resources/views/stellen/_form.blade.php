@@ -191,7 +191,8 @@
         </div>
     </div>
 
-    {{-- Arbeitsvorgänge --}}
+    {{-- Arbeitsvorgänge (nur beim Anlegen inline editierbar) --}}
+    @if(!isset($stelle))
     <div>
         <div class="flex items-center justify-between mb-3">
             <x-input-label value="Stellenbeschreibung (Arbeitsvorgänge)" />
@@ -216,22 +217,19 @@
                 <tbody class="divide-y divide-gray-100 bg-white">
                     <template x-for="(av, index) in arbeitsvorgaenge" :key="index">
                         <tr class="hover:bg-gray-50">
-                            <td class="px-3 py-3 text-gray-400 align-top" x-text="index + 1"></td>
+                            <td class="px-3 py-3 text-gray-400 align-top" x-text="'AV' + (index + 1)"></td>
                             <td class="px-3 py-2 align-top">
                                 <input type="text"
                                        :name="'arbeitsvorgaenge[' + index + '][betreff]'"
                                        x-model="av.betreff"
-                                       placeholder="z.B. AV1: Benutzerverwaltung"
+                                       placeholder="z.B. Benutzerverwaltung"
                                        class="block w-full border-gray-300 rounded text-sm focus:ring-indigo-500 focus:border-indigo-500"
                                        required />
                             </td>
                             <td class="px-3 py-2 align-top">
-                                {{-- Hidden textarea carries the value on form submit --}}
                                 <textarea :name="'arbeitsvorgaenge[' + index + '][beschreibung]'"
                                           x-model="av.beschreibung"
                                           class="hidden"></textarea>
-
-                                {{-- Preview + edit button --}}
                                 <div class="flex items-start gap-2">
                                     <div class="flex-1 min-w-0">
                                         <p class="text-xs text-gray-600 line-clamp-2"
@@ -282,7 +280,7 @@
         </div>
     </div>
 
-    {{-- EasyMDE Modal --}}
+    {{-- EasyMDE Modal (nur beim Anlegen) --}}
     <div x-show="editorOpen" x-cloak
          class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
         <div class="bg-white rounded-lg shadow-2xl w-full max-w-4xl flex flex-col"
@@ -321,6 +319,7 @@
             </div>
         </div>
     </div>
+    @endif
 
     {{-- Buttons --}}
     <div class="flex items-center justify-between pt-4 border-t border-gray-200">
