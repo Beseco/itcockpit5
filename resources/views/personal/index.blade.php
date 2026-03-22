@@ -178,7 +178,7 @@
                     @else
                         <div class="px-5 py-4 space-y-3">
                             <div>
-                                <p class="text-base font-semibold text-gray-900">{{ $stelle->bezeichnung }}</p>
+                                <p class="text-base font-semibold text-gray-900">{{ $stelle->stellenbeschreibung?->bezeichnung ?? '—' }}</p>
                                 @if($stelle->stellennummer)
                                     <p class="text-xs font-mono text-gray-500 mt-0.5">{{ $stelle->stellennummer }}</p>
                                 @endif
@@ -191,27 +191,31 @@
                                     <dd class="text-gray-700 font-medium text-right">{{ $stelle->gruppe->name }}</dd>
                                 </div>
                                 @endif
-                                @if($stelle->tvod_bewertung)
+                                @if($stelle->haushalt_bewertung)
                                 <div class="flex justify-between">
-                                    <dt class="text-gray-500">TVöD</dt>
-                                    <dd><span class="px-1.5 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800">{{ $stelle->tvod_bewertung }}</span></dd>
+                                    <dt class="text-gray-500">HH-Bewertung</dt>
+                                    <dd><span class="px-1.5 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800">{{ $stelle->haushalt_bewertung }}</span></dd>
                                 </div>
                                 @endif
-                                @if($stelle->stunden)
+                                @if($stelle->bes_gruppe)
                                 <div class="flex justify-between">
-                                    <dt class="text-gray-500">Stunden</dt>
-                                    <dd class="text-gray-700">{{ number_format($stelle->stunden, 1, ',', '.') }} Std.
-                                        <span class="text-xs text-gray-400">({{ $stelle->isVollzeit() ? 'VZ' : 'TZ' }})</span>
-                                    </dd>
+                                    <dt class="text-gray-500">Bes.-Gruppe</dt>
+                                    <dd><span class="px-1.5 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-700">{{ $stelle->bes_gruppe }}</span></dd>
+                                </div>
+                                @endif
+                                @if($stelle->belegung !== null)
+                                <div class="flex justify-between">
+                                    <dt class="text-gray-500">Belegung</dt>
+                                    <dd class="text-gray-700">{{ number_format($stelle->belegung, 0) }} %</dd>
                                 </div>
                                 @endif
                             </dl>
 
-                            @if($stelle->arbeitsvorgaenge->isNotEmpty())
+                            @if($stelle->stellenbeschreibung?->arbeitsvorgaenge->isNotEmpty())
                             <div class="pt-2 border-t border-gray-100">
                                 <p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Arbeitsvorgänge</p>
                                 <ul class="space-y-1">
-                                    @foreach($stelle->arbeitsvorgaenge as $av)
+                                    @foreach($stelle->stellenbeschreibung->arbeitsvorgaenge as $av)
                                     <li class="flex items-center justify-between text-xs">
                                         <span class="text-gray-700 truncate mr-2">{{ $av->betreff }}</span>
                                         <span class="flex-shrink-0 font-semibold text-indigo-600">{{ $av->anteil }}%</span>
