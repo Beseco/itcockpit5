@@ -15,12 +15,47 @@ class StellenbeschreibungController extends Controller
     {
         $this->authorize('base.stellenbeschreibungen.view');
 
-        $stellenbeschreibungen = Stellenbeschreibung::withCount('stellen')
-            ->with('arbeitsvorgaenge')
-            ->orderBy('bezeichnung')
-            ->get();
+        $user = auth()->user();
 
-        return view('stellenbeschreibungen.index', compact('stellenbeschreibungen'));
+        // Nur Edit-Berechtigte sehen die volle Liste
+        if ($user->can('base.stellenbeschreibungen.edit')) {
+            $stellenbeschreibungen = Stellenbeschreibung::withCount('stellen')
+                ->with('arbeitsvorgaenge')
+                ->orderBy('bezeichnung')
+                ->get();
+            return view('stellenbeschreibungen.index', compact('stellenbeschreibungen'));
+        }
+
+        // View-only: direkt zur eigenen Stellenbeschreibung weiterleiten
+        $owneSb = $user->stellen()->with('stellenbeschreibung')->first()?->stellenbeschreibung;
+
+        if ($owneSb) {
+            return redirect()->route('stellenbeschreibungen.show', $owneSb);
+        }
+
+        return view('stellenbeschreibungen.index', ['stellenbeschreibungen' => collect()]);
+    }
+
+    public function show(Stellenbeschreibung $stellenbeschreibung)
+    {
+        $this->authorize('base.stellenbeschreibungen.view');
+
+        $user = auth()->user();
+
+        // Ohne Edit-Recht: nur die eigene Stellenbeschreibung darf eingesehen werden
+        if (!$user->can('base.stellenbeschreibungen.edit') && !$user->isSuperAdmin()) {
+            $ownSbId = $user->stellen()->with('stellenbeschreibung')
+                ->get()
+                ->pluck('stellenbeschreibung_id')
+                ->unique();
+
+            if (!$ownSbId->contains($stellenbeschreibung->id)) {
+                abort(403, 'Sie dürfen nur Ihre eigene Stellenbeschreibung einsehen.');
+            }
+        }
+
+        $stellenbeschreibung->load(['arbeitsvorgaenge', 'stellen.gruppe']);
+        return view('stellenbeschreibungen.show', compact('stellenbeschreibung'));
     }
 
     public function create()

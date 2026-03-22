@@ -24,12 +24,14 @@
                                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Stellen-Nr.</th>
                                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Stellenbezeichnung</th>
                                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Stelleninhaber</th>
+                                @if($canSeeSensitive)
                                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">HH-Bewertung</th>
                                 <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Bes.-Gruppe</th>
+                                @endif
                                 <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Belegung %</th>
                                 <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Gesamt-Az. %</th>
                                 <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Anteil %</th>
-                                <th class="px-3 py-2 w-8"></th>
+                                @can('base.stellen.edit')<th class="px-3 py-2 w-8"></th>@endcan
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 bg-white">
@@ -48,8 +50,10 @@
                                             {{ $stelle->stelleninhaber->name }}
                                         @endif
                                     </td>
+                                    @if($canSeeSensitive)
                                     <td class="px-3 py-2.5 text-gray-600">{{ $stelle->haushalt_bewertung ?? '—' }}</td>
                                     <td class="px-3 py-2.5 text-gray-600">{{ $stelle->bes_gruppe ?? '—' }}</td>
+                                    @endif
                                     <td class="px-3 py-2.5 text-center text-gray-600">
                                         {{ $stelle->belegung !== null ? number_format($stelle->belegung, 0).' %' : '—' }}
                                     </td>
@@ -59,17 +63,17 @@
                                     <td class="px-3 py-2.5 text-center text-gray-600">
                                         {{ $stelle->anteil_stelle !== null ? number_format($stelle->anteil_stelle, 0).' %' : '—' }}
                                     </td>
+                                    @can('base.stellen.edit')
                                     <td class="px-3 py-2.5 text-right">
-                                        @can('base.stellen.edit')
-                                            <a href="{{ route('stellen.edit', $stelle) }}"
-                                               class="text-gray-300 hover:text-indigo-600" title="Bearbeiten">
-                                                <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                                </svg>
-                                            </a>
-                                        @endcan
+                                        <a href="{{ route('stellen.edit', $stelle) }}"
+                                           class="text-gray-300 hover:text-indigo-600" title="Bearbeiten">
+                                            <svg class="w-4 h-4 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                            </svg>
+                                        </a>
                                     </td>
+                                    @endcan
                                 </tr>
                             @endforeach
                         </tbody>
@@ -97,12 +101,13 @@
                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Stellen-Nr.</th>
                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Stellenbezeichnung</th>
                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Stelleninhaber</th>
+                            @if($canSeeSensitive)
                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">HH-Bewertung</th>
                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Bes.-Gruppe</th>
+                            @endif
                             <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Belegung %</th>
                             <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Gesamt-Az. %</th>
                             <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Anteil %</th>
-                            <th class="px-3 py-2 w-8"></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 bg-white">
@@ -117,12 +122,13 @@
                                         {{ $stelle->stelleninhaber->name }}
                                     @endif
                                 </td>
+                                @if($canSeeSensitive)
                                 <td class="px-3 py-2.5 text-gray-600">{{ $stelle->haushalt_bewertung ?? '—' }}</td>
                                 <td class="px-3 py-2.5 text-gray-600">{{ $stelle->bes_gruppe ?? '—' }}</td>
+                                @endif
                                 <td class="px-3 py-2.5 text-center text-gray-600">{{ $stelle->belegung !== null ? number_format($stelle->belegung, 0).' %' : '—' }}</td>
                                 <td class="px-3 py-2.5 text-center text-gray-600">{{ $stelle->gesamtarbeitszeit !== null ? number_format($stelle->gesamtarbeitszeit, 0).' %' : '—' }}</td>
                                 <td class="px-3 py-2.5 text-center text-gray-600">{{ $stelle->anteil_stelle !== null ? number_format($stelle->anteil_stelle, 0).' %' : '—' }}</td>
-                                <td class="px-3 py-2.5"></td>
                             </tr>
                         @endforeach
                     </tbody>

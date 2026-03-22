@@ -16,6 +16,8 @@ class StellenplanController extends Controller
                                       ->orderBy('stellennummer'),
         ])->orderBy('name')->get();
 
-        return view('stellenplan::index', compact('gruppen'));
+        $canSeeSensitive = auth()->user()->can('module.stellenplan.view_sensitive');
+
+        return view('stellenplan::index', compact('gruppen', 'canSeeSensitive'));
     }
 }
