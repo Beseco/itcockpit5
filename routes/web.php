@@ -16,6 +16,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PersonalController;
+use App\Http\Controllers\StellenbeschreibungController;
 use App\Http\Controllers\StelleController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -49,11 +50,17 @@ Route::middleware('auth')->group(function () {
     Route::resource('stellen', StelleController::class, [
         'parameters' => ['stellen' => 'stelle'],
     ]);
-    Route::get('/stellen/{stelle}/arbeitsvorgaenge/create', [StelleController::class, 'createArbeitsvorgang'])->name('stellen.av.create');
-    Route::post('/stellen/{stelle}/arbeitsvorgaenge', [StelleController::class, 'storeArbeitsvorgang'])->name('stellen.av.store');
-    Route::get('/stellen/{stelle}/arbeitsvorgaenge/{av}/edit', [StelleController::class, 'editArbeitsvorgang'])->name('stellen.av.edit');
-    Route::put('/stellen/{stelle}/arbeitsvorgaenge/{av}', [StelleController::class, 'updateArbeitsvorgang'])->name('stellen.av.update');
-    Route::delete('/stellen/{stelle}/arbeitsvorgaenge/{av}', [StelleController::class, 'destroyArbeitsvorgang'])->name('stellen.av.destroy');
+
+    // Stellenbeschreibungen
+    Route::resource('stellenbeschreibungen', StellenbeschreibungController::class, [
+        'parameters' => ['stellenbeschreibungen' => 'stellenbeschreibung'],
+    ]);
+    Route::get('/stellenbeschreibungen/{stellenbeschreibung}/arbeitsvorgaenge/create', [StellenbeschreibungController::class, 'createAv'])->name('sb.av.create');
+    Route::post('/stellenbeschreibungen/{stellenbeschreibung}/arbeitsvorgaenge', [StellenbeschreibungController::class, 'storeAv'])->name('sb.av.store');
+    Route::get('/stellenbeschreibungen/{stellenbeschreibung}/arbeitsvorgaenge/{av}/edit', [StellenbeschreibungController::class, 'editAv'])->name('sb.av.edit');
+    Route::put('/stellenbeschreibungen/{stellenbeschreibung}/arbeitsvorgaenge/{av}', [StellenbeschreibungController::class, 'updateAv'])->name('sb.av.update');
+    Route::delete('/stellenbeschreibungen/{stellenbeschreibung}/arbeitsvorgaenge/{av}', [StellenbeschreibungController::class, 'destroyAv'])->name('sb.av.destroy');
+
     Route::get('/personal', [PersonalController::class, 'index'])->name('personal.index');
 
     // Aufgaben / Rollen & Aufgaben

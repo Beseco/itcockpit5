@@ -78,6 +78,24 @@ class RegisterNewModulesSeeder extends Seeder
             ]
         );
 
+        $stellenplanModule = Module::firstOrCreate(
+            ['name' => 'stellenplan'],
+            [
+                'display_name' => 'Stellenplan',
+                'description'  => 'Übersicht aller Stellen des Sachgebiets IuK',
+                'is_active'    => true,
+            ]
+        );
+
+        $stellenbeschreibungenModule = Module::firstOrCreate(
+            ['name' => 'stellenbeschreibungen'],
+            [
+                'display_name' => 'Stellenbeschreibungen',
+                'description'  => 'Verwaltung von Stellenbeschreibungen und Arbeitsvorgängen',
+                'is_active'    => true,
+            ]
+        );
+
         // --- Permissions anlegen ---
 
         $permissions = [
@@ -126,6 +144,13 @@ class RegisterNewModulesSeeder extends Seeder
             ['name' => 'base.aufgaben.create',     'module_id' => $aufgabenModule->id],
             ['name' => 'base.aufgaben.edit',       'module_id' => $aufgabenModule->id],
             ['name' => 'base.aufgaben.delete',     'module_id' => $aufgabenModule->id],
+
+            // Stellenplan
+            ['name' => 'module.stellenplan.view',  'module_id' => $stellenplanModule->id],
+
+            // Stellenbeschreibungen
+            ['name' => 'base.stellenbeschreibungen.view',   'module_id' => $stellenbeschreibungenModule->id],
+            ['name' => 'base.stellenbeschreibungen.edit',   'module_id' => $stellenbeschreibungenModule->id],
         ];
 
         foreach ($permissions as $perm) {
@@ -156,11 +181,13 @@ class RegisterNewModulesSeeder extends Seeder
                 'base.gruppen.view', 'base.gruppen.create', 'base.gruppen.edit',
                 'base.stellen.view', 'base.stellen.create', 'base.stellen.edit',
                 'base.aufgaben.view', 'base.aufgaben.create', 'base.aufgaben.edit',
+                'module.stellenplan.view',
+                'base.stellenbeschreibungen.view', 'base.stellenbeschreibungen.edit',
             ];
             $admin->givePermissionTo($adminPermissions);
         }
 
-        $this->command->info('✓ Module registriert: orders, dienstleister, reminders, gruppen, stellen, aufgaben');
+        $this->command->info('✓ Module registriert: orders, dienstleister, reminders, gruppen, stellen, aufgaben, stellenplan, stellenbeschreibungen');
         $this->command->info('✓ ' . count($permissions) . ' Permissions angelegt');
         $this->command->info('✓ Superadmin und Admin aktualisiert');
     }

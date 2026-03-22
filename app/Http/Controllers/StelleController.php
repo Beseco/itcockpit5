@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Arbeitsvorgang;
 use App\Models\Gruppe;
 use App\Models\Stelle;
+use App\Models\Stellenbeschreibung;
 use App\Models\User;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
@@ -17,8 +17,8 @@ class StelleController extends Controller
     {
         $this->authorize('base.stellen.view');
 
-        $stellen = Stelle::with(['gruppe', 'stelleninhaber', 'arbeitsvorgaenge'])
-            ->orderBy('bezeichnung')
+        $stellen = Stelle::with(['stellenbeschreibung', 'gruppe', 'stelleninhaber'])
+            ->orderBy('stellennummer')
             ->paginate(25)
             ->withQueryString();
 
@@ -27,60 +27,45 @@ class StelleController extends Controller
 
     public function create()
     {
-        $this->authorize('base.stellen.create');
+        $this->authorize('base.stellen.edit');
 
-        $gruppen = Gruppe::orderBy('name')->get();
-        $users   = User::where('is_active', true)->orderBy('name')->get();
+        $gruppen              = Gruppe::orderBy('name')->get();
+        $users                = User::where('is_active', true)->orderBy('name')->get();
+        $stellenbeschreibungen = Stellenbeschreibung::orderBy('bezeichnung')->get();
 
-        return view('stellen.create', compact('gruppen', 'users'));
+        return view('stellen.create', compact('gruppen', 'users', 'stellenbeschreibungen'));
     }
 
     public function store(Request $request)
     {
-        $this->authorize('base.stellen.create');
+        $this->authorize('base.stellen.edit');
 
         $validated = $request->validate([
-            'bezeichnung'    => 'required|string|max:255',
-            'stellennummer'  => 'nullable|string|max:50',
-            'gruppe_id'      => 'nullable|exists:gruppen,id',
-            'user_id'        => 'nullable|exists:users,id',
-            'tvod_bewertung' => 'nullable|string|max:10',
-            'stunden'        => 'nullable|numeric|min:0|max:50',
-            'arbeitsvorgaenge'              => 'nullable|array',
-            'arbeitsvorgaenge.*.betreff'    => 'required|string|max:255',
-            'arbeitsvorgaenge.*.beschreibung' => 'nullable|string',
-            'arbeitsvorgaenge.*.anteil'     => 'required|integer|min:0|max:100',
+            'stellennummer'          => 'required|string|max:50|unique:stellen,stellennummer',
+            'stellenbeschreibung_id' => 'required|exists:stellenbeschreibungen,id',
+            'gruppe_id'              => 'nullable|exists:gruppen,id',
+            'user_id'                => 'nullable|exists:users,id',
+            'haushalt_bewertung'     => 'nullable|string|max:50',
+            'bes_gruppe'             => 'nullable|string|max:50',
+            'belegung'               => 'nullable|numeric|min:0|max:100',
+            'gesamtarbeitszeit'      => 'nullable|numeric|min:0|max:100',
+            'anteil_stelle'          => 'nullable|numeric|min:0|max:100',
         ]);
 
-        $stelle = Stelle::create([
-            'bezeichnung'    => $validated['bezeichnung'],
-            'stellennummer'  => $validated['stellennummer'] ?? null,
-            'gruppe_id'      => $validated['gruppe_id'] ?? null,
-            'user_id'        => $validated['user_id'] ?? null,
-            'tvod_bewertung' => $validated['tvod_bewertung'] ?? null,
-            'stunden'        => $validated['stunden'] ?? null,
+        $stelle = Stelle::create($validated);
+
+        $this->auditLogger->log('stellen', 'create', [
+            'message' => "Stelle '{$stelle->stellennummer}' angelegt",
         ]);
-
-        foreach (($validated['arbeitsvorgaenge'] ?? []) as $i => $av) {
-            Arbeitsvorgang::create([
-                'stelle_id'    => $stelle->id,
-                'betreff'      => $av['betreff'],
-                'beschreibung' => $av['beschreibung'] ?? null,
-                'anteil'       => (int) $av['anteil'],
-                'sort_order'   => $i,
-            ]);
-        }
-
-        $this->auditLogger->log('stellen', 'create', ['message' => "Stelle '{$stelle->bezeichnung}' angelegt"]);
 
         return redirect()->route('stellen.index')
-            ->with('success', "Stelle \"{$stelle->bezeichnung}\" wurde angelegt.");
+            ->with('success', "Stelle \"{$stelle->stellennummer}\" wurde angelegt.");
     }
 
     public function show(Stelle $stelle)
     {
         $this->authorize('base.stellen.view');
-        $stelle->load(['gruppe', 'stelleninhaber', 'arbeitsvorgaenge']);
+        $stelle->load(['stellenbeschreibung.arbeitsvorgaenge', 'gruppe', 'stelleninhaber']);
         return view('stellen.show', compact('stelle'));
     }
 
@@ -88,11 +73,12 @@ class StelleController extends Controller
     {
         $this->authorize('base.stellen.edit');
 
-        $stelle->load(['gruppe', 'stelleninhaber', 'arbeitsvorgaenge']);
-        $gruppen = Gruppe::orderBy('name')->get();
-        $users   = User::where('is_active', true)->orderBy('name')->get();
+        $stelle->load(['stellenbeschreibung', 'gruppe', 'stelleninhaber']);
+        $gruppen              = Gruppe::orderBy('name')->get();
+        $users                = User::where('is_active', true)->orderBy('name')->get();
+        $stellenbeschreibungen = Stellenbeschreibung::orderBy('bezeichnung')->get();
 
-        return view('stellen.edit', compact('stelle', 'gruppen', 'users'));
+        return view('stellen.edit', compact('stelle', 'gruppen', 'users', 'stellenbeschreibungen'));
     }
 
     public function update(Request $request, Stelle $stelle)
@@ -100,119 +86,39 @@ class StelleController extends Controller
         $this->authorize('base.stellen.edit');
 
         $validated = $request->validate([
-            'bezeichnung'    => 'required|string|max:255',
-            'stellennummer'  => 'nullable|string|max:50',
-            'gruppe_id'      => 'nullable|exists:gruppen,id',
-            'user_id'        => 'nullable|exists:users,id',
-            'tvod_bewertung' => 'nullable|string|max:10',
-            'stunden'        => 'nullable|numeric|min:0|max:50',
+            'stellennummer'          => 'required|string|max:50|unique:stellen,stellennummer,' . $stelle->id,
+            'stellenbeschreibung_id' => 'required|exists:stellenbeschreibungen,id',
+            'gruppe_id'              => 'nullable|exists:gruppen,id',
+            'user_id'                => 'nullable|exists:users,id',
+            'haushalt_bewertung'     => 'nullable|string|max:50',
+            'bes_gruppe'             => 'nullable|string|max:50',
+            'belegung'               => 'nullable|numeric|min:0|max:100',
+            'gesamtarbeitszeit'      => 'nullable|numeric|min:0|max:100',
+            'anteil_stelle'          => 'nullable|numeric|min:0|max:100',
         ]);
 
-        $stelle->update([
-            'bezeichnung'    => $validated['bezeichnung'],
-            'stellennummer'  => $validated['stellennummer'] ?? null,
-            'gruppe_id'      => $validated['gruppe_id'] ?? null,
-            'user_id'        => $validated['user_id'] ?? null,
-            'tvod_bewertung' => $validated['tvod_bewertung'] ?? null,
-            'stunden'        => $validated['stunden'] ?? null,
-        ]);
-
-        $this->auditLogger->log('stellen', 'update', ['message' => "Stelle '{$stelle->bezeichnung}' aktualisiert"]);
-
-        return redirect()->route('stellen.edit', $stelle)
-            ->with('success', "Stelle \"{$stelle->bezeichnung}\" wurde gespeichert.");
-    }
-
-    public function createArbeitsvorgang(Stelle $stelle)
-    {
-        $this->authorize('base.stellen.edit');
-        $nextNumber = $stelle->arbeitsvorgaenge()->count() + 1;
-        $avLabel = 'AV' . $nextNumber;
-        $av = new Arbeitsvorgang();
-        return view('stellen.arbeitsvorgang_edit', compact('stelle', 'av', 'avLabel'));
-    }
-
-    public function storeArbeitsvorgang(Request $request, Stelle $stelle)
-    {
-        $this->authorize('base.stellen.edit');
-
-        $validated = $request->validate([
-            'betreff'      => 'required|string|max:255',
-            'beschreibung' => 'nullable|string',
-            'anteil'       => 'required|integer|min:0|max:100',
-        ]);
-
-        $stelle->arbeitsvorgaenge()->create([
-            'betreff'      => $validated['betreff'],
-            'beschreibung' => $validated['beschreibung'] ?? null,
-            'anteil'       => (int) $validated['anteil'],
-            'sort_order'   => $stelle->arbeitsvorgaenge()->count(),
-        ]);
+        $stelle->update($validated);
 
         $this->auditLogger->log('stellen', 'update', [
-            'message' => "Arbeitsvorgang '{$validated['betreff']}' zu Stelle '{$stelle->bezeichnung}' hinzugefügt",
+            'message' => "Stelle '{$stelle->stellennummer}' aktualisiert",
         ]);
 
         return redirect()->route('stellen.edit', $stelle)
-            ->with('success', "Arbeitsvorgang \"{$validated['betreff']}\" wurde hinzugefügt.");
-    }
-
-    public function editArbeitsvorgang(Stelle $stelle, Arbeitsvorgang $av)
-    {
-        $this->authorize('base.stellen.edit');
-
-        $stelle->load('arbeitsvorgaenge');
-        $avIndex = $stelle->arbeitsvorgaenge->sortBy('sort_order')->search(fn($a) => $a->id === $av->id);
-        $avLabel = 'AV' . ($avIndex + 1);
-
-        return view('stellen.arbeitsvorgang_edit', compact('stelle', 'av', 'avLabel'));
-    }
-
-    public function updateArbeitsvorgang(Request $request, Stelle $stelle, Arbeitsvorgang $av)
-    {
-        $this->authorize('base.stellen.edit');
-
-        $validated = $request->validate([
-            'betreff'      => 'required|string|max:255',
-            'beschreibung' => 'nullable|string',
-            'anteil'       => 'required|integer|min:0|max:100',
-        ]);
-
-        $av->update($validated);
-
-        $this->auditLogger->log('stellen', 'update', [
-            'message' => "Arbeitsvorgang '{$av->betreff}' in Stelle '{$stelle->bezeichnung}' aktualisiert",
-        ]);
-
-        return redirect()->route('stellen.edit', $stelle)
-            ->with('success', "Arbeitsvorgang \"{$av->betreff}\" wurde gespeichert.");
-    }
-
-    public function destroyArbeitsvorgang(Stelle $stelle, Arbeitsvorgang $av)
-    {
-        $this->authorize('base.stellen.edit');
-        $betreff = $av->betreff;
-        $av->delete();
-
-        $this->auditLogger->log('stellen', 'update', [
-            'message' => "Arbeitsvorgang '{$betreff}' aus Stelle '{$stelle->bezeichnung}' gelöscht",
-        ]);
-
-        return redirect()->route('stellen.edit', $stelle)
-            ->with('success', "Arbeitsvorgang \"{$betreff}\" wurde gelöscht.");
+            ->with('success', "Stelle \"{$stelle->stellennummer}\" wurde gespeichert.");
     }
 
     public function destroy(Stelle $stelle)
     {
-        $this->authorize('base.stellen.delete');
+        $this->authorize('base.stellen.edit');
 
-        $bezeichnung = $stelle->bezeichnung;
-        $stelle->arbeitsvorgaenge()->delete();
+        $nr = $stelle->stellennummer;
         $stelle->delete();
 
-        $this->auditLogger->log('stellen', 'delete', ['message' => "Stelle '{$bezeichnung}' gelöscht"]);
+        $this->auditLogger->log('stellen', 'delete', [
+            'message' => "Stelle '{$nr}' gelöscht",
+        ]);
 
         return redirect()->route('stellen.index')
-            ->with('success', "Stelle \"{$bezeichnung}\" wurde gelöscht.");
+            ->with('success', "Stelle \"{$nr}\" wurde gelöscht.");
     }
 }

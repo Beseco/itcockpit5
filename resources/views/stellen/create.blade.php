@@ -6,7 +6,7 @@
         <div class="bg-white shadow rounded-lg">
             <form action="{{ route('stellen.store') }}" method="POST">
                 @csrf
-                @include('stellen._form', ['stelle' => null])
+                @include('stellen._form')
             </form>
         </div>
     </div>
