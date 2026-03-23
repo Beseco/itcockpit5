@@ -63,7 +63,7 @@ class AufgabeController extends Controller
     {
         $this->authorize('base.aufgaben.create');
 
-        $alleAufgaben = Aufgabe::orderBy('name')->get();
+        $alleAufgaben = $this->aufgabenAlsHierarchie();
         $gruppen = Gruppe::orderBy('name')->get();
         $users   = User::where('is_active', true)->orderBy('name')->get();
         $selectedParent = $request->filled('parent_id') ? Aufgabe::find($request->parent_id) : null;
@@ -113,7 +113,8 @@ class AufgabeController extends Controller
         $this->authorize('base.aufgaben.edit');
 
         $aufgabe->load(['zuweisungen.gruppe', 'zuweisungen.admin', 'zuweisungen.stellvertreter']);
-        $alleAufgaben = Aufgabe::where('id', '!=', $aufgabe->id)->orderBy('name')->get();
+        $excludeIds = array_merge([$aufgabe->id], $aufgabe->allChildren()->pluck('id')->all());
+        $alleAufgaben = $this->aufgabenAlsHierarchie($excludeIds);
         $gruppen = Gruppe::orderBy('name')->get();
         $users   = User::where('is_active', true)->orderBy('name')->get();
 
@@ -159,6 +160,30 @@ class AufgabeController extends Controller
 
         return redirect()->route('aufgaben.index')
             ->with('success', "Aufgabe \"{$aufgabe->name}\" wurde gespeichert.");
+    }
+
+    private function aufgabenAlsHierarchie(array $excludeIds = []): array
+    {
+        $roots = Aufgabe::with('children.children.children.children')
+            ->whereNull('parent_id')
+            ->orderBy('sort_order')->orderBy('name')
+            ->get();
+
+        $result = [];
+        $flatten = function ($items, int $depth) use (&$flatten, $excludeIds, &$result) {
+            foreach ($items as $a) {
+                if (in_array($a->id, $excludeIds)) {
+                    continue;
+                }
+                $result[] = ['id' => $a->id, 'name' => $a->name, 'depth' => $depth];
+                if ($a->children->isNotEmpty()) {
+                    $flatten($a->children, $depth + 1);
+                }
+            }
+        };
+        $flatten($roots, 0);
+
+        return $result;
     }
 
     public function destroy(Aufgabe $aufgabe)

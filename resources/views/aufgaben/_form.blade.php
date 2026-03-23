@@ -40,9 +40,9 @@
                 class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
             <option value="">— Keine (Root-Aufgabe) —</option>
             @foreach($alleAufgaben as $a)
-                <option value="{{ $a->id }}"
-                    @selected(old('parent_id', $aufgabe?->parent_id ?? $selectedParent?->id) == $a->id)>
-                    {{ $a->name }}
+                <option value="{{ $a['id'] }}"
+                    @selected(old('parent_id', $aufgabe?->parent_id ?? $selectedParent?->id) == $a['id'])>
+                    {{ str_repeat('— ', $a['depth']) }}{{ $a['name'] }}
                 </option>
             @endforeach
         </select>
