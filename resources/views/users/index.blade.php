@@ -1,175 +1,231 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('User Management') }}
-        </h2>
+        <div class="flex items-center justify-between">
+            <h2 class="text-xl font-semibold text-gray-800">Benutzerverwaltung</h2>
+            @can('base.users.create')
+                <a href="{{ route('users.create') }}"
+                   class="inline-flex items-center px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-md hover:bg-gray-700">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Neuer Benutzer
+                </a>
+            @endcan
+        </div>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <!-- Create Button -->
-            <div class="mb-4">
-                <a href="{{ route('users.create') }}" class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:bg-gray-700 active:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                    </svg>
-                    {{ __('Create New User') }}
-                </a>
+    <div class="py-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+         x-data="{ deleteId: null, deleteName: '' }">
+
+        @if(session('success'))
+            <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 3000)"
+                 class="mb-4 p-4 bg-green-100 border border-green-300 text-green-800 rounded-md text-sm">
+                {{ session('success') }}
             </div>
-            @if (session('success'))
-                <div x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 3000)" 
-                     class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-                    {{ __(session('success')) }}
-                </div>
-            @endif
+        @endif
+        @if(session('error'))
+            <div class="mb-4 p-4 bg-red-100 border border-red-300 text-red-800 rounded-md text-sm">
+                {{ session('error') }}
+            </div>
+        @endif
 
-            @if (session('error'))
-                <div x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 3000)" 
-                     class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-                    {{ __(session('error')) }}
-                </div>
-            @endif
+        {{-- Filter Bar --}}
+        <form method="GET" action="{{ route('users.index') }}"
+              class="mb-4 bg-white shadow rounded-lg p-4 flex flex-wrap items-end gap-3">
 
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6">
-                    <!-- Filters -->
-                    <form method="GET" action="{{ route('users.index') }}" class="mb-6">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label for="role" class="block text-sm font-medium text-gray-700">{{ __('Role') }}</label>
-                                <select name="role" id="role" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                                    <option value="">{{ __('All Roles') }}</option>
-                                    <option value="super-admin" {{ request('role') === 'super-admin' ? 'selected' : '' }}>{{ __('Super Admin') }}</option>
-                                    <option value="admin" {{ request('role') === 'admin' ? 'selected' : '' }}>{{ __('Admin') }}</option>
-                                    <option value="user" {{ request('role') === 'user' ? 'selected' : '' }}>{{ __('User') }}</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="active" class="block text-sm font-medium text-gray-700">{{ __('Status') }}</label>
-                                <select name="active" id="active" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
-                                    <option value="">{{ __('All Status') }}</option>
-                                    <option value="1" {{ request('active') === '1' ? 'selected' : '' }}>{{ __('Active') }}</option>
-                                    <option value="0" {{ request('active') === '0' ? 'selected' : '' }}>{{ __('Inactive') }}</option>
-                                </select>
-                            </div>
-                            <div class="flex items-end">
-                                <button type="submit" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-                                    {{ __('Filter') }}
-                                </button>
-                                <a href="{{ route('users.index') }}" class="ml-2 bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">
-                                    {{ __('Clear') }}
-                                </a>
-                            </div>
-                        </div>
-                    </form>
+            <div class="flex-1 min-w-[180px]">
+                <label class="block text-xs font-medium text-gray-500 mb-1">Suche</label>
+                <input type="text" name="search" value="{{ $search }}"
+                       placeholder="Name oder E-Mail…"
+                       class="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300">
+            </div>
 
-                    <!-- Users Table -->
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Name') }}</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Email') }}</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Role') }}</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Status') }}</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Last Login') }}</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ __('Actions') }}</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @forelse ($users as $user)
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap">{{ $user->name }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap">{{ $user->email }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                @if($user->role === 'super-admin') bg-purple-100 text-purple-800
-                                                @elseif($user->role === 'admin') bg-blue-100 text-blue-800
-                                                @else bg-gray-100 text-gray-800
-                                                @endif">
-                                                {{ ucwords(str_replace('-', ' ', $user->role)) }}
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                {{ $user->is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                                {{ $user->is_active ? __('Active') : __('Inactive') }}
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $user->last_login_at ? $user->last_login_at->diffForHumans() : __('Never') }}
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium" x-data="{ showDeleteConfirm: false }">
-                                            <a href="{{ route('users.edit', $user) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">{{ __('Edit') }}</a>
+            <div class="min-w-[160px]">
+                <label class="block text-xs font-medium text-gray-500 mb-1">Gruppe</label>
+                <select name="gruppe_id"
+                        class="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                    <option value="">Alle Gruppen</option>
+                    @foreach($gruppen as $gruppe)
+                        <option value="{{ $gruppe->id }}" @selected($gruppeId == $gruppe->id)>{{ $gruppe->name }}</option>
+                    @endforeach
+                </select>
+            </div>
 
-                                            @if (!session('impersonating_original_id') && $user->id !== auth()->id() && (auth()->user()->isSuperAdmin() || auth()->user()->can('base.users.edit')) && !$user->isSuperAdmin())
-                                            <form action="{{ route('users.impersonate', $user) }}" method="POST" class="inline">
+            <div class="min-w-[140px]">
+                <label class="block text-xs font-medium text-gray-500 mb-1">Status</label>
+                <select name="active"
+                        class="w-full border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                    <option value="">Alle</option>
+                    <option value="1" @selected(request('active') === '1')>Aktiv</option>
+                    <option value="0" @selected(request('active') === '0')>Inaktiv</option>
+                </select>
+            </div>
+
+            <div class="flex gap-2 pb-0.5">
+                <button type="submit"
+                        class="px-4 py-1.5 bg-indigo-600 text-white text-sm rounded-md hover:bg-indigo-700">
+                    Filtern
+                </button>
+                @if($search || $gruppeId || request('active') !== null && request('active') !== '')
+                    <a href="{{ route('users.index') }}"
+                       class="px-4 py-1.5 bg-white border border-gray-300 text-gray-700 text-sm rounded-md hover:bg-gray-50">
+                        Zurücksetzen
+                    </a>
+                @endif
+            </div>
+        </form>
+
+        {{-- Table --}}
+        <div class="bg-white shadow rounded-lg overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                            <a href="{{ request()->fullUrlWithQuery(['sort' => $sortDir === 'asc' ? 'desc' : 'asc']) }}"
+                               class="flex items-center gap-1 hover:text-gray-800">
+                                Name
+                                @if($sortDir === 'asc')
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                                @else
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                @endif
+                            </a>
+                        </th>
+                        <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">E-Mail</th>
+                        <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Gruppen</th>
+                        <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Rollen</th>
+                        <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Letzter Login</th>
+                        <th class="px-4 py-3"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($users as $user)
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-4 py-3 font-medium text-gray-900">
+                                <div class="flex items-center gap-2">
+                                    @if($user->avatarUrl())
+                                        <img src="{{ $user->avatarUrl() }}" class="w-7 h-7 rounded-full object-cover" alt="">
+                                    @else
+                                        <div class="w-7 h-7 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-xs font-bold flex-shrink-0">
+                                            {{ strtoupper(substr($user->name, 0, 1)) }}
+                                        </div>
+                                    @endif
+                                    {{ $user->name }}
+                                </div>
+                            </td>
+                            <td class="px-4 py-3 text-gray-600">{{ $user->email }}</td>
+                            <td class="px-4 py-3">
+                                <div class="flex flex-wrap gap-1">
+                                    @forelse($user->gruppen as $gruppe)
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
+                                            {{ $gruppe->name }}
+                                        </span>
+                                    @empty
+                                        <span class="text-gray-400 text-xs">—</span>
+                                    @endforelse
+                                </div>
+                            </td>
+                            <td class="px-4 py-3">
+                                <div class="flex flex-wrap gap-1">
+                                    @forelse($user->roles as $role)
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700">
+                                            {{ $role->name }}
+                                        </span>
+                                    @empty
+                                        <span class="text-gray-400 text-xs">—</span>
+                                    @endforelse
+                                </div>
+                            </td>
+                            <td class="px-4 py-3">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                                    {{ $user->is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
+                                    {{ $user->is_active ? 'Aktiv' : 'Inaktiv' }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
+                                {{ $user->last_login_at ? $user->last_login_at->format('d.m.Y H:i') : '—' }}
+                            </td>
+                            <td class="px-4 py-3 text-right whitespace-nowrap">
+                                <div class="flex items-center justify-end gap-1">
+                                    @can('base.users.edit')
+                                        <a href="{{ route('users.edit', $user) }}"
+                                           class="px-2.5 py-1 text-xs text-indigo-600 hover:text-indigo-800 border border-indigo-200 hover:border-indigo-400 rounded">
+                                            Bearbeiten
+                                        </a>
+
+                                        <form action="{{ route('users.toggle-active', $user) }}" method="POST">
+                                            @csrf
+                                            <button type="submit"
+                                                    class="px-2.5 py-1 text-xs border rounded
+                                                        {{ $user->is_active
+                                                            ? 'text-amber-600 border-amber-200 hover:border-amber-400'
+                                                            : 'text-green-600 border-green-200 hover:border-green-400' }}">
+                                                {{ $user->is_active ? 'Deaktivieren' : 'Aktivieren' }}
+                                            </button>
+                                        </form>
+                                    @endcan
+
+                                    @if(!session('impersonating_original_id') && $user->id !== auth()->id() && !$user->isSuperAdmin())
+                                        @can('base.users.edit')
+                                            <form action="{{ route('users.impersonate', $user) }}" method="POST">
                                                 @csrf
-                                                <button type="submit" class="text-purple-600 hover:text-purple-900 mr-3" title="Als diesen Benutzer anmelden">
+                                                <button type="submit"
+                                                        class="px-2.5 py-1 text-xs text-purple-600 border border-purple-200 hover:border-purple-400 rounded"
+                                                        title="Als diesen Benutzer anmelden">
                                                     Anmelden als
                                                 </button>
                                             </form>
-                                            @endif
+                                        @endcan
+                                    @endif
 
-                                            <form action="{{ route('users.toggle-active', $user) }}" method="POST" class="inline">
-                                                @csrf
-                                                <button type="submit" class="text-yellow-600 hover:text-yellow-900 mr-3">
-                                                    {{ $user->is_active ? __('Deactivate') : __('Activate') }}
-                                                </button>
-                                            </form>
-
-                                            <button @click="showDeleteConfirm = true" type="button" class="text-red-600 hover:text-red-900">
-                                                {{ __('Delete') }}
+                                    @can('base.users.delete')
+                                        @if($user->id !== auth()->id())
+                                            <button @click="deleteId = {{ $user->id }}; deleteName = '{{ addslashes($user->name) }}'"
+                                                    class="px-2.5 py-1 text-xs text-red-600 border border-red-200 hover:border-red-400 rounded">
+                                                Löschen
                                             </button>
-                                            
-                                            <!-- Delete Confirmation Modal -->
-                                            <div x-show="showDeleteConfirm" 
-                                                 x-cloak
-                                                 @click.away="showDeleteConfirm = false"
-                                                 class="fixed inset-0 z-50 overflow-y-auto" 
-                                                 style="display: none;">
-                                                <div class="flex items-center justify-center min-h-screen px-4">
-                                                    <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
-                                                    
-                                                    <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-                                                        <h3 class="text-lg font-medium text-gray-900 mb-4">{{ __('Confirm Delete') }}</h3>
-                                                        <p class="text-sm text-gray-500 mb-4">
-                                                            {{ __('Are you sure you want to delete this user? This action cannot be undone.') }}
-                                                        </p>
-                                                        <div class="flex justify-end space-x-3">
-                                                            <button @click="showDeleteConfirm = false" 
-                                                                    type="button" 
-                                                                    class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">
-                                                                {{ __('Cancel') }}
-                                                            </button>
-                                                            <form action="{{ route('users.destroy', $user) }}" method="POST" class="inline">
-                                                                @csrf
-                                                                @method('DELETE')
-                                                                <button type="submit" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
-                                                                    {{ __('Delete') }}
-                                                                </button>
-                                                            </form>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">{{ __('No users found.') }}</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
+                                        @endif
+                                    @endcan
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="px-4 py-8 text-center text-gray-400">Keine Benutzer gefunden.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
 
-                    <!-- Pagination -->
-                    <div class="mt-4">
-                        {{ $users->links() }}
-                    </div>
+            @if($users->hasPages())
+                <div class="px-4 py-3 border-t border-gray-200">{{ $users->links() }}</div>
+            @endif
+        </div>
+
+        {{-- Delete Modal --}}
+        <div x-show="deleteId !== null" x-cloak
+             class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+            <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Benutzer löschen</h3>
+                <p class="text-sm text-gray-600 mb-4">
+                    Soll <strong x-text="deleteName"></strong> wirklich gelöscht werden? Diese Aktion kann nicht rückgängig gemacht werden.
+                </p>
+                <div class="flex justify-end gap-3">
+                    <button @click="deleteId = null; deleteName = ''"
+                            class="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                        Abbrechen
+                    </button>
+                    <form :action="'{{ url('users') }}/' + deleteId" method="POST">
+                        @csrf @method('DELETE')
+                        <button type="submit"
+                                class="px-4 py-2 text-sm text-white bg-red-600 rounded-md hover:bg-red-700">
+                            Löschen
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
+
     </div>
 </x-app-layout>

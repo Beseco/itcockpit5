@@ -137,6 +137,37 @@
                         </div>
                         @endif
 
+                        {{-- Stelle zuweisen --}}
+                        <div class="mb-4">
+                            <x-input-label value="Stelle(n) zuweisen" />
+                            <p class="text-xs text-gray-500 mb-2">Wähle die Stelle(n), die diesem Benutzer als Stelleninhaber zugeordnet werden sollen.</p>
+                            @if(isset($stellen) && $stellen->isNotEmpty())
+                                <div class="mt-2 border border-gray-200 rounded-md overflow-hidden">
+                                    @foreach($stellen as $stelle)
+                                        <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 cursor-pointer">
+                                            <input type="checkbox" name="stelle_ids[]" value="{{ $stelle->id }}"
+                                                   {{ in_array($stelle->id, old('stelle_ids', $user->stellen->pluck('id')->toArray())) ? 'checked' : '' }}
+                                                   class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                            <div class="min-w-0 flex-1">
+                                                <span class="text-sm font-medium text-gray-800">
+                                                    {{ $stelle->stellenbeschreibung?->bezeichnung ?? '—' }}
+                                                </span>
+                                                <span class="text-xs font-mono text-gray-400 ml-2">{{ $stelle->stellennummer }}</span>
+                                                @if($stelle->gruppe)
+                                                    <span class="text-xs text-gray-500 ml-2">· {{ $stelle->gruppe->name }}</span>
+                                                @endif
+                                            </div>
+                                            @if($stelle->user_id === $user->id)
+                                                <span class="text-xs text-green-600 font-medium">aktuell zugewiesen</span>
+                                            @endif
+                                        </label>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="text-sm text-gray-400 mt-1">Keine freien Stellen vorhanden.</p>
+                            @endif
+                        </div>
+
                         <!-- Is Active -->
                         <div class="mb-4">
                             <label for="is_active" class="inline-flex items-center">

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Gruppe;
+use App\Models\Stelle;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\GruppeService;
@@ -39,25 +40,26 @@ class UserController extends Controller
     {
         $this->authorize('base.users.view');
 
-        $query = User::query();
+        $search   = $request->input('search', '');
+        $gruppeId = $request->input('gruppe_id', '');
+        $sortDir  = $request->input('sort', 'asc') === 'desc' ? 'desc' : 'asc';
 
-        // Filter by role if provided
-        if ($request->filled('role')) {
-            $query->byRole($request->role);
-        }
+        $query = User::with(['gruppen', 'roles'])
+            ->when($search, fn($q) => $q->where(fn($q2) =>
+                $q2->where('name', 'like', "%{$search}%")
+                   ->orWhere('email', 'like', "%{$search}%")
+            ))
+            ->when($request->filled('role'), fn($q) => $q->byRole($request->role))
+            ->when($request->filled('active'), function ($q) use ($request) {
+                if ($request->active === '1') $q->active();
+                elseif ($request->active === '0') $q->where('is_active', false);
+            })
+            ->when($gruppeId, fn($q) => $q->whereHas('gruppen', fn($q2) => $q2->where('gruppen.id', $gruppeId)));
 
-        // Filter by active status if provided
-        if ($request->filled('active')) {
-            if ($request->active === '1' || $request->active === 'true') {
-                $query->active();
-            } elseif ($request->active === '0' || $request->active === 'false') {
-                $query->where('is_active', false);
-            }
-        }
+        $users   = $query->orderBy('name', $sortDir)->paginate(25)->withQueryString();
+        $gruppen = Gruppe::orderBy('name')->get();
 
-        $users = $query->orderBy('created_at', 'desc')->paginate(15);
-
-        return view('users.index', compact('users'));
+        return view('users.index', compact('users', 'gruppen', 'search', 'gruppeId', 'sortDir'));
     }
 
     /**
@@ -150,8 +152,13 @@ class UserController extends Controller
 
         $roles   = \Spatie\Permission\Models\Role::with('permissions')->get();
         $gruppen = Gruppe::with('children')->roots()->get();
-        $user->load('gruppen');
-        return view('users.edit', compact('user', 'roles', 'gruppen'));
+        $user->load(['gruppen', 'stellen']);
+        $stellen = Stelle::with(['stellenbeschreibung', 'gruppe'])
+            ->where(fn($q) => $q->whereNull('user_id')->orWhere('user_id', $user->id))
+            ->orderBy('stellennummer')
+            ->get();
+
+        return view('users.edit', compact('user', 'roles', 'gruppen', 'stellen'));
     }
 
     /**
@@ -170,6 +177,8 @@ class UserController extends Controller
             'is_active'    => ['sometimes', 'boolean'],
             'gruppe_ids'   => ['nullable', 'array'],
             'gruppe_ids.*' => ['integer', 'exists:gruppen,id'],
+            'stelle_ids'   => ['nullable', 'array'],
+            'stelle_ids.*' => ['integer', 'exists:stellen,id'],
         ]);
 
         // Track changes for audit log
@@ -216,6 +225,13 @@ class UserController extends Controller
 
         if ($previousRoles !== $newRoles) {
             $changes['roles'] = ['from' => $previousRoles, 'to' => $newRoles];
+        }
+
+        // Sync Stellen: unassign old, assign new
+        $stelleIds = $validated['stelle_ids'] ?? [];
+        Stelle::where('user_id', $user->id)->whereNotIn('id', $stelleIds)->update(['user_id' => null]);
+        if (!empty($stelleIds)) {
+            Stelle::whereIn('id', $stelleIds)->update(['user_id' => $user->id]);
         }
 
         // Always log the action, even if no changes (to track update attempts)
