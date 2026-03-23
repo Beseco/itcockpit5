@@ -58,8 +58,6 @@ class CreateAdminUser extends Command
         $permissions = [
             'module.network.view',
             'module.network.edit',
-            'module.example.view',
-            'module.example.edit',
         ];
 
         foreach ($permissions as $permissionName) {

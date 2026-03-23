@@ -60,15 +60,6 @@ class RbacSeeder extends Seeder
             ]
         );
 
-        $exampleModule = Module::firstOrCreate(
-            ['name' => 'example'],
-            [
-                'display_name' => 'Example Module',
-                'description' => 'Beispielmodul für Demonstrationszwecke',
-                'is_active' => true,
-            ]
-        );
-
         // Create base module permissions
         $basePermissions = [
             ['name' => 'base.users.view', 'module_id' => $baseModule->id],
@@ -109,20 +100,13 @@ class RbacSeeder extends Seeder
             ['name' => 'hh.approve', 'module_id' => $hhModule->id],
         ];
 
-        // Create example module permissions
-        $examplePermissions = [
-            ['name' => 'example.view', 'module_id' => $exampleModule->id],
-            ['name' => 'example.edit', 'module_id' => $exampleModule->id],
-        ];
-
         // Combine all permissions
         $allPermissions = array_merge(
             $basePermissions,
             $announcementsPermissions,
             $auditPermissions,
             $networkPermissions,
-            $hhPermissions,
-            $examplePermissions
+            $hhPermissions
         );
 
         // Create all permissions
