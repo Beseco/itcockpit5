@@ -13,15 +13,50 @@ class AufgabeController extends Controller
 {
     public function __construct(private AuditLogger $auditLogger) {}
 
-    public function index()
+    public function index(Request $request)
     {
         $this->authorize('base.aufgaben.view');
 
-        $aufgaben = Aufgabe::with(['children.children.zuweisungen.gruppe', 'children.children.zuweisungen.admin', 'children.children.zuweisungen.stellvertreter', 'children.zuweisungen.gruppe', 'children.zuweisungen.admin', 'children.zuweisungen.stellvertreter', 'zuweisungen.gruppe', 'zuweisungen.admin', 'zuweisungen.stellvertreter'])
-            ->roots()
-            ->get();
+        $search    = $request->input('search', '');
+        $gruppeId  = $request->input('gruppe_id', '');
+        $adminId   = $request->input('admin_id', '');
+        $nurEigene = $request->boolean('nur_eigene');
+        $sortDir   = $request->input('sort', 'asc') === 'desc' ? 'desc' : 'asc';
+        $isFiltered = $search !== '' || $gruppeId !== '' || $adminId !== '' || $nurEigene;
 
-        return view('aufgaben.index', compact('aufgaben'));
+        $gruppen = Gruppe::orderBy('name')->get();
+        $adminUserIds = AufgabeZuweisung::whereNotNull('admin_user_id')->pluck('admin_user_id')->unique();
+        $admins = User::whereIn('id', $adminUserIds)->orderBy('name')->get();
+
+        if ($isFiltered) {
+            $aufgaben = Aufgabe::with(['zuweisungen.gruppe', 'zuweisungen.admin', 'zuweisungen.stellvertreter', 'parent'])
+                ->when($search, fn($q) => $q->where('name', 'like', "%{$search}%"))
+                ->when($gruppeId, fn($q) => $q->whereHas('zuweisungen', fn($q2) => $q2->where('gruppe_id', $gruppeId)))
+                ->when($adminId, fn($q) => $q->whereHas('zuweisungen', fn($q2) => $q2->where('admin_user_id', $adminId)))
+                ->when($nurEigene, fn($q) => $q->whereHas('zuweisungen', function ($q2) {
+                    $q2->where('admin_user_id', auth()->id())
+                       ->orWhere('stellvertreter_user_id', auth()->id());
+                }))
+                ->orderBy('name', $sortDir)
+                ->get();
+        } else {
+            $aufgaben = Aufgabe::with([
+                'children.children.zuweisungen.gruppe',
+                'children.children.zuweisungen.admin',
+                'children.children.zuweisungen.stellvertreter',
+                'children.zuweisungen.gruppe',
+                'children.zuweisungen.admin',
+                'children.zuweisungen.stellvertreter',
+                'zuweisungen.gruppe',
+                'zuweisungen.admin',
+                'zuweisungen.stellvertreter',
+            ])->roots()->get();
+        }
+
+        return view('aufgaben.index', compact(
+            'aufgaben', 'gruppen', 'admins',
+            'isFiltered', 'search', 'gruppeId', 'adminId', 'nurEigene', 'sortDir'
+        ));
     }
 
     public function create(Request $request)

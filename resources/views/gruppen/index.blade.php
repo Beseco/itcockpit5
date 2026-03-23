@@ -58,7 +58,7 @@
                             class="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
                         Abbrechen
                     </button>
-                    <form :action="'/gruppen/' + deleteId" method="POST">
+                    <form :action="'{{ url('gruppen') }}/' + deleteId" method="POST">
                         @csrf @method('DELETE')
                         <button type="submit"
                                 class="px-4 py-2 text-sm text-white bg-red-600 rounded-md hover:bg-red-700">
