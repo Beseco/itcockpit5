@@ -62,6 +62,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/stellenbeschreibungen/{stellenbeschreibung}/arbeitsvorgaenge/{av}', [StellenbeschreibungController::class, 'destroyAv'])->name('sb.av.destroy');
 
     Route::get('/personal', [PersonalController::class, 'index'])->name('personal.index');
+    Route::post('/personal/avatar', [PersonalController::class, 'uploadAvatar'])->name('personal.avatar');
 
     // Aufgaben / Rollen & Aufgaben
     Route::resource('aufgaben', AufgabeController::class, [

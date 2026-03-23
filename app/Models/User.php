@@ -22,6 +22,7 @@ class User extends Authenticatable
         'email',
         'password',
         'is_active',
+        'avatar_path',
     ];
 
     /**
@@ -52,6 +53,14 @@ class User extends Authenticatable
     /**
      * Get the audit logs for the user.
      */
+    public function avatarUrl(): ?string
+    {
+        if ($this->avatar_path) {
+            return \Illuminate\Support\Facades\Storage::url($this->avatar_path);
+        }
+        return null;
+    }
+
     public function auditLogs()
     {
         return $this->hasMany(AuditLog::class);

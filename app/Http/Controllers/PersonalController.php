@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Announcement;
 use App\Models\AufgabeZuweisung;
 use App\Models\Order;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class PersonalController extends Controller
 {
@@ -42,5 +44,24 @@ class PersonalController extends Controller
             'aufgabenZuweisungen',
             'stelle'
         ));
+    }
+
+    public function uploadAvatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => 'required|image|mimes:jpg,jpeg,png,gif,webp|max:2048',
+        ]);
+
+        $user = Auth::user();
+
+        // Delete old avatar
+        if ($user->avatar_path) {
+            Storage::disk('public')->delete($user->avatar_path);
+        }
+
+        $path = $request->file('avatar')->store('avatars', 'public');
+        $user->update(['avatar_path' => $path]);
+
+        return back()->with('success', 'Profilbild wurde aktualisiert.');
     }
 }
