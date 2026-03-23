@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -20,6 +21,7 @@ class Order extends Model
         'cost_center_id',
         'account_code_id',
         'buyer_username',
+        'buyer_user_id',
         'status',
         'bemerkungen',
         'status_updated_at',
@@ -49,6 +51,16 @@ class Order extends Model
     public function scopeActive($query)
     {
         return $query->where('status', '!=', 6);
+    }
+
+    public function isOwnedBy(int $userId): bool
+    {
+        return $this->buyer_user_id === $userId;
+    }
+
+    public function buyer()
+    {
+        return $this->belongsTo(User::class, 'buyer_user_id');
     }
 
     public function vendor()

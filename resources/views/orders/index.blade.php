@@ -136,6 +136,7 @@
                                 <span class="text-sm font-normal text-gray-400">({{ $orders->total() }} gesamt)</span>
                             @endif
                         </h3>
+                        @can('orders.create')
                         <a href="{{ route('orders.create') }}"
                            class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -143,6 +144,7 @@
                             </svg>
                             Neue Bestellung
                         </a>
+                        @endcan
                     </div>
 
                     <div class="overflow-x-auto">
@@ -188,9 +190,16 @@
                                             </span>
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm font-medium" x-data="{ showDelete: false }">
+                                            @php
+                                                $canEdit   = auth()->user()->can('orders.edit')   || (auth()->user()->can('orders.create') && $order->isOwnedBy(auth()->id()));
+                                                $canDelete = auth()->user()->can('orders.delete') || (auth()->user()->can('orders.create') && $order->isOwnedBy(auth()->id()));
+                                            @endphp
+                                            @if($canEdit)
                                             <a href="{{ route('orders.edit', $order) }}"
                                                class="text-indigo-600 hover:text-indigo-900 mr-3">Bearbeiten</a>
+                                            @endif
 
+                                            @if($canDelete)
                                             <button @click="showDelete = true" type="button"
                                                     class="text-red-600 hover:text-red-900">Löschen</button>
 
@@ -221,6 +230,7 @@
                                                     </div>
                                                 </div>
                                             </div>
+                                            @endif
                                         </td>
                                     </tr>
                                 @empty

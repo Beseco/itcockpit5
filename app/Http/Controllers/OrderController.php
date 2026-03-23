@@ -25,6 +25,8 @@ class OrderController extends Controller
      */
     public function index(Request $request)
     {
+        $this->authorize('orders.view');
+
         $obligo = Order::where('status', '!=', 6)->sum('price_gross');
 
         $kstSummen = Order::join('it_cost_centers', 'it_orders.cost_center_id', '=', 'it_cost_centers.id')
@@ -80,6 +82,8 @@ class OrderController extends Controller
      */
     public function create()
     {
+        $this->authorize('orders.create');
+
         $vendors      = Dienstleister::orderBy('firmenname')->get();
         $costCenters  = CostCenter::orderBy('number')->get();
         $accountCodes = AccountCode::orderBy('code')->get();
@@ -93,9 +97,12 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('orders.create');
+
         $validated = $this->validateOrder($request);
 
         $validated['buyer_username'] = Auth::user()->name;
+        $validated['buyer_user_id']  = Auth::id();
         $validated['order_date']     = $validated['order_date'] ?? now()->toDateString();
 
         $order = Order::create($validated);
@@ -114,6 +121,8 @@ class OrderController extends Controller
      */
     public function edit(Order $order)
     {
+        $this->authorizeOrderAccess($order);
+
         $vendors      = Dienstleister::orderBy('firmenname')->get();
         $costCenters  = CostCenter::orderBy('number')->get();
         $accountCodes = AccountCode::orderBy('code')->get();
@@ -127,6 +136,8 @@ class OrderController extends Controller
      */
     public function update(Request $request, Order $order)
     {
+        $this->authorizeOrderAccess($order);
+
         $validated = $this->validateOrder($request);
 
         // Audit-Log: Status-Änderung tracken
@@ -162,6 +173,8 @@ class OrderController extends Controller
      */
     public function destroy(Order $order)
     {
+        $this->authorizeOrderDelete($order);
+
         $data = ['order_id' => $order->id, 'subject' => $order->subject];
 
         $order->history()->delete();
@@ -170,6 +183,46 @@ class OrderController extends Controller
         $this->auditLogger->log('Order', 'Bestellung gelöscht', $data);
 
         return redirect()->route('orders.index')->with('success', 'Bestellung erfolgreich gelöscht.');
+    }
+
+    /**
+     * Prüft ob der User die Bestellung bearbeiten darf:
+     * - orders.edit → alle Bestellungen
+     * - orders.create + eigene Bestellung → nur eigene
+     */
+    private function authorizeOrderAccess(Order $order): void
+    {
+        $user = Auth::user();
+
+        if ($user->can('orders.edit')) {
+            return;
+        }
+
+        if ($user->can('orders.create') && $order->isOwnedBy($user->id)) {
+            return;
+        }
+
+        abort(403);
+    }
+
+    /**
+     * Prüft ob der User die Bestellung löschen darf:
+     * - orders.delete → alle Bestellungen
+     * - orders.create + eigene Bestellung → nur eigene
+     */
+    private function authorizeOrderDelete(Order $order): void
+    {
+        $user = Auth::user();
+
+        if ($user->can('orders.delete')) {
+            return;
+        }
+
+        if ($user->can('orders.create') && $order->isOwnedBy($user->id)) {
+            return;
+        }
+
+        abort(403);
     }
 
     /**
