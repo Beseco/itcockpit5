@@ -21,6 +21,8 @@ class GruppeController extends Controller
 
         $gruppen = Gruppe::with(['children.children', 'roles', 'users'])
             ->roots()
+            ->orderBy('sort_order')
+            ->orderBy('name')
             ->get();
 
         return view('gruppen.index', compact('gruppen'));
