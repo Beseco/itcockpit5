@@ -11,6 +11,8 @@ class ReminderMailController extends Controller
 {
     public function index()
     {
+        $this->authorize('reminders.view');
+
         $reminders = ReminderMail::orderBy('nextsend')->get();
 
         $lastHeartbeat = ReminderMailLog::where('typ', 4)->latest()->first();
@@ -21,11 +23,15 @@ class ReminderMailController extends Controller
 
     public function create()
     {
+        $this->authorize('reminders.create');
+
         return view('reminders.create', ['faktoren' => ReminderMail::FAKTOREN]);
     }
 
     public function store(Request $request)
     {
+        $this->authorize('reminders.create');
+
         $validated = $this->validateReminder($request);
         $validated['user_id'] = Auth::id();
         $validated['status']  = 1;
@@ -42,6 +48,8 @@ class ReminderMailController extends Controller
 
     public function edit(ReminderMail $reminder)
     {
+        $this->authorizeReminderAccess($reminder);
+
         return view('reminders.edit', [
             'reminder' => $reminder,
             'faktoren' => ReminderMail::FAKTOREN,
@@ -50,6 +58,8 @@ class ReminderMailController extends Controller
 
     public function update(Request $request, ReminderMail $reminder)
     {
+        $this->authorizeReminderAccess($reminder);
+
         $validated = $this->validateReminder($request);
         $reminder->update($validated);
 
@@ -58,18 +68,24 @@ class ReminderMailController extends Controller
 
     public function destroy(ReminderMail $reminder)
     {
+        $this->authorizeReminderDelete($reminder);
+
         $reminder->delete();
         return redirect()->route('reminders.index')->with('success', 'Erinnerung gelöscht.');
     }
 
     public function toggleStatus(ReminderMail $reminder)
     {
+        $this->authorizeReminderAccess($reminder);
+
         $reminder->update(['status' => $reminder->status ? 0 : 1]);
         return back()->with('success', $reminder->status ? 'Erinnerung aktiviert.' : 'Erinnerung deaktiviert.');
     }
 
     public function log(Request $request)
     {
+        $this->authorize('reminders.view');
+
         $typ = $request->get('typ', '');
 
         $query = ReminderMailLog::orderBy('created_at', 'desc');
@@ -81,6 +97,46 @@ class ReminderMailController extends Controller
         $typen = ReminderMailLog::TYPEN;
 
         return view('reminders.log', compact('logs', 'typen', 'typ'));
+    }
+
+    /**
+     * Prüft ob der User die Erinnerung bearbeiten darf:
+     * - reminders.edit → alle Erinnerungen
+     * - reminders.create + eigene → nur eigene
+     */
+    private function authorizeReminderAccess(ReminderMail $reminder): void
+    {
+        $user = Auth::user();
+
+        if ($user->can('reminders.edit')) {
+            return;
+        }
+
+        if ($user->can('reminders.create') && $reminder->user_id === $user->id) {
+            return;
+        }
+
+        abort(403);
+    }
+
+    /**
+     * Prüft ob der User die Erinnerung löschen darf:
+     * - reminders.delete → alle Erinnerungen
+     * - reminders.create + eigene → nur eigene
+     */
+    private function authorizeReminderDelete(ReminderMail $reminder): void
+    {
+        $user = Auth::user();
+
+        if ($user->can('reminders.delete')) {
+            return;
+        }
+
+        if ($user->can('reminders.create') && $reminder->user_id === $user->id) {
+            return;
+        }
+
+        abort(403);
     }
 
     private function validateReminder(Request $request): array

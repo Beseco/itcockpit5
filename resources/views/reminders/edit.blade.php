@@ -12,6 +12,7 @@
                         @method('PUT')
                         @include('reminders._form')
                         <div class="flex items-center justify-between mt-6">
+                            @if(auth()->user()->can('reminders.delete') || (auth()->user()->can('reminders.create') && $reminder->user_id === auth()->id()))
                             <form action="{{ route('reminders.destroy', $reminder) }}" method="POST"
                                   onsubmit="return confirm('Erinnerung wirklich löschen?')">
                                 @csrf
@@ -21,6 +22,9 @@
                                     Löschen
                                 </button>
                             </form>
+                            @else
+                            <div></div>
+                            @endif
                             <div class="flex gap-3">
                                 <a href="{{ route('reminders.index') }}"
                                    class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50">

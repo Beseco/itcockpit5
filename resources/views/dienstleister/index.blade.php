@@ -31,6 +31,7 @@
                     @endif
                 </form>
 
+                @can('dienstleister.create')
                 <a href="{{ route('dienstleister.create') }}"
                    class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -38,6 +39,7 @@
                     </svg>
                     Neuer Dienstleister
                 </a>
+                @endcan
             </div>
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -166,8 +168,11 @@
                                         @endif
                                     </td>
                                     <td class="px-4 py-3 text-right whitespace-nowrap" x-data="{ showDelete: false }">
+                                        @can('dienstleister.edit')
                                         <a href="{{ route('dienstleister.edit', $d) }}"
                                            class="text-indigo-600 hover:text-indigo-900 text-sm mr-3">Bearbeiten</a>
+                                        @endcan
+                                        @can('dienstleister.delete')
                                         <button @click="showDelete = true" type="button"
                                                 class="text-red-600 hover:text-red-900 text-sm">Löschen</button>
 
@@ -198,6 +203,7 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        @endcan
                                     </td>
                                 </tr>
                             @empty

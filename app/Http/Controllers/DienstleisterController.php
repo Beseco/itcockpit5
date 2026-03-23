@@ -21,6 +21,7 @@ class DienstleisterController extends Controller
      */
     public function index(Request $request)
     {
+        $this->authorize('dienstleister.view');
         $allowedSorts = ['firmenname', 'ort', 'dienstleister_typ', 'status', 'bewertung_gesamt'];
         $sort  = in_array($request->get('sort'), $allowedSorts) ? $request->get('sort') : 'firmenname';
         $order = $request->get('order') === 'DESC' ? 'DESC' : 'ASC';
@@ -55,6 +56,8 @@ class DienstleisterController extends Controller
      */
     public function create()
     {
+        $this->authorize('dienstleister.create');
+
         return view('dienstleister.create', [
             'typen'  => Dienstleister::TYPEN,
             'status' => Dienstleister::STATUS,
@@ -66,6 +69,8 @@ class DienstleisterController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('dienstleister.create');
+
         $validated = $this->validateDienstleister($request);
         $validated['angelegt_am']    = now();
         $validated['aktualisiert_am'] = now();
@@ -85,6 +90,7 @@ class DienstleisterController extends Controller
      */
     public function show(Dienstleister $dienstleister)
     {
+        $this->authorize('dienstleister.view');
         return redirect()->route('dienstleister.edit', $dienstleister);
     }
 
@@ -93,6 +99,8 @@ class DienstleisterController extends Controller
      */
     public function edit(Dienstleister $dienstleister)
     {
+        $this->authorize('dienstleister.edit');
+
         return view('dienstleister.edit', [
             'dienstleister' => $dienstleister,
             'typen'         => Dienstleister::TYPEN,
@@ -105,6 +113,8 @@ class DienstleisterController extends Controller
      */
     public function update(Request $request, Dienstleister $dienstleister)
     {
+        $this->authorize('dienstleister.edit');
+
         $validated = $this->validateDienstleister($request);
         $validated['aktualisiert_am'] = now();
 
@@ -123,6 +133,8 @@ class DienstleisterController extends Controller
      */
     public function destroy(Dienstleister $dienstleister)
     {
+        $this->authorize('dienstleister.delete');
+
         $data = ['id' => $dienstleister->id, 'firmenname' => $dienstleister->firmenname];
 
         $dienstleister->delete();
