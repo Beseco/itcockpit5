@@ -29,11 +29,12 @@ class StelleController extends Controller
     {
         $this->authorize('base.stellen.edit');
 
+        $stelle               = null;
         $gruppen              = Gruppe::orderBy('name')->get();
         $users                = User::where('is_active', true)->orderBy('name')->get();
         $stellenbeschreibungen = Stellenbeschreibung::orderBy('bezeichnung')->get();
 
-        return view('stellen.create', compact('gruppen', 'users', 'stellenbeschreibungen'));
+        return view('stellen.create', compact('stelle', 'gruppen', 'users', 'stellenbeschreibungen'));
     }
 
     public function store(Request $request)
@@ -58,7 +59,7 @@ class StelleController extends Controller
             'message' => "Stelle '{$stelle->stellennummer}' angelegt",
         ]);
 
-        return redirect()->route('stellen.index')
+        return redirect()->route('stellenplan.index')
             ->with('success', "Stelle \"{$stelle->stellennummer}\" wurde angelegt.");
     }
 
@@ -118,7 +119,7 @@ class StelleController extends Controller
             'message' => "Stelle '{$nr}' gelöscht",
         ]);
 
-        return redirect()->route('stellen.index')
+        return redirect()->route('stellenplan.index')
             ->with('success', "Stelle \"{$nr}\" wurde gelöscht.");
     }
 }

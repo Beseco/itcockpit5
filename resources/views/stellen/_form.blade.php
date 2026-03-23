@@ -125,7 +125,7 @@
 
     {{-- Buttons --}}
     <div class="flex items-center justify-between pt-4 border-t border-gray-200">
-        <a href="{{ route('stellen.index') }}" class="text-sm text-gray-600 hover:text-gray-900">Abbrechen</a>
+        <a href="{{ route('stellenplan.index') }}" class="text-sm text-gray-600 hover:text-gray-900">Abbrechen</a>
         <x-primary-button>Speichern</x-primary-button>
     </div>
 </div>
