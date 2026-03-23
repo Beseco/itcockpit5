@@ -11,9 +11,14 @@ class Applikation extends Model
     protected $fillable = [
         'name', 'sg', 'einsatzzweck',
         'confidentiality', 'integrity', 'availability',
-        'baustein', 'verantwortlich_sg', 'admin', 'ansprechpartner',
+        'baustein', 'verantwortlich_sg', 'admin_user_id', 'admin', 'ansprechpartner',
         'hersteller', 'revision_date', 'doc_url', 'updated_by',
     ];
+
+    public function adminUser()
+    {
+        return $this->belongsTo(User::class, 'admin_user_id');
+    }
 
     protected $casts = [
         'revision_date' => 'date',

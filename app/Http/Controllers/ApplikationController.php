@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Applikation;
 use App\Models\Dienstleister;
+use App\Models\User;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,12 +15,14 @@ class ApplikationController extends Controller
 
     public function index(Request $request)
     {
+        $this->authorize('applikationen.view');
+
         $allowed = ['name', 'sg', 'hersteller', 'baustein', 'verantwortlich_sg'];
         $sort    = in_array($request->get('sort'), $allowed) ? $request->get('sort') : 'name';
         $order   = $request->get('order') === 'DESC' ? 'DESC' : 'ASC';
         $search  = $request->get('search', '');
 
-        $query = Applikation::orderBy($sort, $order);
+        $query = Applikation::with('adminUser')->orderBy($sort, $order);
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
@@ -37,17 +40,23 @@ class ApplikationController extends Controller
 
     public function create()
     {
+        $this->authorize('applikationen.create');
+
         $vendors = Dienstleister::where('status', '!=', 'gesperrt')->orderBy('firmenname')->get();
+        $users   = User::where('is_active', true)->orderBy('name')->get();
         return view('applikationen.create', [
-            'app'       => null,
-            'bausteine' => Applikation::BAUSTEINE,
+            'app'          => null,
+            'bausteine'    => Applikation::BAUSTEINE,
             'schutzbedarf' => Applikation::SCHUTZBEDARF,
-            'vendors'   => $vendors,
+            'vendors'      => $vendors,
+            'users'        => $users,
         ]);
     }
 
     public function store(Request $request)
     {
+        $this->authorize('applikationen.create');
+
         $validated = $this->validateApp($request);
         $validated['updated_by'] = Auth::user()->name;
 
@@ -63,17 +72,23 @@ class ApplikationController extends Controller
 
     public function edit(Applikation $applikation)
     {
+        $this->authorize('applikationen.edit');
+
         $vendors = Dienstleister::where('status', '!=', 'gesperrt')->orderBy('firmenname')->get();
+        $users   = User::where('is_active', true)->orderBy('name')->get();
         return view('applikationen.edit', [
-            'app'       => $applikation,
-            'bausteine' => Applikation::BAUSTEINE,
+            'app'          => $applikation,
+            'bausteine'    => Applikation::BAUSTEINE,
             'schutzbedarf' => Applikation::SCHUTZBEDARF,
-            'vendors'   => $vendors,
+            'vendors'      => $vendors,
+            'users'        => $users,
         ]);
     }
 
     public function update(Request $request, Applikation $applikation)
     {
+        $this->authorize('applikationen.edit');
+
         $validated = $this->validateApp($request);
         $validated['updated_by'] = Auth::user()->name;
 
@@ -89,6 +104,8 @@ class ApplikationController extends Controller
 
     public function destroy(Applikation $applikation)
     {
+        $this->authorize('applikationen.delete');
+
         $data = ['id' => $applikation->id, 'name' => $applikation->name];
         $applikation->delete();
 
@@ -108,7 +125,7 @@ class ApplikationController extends Controller
             'availability'     => ['required', 'in:A,B,C'],
             'baustein'         => ['nullable', 'string', 'max:50'],
             'verantwortlich_sg'=> ['nullable', 'string', 'max:255'],
-            'admin'            => ['nullable', 'string', 'max:255'],
+            'admin_user_id'    => ['nullable', 'integer', 'exists:users,id'],
             'ansprechpartner'  => ['nullable', 'string', 'max:255'],
             'hersteller'       => ['nullable', 'string', 'max:255'],
             'revision_date'    => ['nullable', 'date'],

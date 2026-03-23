@@ -104,11 +104,45 @@
                 <x-input-error :messages="$errors->get('verantwortlich_sg')" class="mt-2" />
             </div>
 
-            <div>
-                <x-input-label for="admin" value="IT-Administrator" />
-                <x-text-input id="admin" name="admin" type="text" class="mt-1 block w-full"
-                              value="{{ old('admin', $app->admin ?? '') }}" />
-                <x-input-error :messages="$errors->get('admin')" class="mt-2" />
+            {{-- IT-Administrator (User-Picker) --}}
+            <div x-data="{
+                    open: false,
+                    search: '{{ old('admin_user_id') ? ($users->firstWhere('id', old('admin_user_id'))?->name ?? '') : ($app?->adminUser?->name ?? '') }}',
+                    selectedId: '{{ old('admin_user_id', $app?->admin_user_id ?? '') }}',
+                    users: {{ Js::from($users->map(fn($u) => ['id' => $u->id, 'name' => $u->name])) }},
+                    get filtered() {
+                        if (!this.search) return this.users;
+                        const q = this.search.toLowerCase();
+                        return this.users.filter(u => u.name.toLowerCase().includes(q));
+                    },
+                    select(u) { this.search = u.name; this.selectedId = u.id; this.open = false; },
+                    clear() { this.search = ''; this.selectedId = ''; }
+                }" @click.outside="open = false">
+                <x-input-label for="admin_user_id" value="IT-Administrator" />
+                <input type="hidden" name="admin_user_id" :value="selectedId">
+                <div class="relative mt-1">
+                    <input type="text" id="admin_user_id"
+                           x-model="search" @focus="open = true" @input="open = true" @keydown.escape="open = false"
+                           placeholder="Benutzer suchen…" autocomplete="off"
+                           class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                    <button x-show="selectedId" type="button" @click="clear()"
+                            class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                    <ul x-show="open && filtered.length > 0" x-cloak
+                        class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-auto">
+                        <template x-for="u in filtered" :key="u.id">
+                            <li>
+                                <button type="button" @click="select(u)"
+                                        class="w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-gray-50"
+                                        x-text="u.name"></button>
+                            </li>
+                        </template>
+                    </ul>
+                </div>
+                <x-input-error :messages="$errors->get('admin_user_id')" class="mt-2" />
             </div>
 
             <div>

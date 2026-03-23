@@ -28,6 +28,7 @@
                         </a>
                     @endif
                 </form>
+                @can('applikationen.create')
                 <a href="{{ route('applikationen.create') }}"
                    class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -35,6 +36,7 @@
                     </svg>
                     Neue Applikation
                 </a>
+                @endcan
             </div>
 
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
@@ -87,7 +89,9 @@
                                         @if ($app->verantwortlich_sg)
                                             <div>{{ $app->verantwortlich_sg }}</div>
                                         @endif
-                                        @if ($app->admin)
+                                        @if ($app->adminUser)
+                                            <div class="text-xs text-gray-400">Admin: {{ $app->adminUser->name }}</div>
+                                        @elseif ($app->admin)
                                             <div class="text-xs text-gray-400">Admin: {{ $app->admin }}</div>
                                         @endif
                                     </td>
@@ -103,8 +107,11 @@
                                         </div>
                                     </td>
                                     <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium" x-data="{ showDelete: false }">
+                                        @can('applikationen.edit')
                                         <a href="{{ route('applikationen.edit', $app) }}"
                                            class="text-indigo-600 hover:text-indigo-900 mr-3">Bearbeiten</a>
+                                        @endcan
+                                        @can('applikationen.delete')
                                         <button @click="showDelete = true" type="button"
                                                 class="text-red-600 hover:text-red-900">Löschen</button>
 
@@ -126,6 +133,7 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        @endcan
                                     </td>
                                 </tr>
                             @empty
