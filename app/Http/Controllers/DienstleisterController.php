@@ -32,8 +32,16 @@ class DienstleisterController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('firmenname', 'LIKE', "%{$search}%")
                   ->orWhere('ort', 'LIKE', "%{$search}%")
+                  ->orWhere('plz', 'LIKE', "%{$search}%")
+                  ->orWhere('strasse', 'LIKE', "%{$search}%")
                   ->orWhere('dienstleister_typ', 'LIKE', "%{$search}%")
-                  ->orWhere('fachgebiet', 'LIKE', "%{$search}%");
+                  ->orWhere('fachgebiet', 'LIKE', "%{$search}%")
+                  ->orWhere('leistungsbeschreibung', 'LIKE', "%{$search}%")
+                  ->orWhere('bemerkungen', 'LIKE', "%{$search}%")
+                  ->orWhere('bewertungsnotiz', 'LIKE', "%{$search}%")
+                  ->orWhere('verantwortliche_stelle', 'LIKE', "%{$search}%")
+                  ->orWhere('email', 'LIKE', "%{$search}%")
+                  ->orWhere('website', 'LIKE', "%{$search}%");
             });
         }
 

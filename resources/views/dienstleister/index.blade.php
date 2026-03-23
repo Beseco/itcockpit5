@@ -152,9 +152,13 @@
                                     </td>
                                     <td class="px-4 py-3">
                                         @if ($d->bewertung_gesamt)
-                                            <div class="flex gap-0.5">
+                                            <div class="flex gap-0.5 text-base leading-none">
                                                 @for ($i = 1; $i <= 5; $i++)
-                                                    <span class="{{ $i <= $d->bewertung_gesamt ? 'text-yellow-400' : 'text-gray-200' }}">★</span>
+                                                    @if($i <= $d->bewertung_gesamt)
+                                                        <span class="text-yellow-400">★</span>
+                                                    @else
+                                                        <span class="text-gray-300">☆</span>
+                                                    @endif
                                                 @endfor
                                             </div>
                                         @else
