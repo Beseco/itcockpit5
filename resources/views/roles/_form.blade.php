@@ -1,11 +1,12 @@
 @php
     $isSuperAdmin = isset($role) && $role->name === 'Superadministrator';
     $actionLabels = [
-        'view'   => 'Anzeigen',
-        'create' => 'Erstellen',
-        'edit'   => 'Bearbeiten',
-        'delete' => 'Löschen',
-        'manage' => 'Verwalten',
+        'view'           => 'Anzeigen',
+        'view_sensitive' => 'Sensible Daten',
+        'create'         => 'Erstellen',
+        'edit'           => 'Bearbeiten',
+        'delete'         => 'Löschen',
+        'manage'         => 'Verwalten',
     ];
     // Collect which columns actually exist across all modules
     $existingActions = collect($permissionsByModule)->flatMap(fn($actions) => $actions->keys())->unique()->values();
@@ -79,7 +80,24 @@
                             }
                         }">
                             <td class="px-4 py-3 text-sm font-medium text-gray-700">
-                                {{ $moduleDisplayNames[$module] ?? $module }}
+                                @php
+                                    $mod = $moduleDisplayNames[$module] ?? null;
+                                    $displayName = $mod?->display_name ?? $module;
+                                    $description = $mod?->description ?? null;
+                                @endphp
+                                <div class="flex items-center gap-1">
+                                    <span>{{ $displayName }}</span>
+                                    @if ($description)
+                                        <span class="relative group cursor-default">
+                                            <svg class="w-3.5 h-3.5 text-gray-400 hover:text-indigo-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                                            </svg>
+                                            <span class="absolute left-5 top-0 z-10 hidden group-hover:block w-56 bg-gray-800 text-white text-xs rounded shadow-lg px-3 py-2 leading-snug">
+                                                {{ $description }}
+                                            </span>
+                                        </span>
+                                    @endif
+                                </div>
                             </td>
                             @foreach ($existingActions as $action)
                                 <td class="px-4 py-3 text-center">

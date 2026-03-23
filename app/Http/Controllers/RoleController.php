@@ -104,21 +104,26 @@ class RoleController extends Controller
 
     private function moduleDisplayNames(): Collection
     {
-        return Module::all()->pluck('display_name', 'name');
+        return Module::orderBy('display_name')->get()->keyBy('name');
     }
 
     private function permissionsByModule(): Collection
     {
-        $columns = ['view', 'create', 'edit', 'delete', 'manage'];
+        $columns = ['view', 'view_sensitive', 'create', 'edit', 'delete', 'manage'];
+        $modules = Module::orderBy('display_name')->get()->keyBy('id');
 
         return Permission::all()
-            ->groupBy(fn($p) => explode('.', $p->name)[0])
-            ->map(fn($perms, $module) => collect($columns)
-                ->mapWithKeys(fn($action) => [
-                    $action => $perms->first(fn($p) => $p->name === "{$module}.{$action}"),
-                ])
-                ->filter()
-            )
+            ->filter(fn($p) => $p->module_id !== null)
+            ->groupBy('module_id')
+            ->mapWithKeys(function ($perms, $moduleId) use ($modules, $columns) {
+                $moduleName = $modules[$moduleId]?->name ?? "module_{$moduleId}";
+                $actions = collect($columns)
+                    ->mapWithKeys(fn($col) => [
+                        $col => $perms->first(fn($p) => str_ends_with($p->name, ".{$col}")),
+                    ])
+                    ->filter();
+                return [$moduleName => $actions];
+            })
             ->sortKeys();
     }
 }
