@@ -96,6 +96,15 @@ class RegisterNewModulesSeeder extends Seeder
             ]
         );
 
+        $calendarModule = Module::firstOrCreate(
+            ['name' => 'calendar'],
+            [
+                'display_name' => 'Kalender',
+                'description'  => 'IT-Kalender für Termine, Wartungen und Ereignisse',
+                'is_active'    => true,
+            ]
+        );
+
         // --- Permissions anlegen ---
 
         $permissions = [
@@ -152,6 +161,10 @@ class RegisterNewModulesSeeder extends Seeder
             // Stellenbeschreibungen
             ['name' => 'base.stellenbeschreibungen.view',   'module_id' => $stellenbeschreibungenModule->id],
             ['name' => 'base.stellenbeschreibungen.edit',   'module_id' => $stellenbeschreibungenModule->id],
+
+            // Kalender
+            ['name' => 'module.calendar.view',  'module_id' => $calendarModule->id],
+            ['name' => 'module.calendar.edit',  'module_id' => $calendarModule->id],
         ];
 
         foreach ($permissions as $perm) {
@@ -184,11 +197,12 @@ class RegisterNewModulesSeeder extends Seeder
                 'base.aufgaben.view', 'base.aufgaben.create', 'base.aufgaben.edit',
                 'module.stellenplan.view', 'module.stellenplan.view_sensitive',
                 'base.stellenbeschreibungen.view', 'base.stellenbeschreibungen.edit',
+                'module.calendar.view', 'module.calendar.edit',
             ];
             $admin->givePermissionTo($adminPermissions);
         }
 
-        $this->command->info('✓ Module registriert: orders, dienstleister, reminders, gruppen, stellen, aufgaben, stellenplan, stellenbeschreibungen');
+        $this->command->info('✓ Module registriert: orders, dienstleister, reminders, gruppen, stellen, aufgaben, stellenplan, stellenbeschreibungen, calendar');
         $this->command->info('✓ ' . count($permissions) . ' Permissions angelegt');
         $this->command->info('✓ Superadmin und Admin aktualisiert');
     }
