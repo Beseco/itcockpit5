@@ -6,6 +6,17 @@
     <div class="py-6" x-data="calendarApp()" x-init="init()">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
 
+            {{-- Aktionsleiste --}}
+            <div class="flex items-center justify-between">
+                <button @click="openNew('{{ now()->format('Y-m-d') }}', false)"
+                        class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Neuer Termin
+                </button>
+            </div>
+
             {{-- ICS-Abonnement --}}
             <div class="flex items-center justify-between gap-3 px-4 py-2 bg-white border border-gray-200 rounded-lg shadow-sm text-sm">
                 <div class="flex items-center gap-2 text-gray-600 min-w-0">
