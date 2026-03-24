@@ -60,9 +60,12 @@ class EventController extends Controller
             'ganztag'             => ['boolean'],
             'typ'                 => ['required', 'string', 'in:termin,wartung,sonstiges'],
             'farbe'               => ['nullable', 'string', 'max:20'],
-            'erinnerung_minuten'  => ['nullable', 'integer'],
-            'attendees'           => ['nullable', 'array'],
-            'attendees.*'         => ['string'],
+            'erinnerung_minuten'    => ['nullable', 'integer'],
+            'wiederholung_typ'      => ['nullable', 'string', 'in:,daily,weekly,monthly,yearly'],
+            'wiederholung_config'   => ['nullable', 'array'],
+            'wiederholung_bis'      => ['nullable', 'date'],
+            'attendees'             => ['nullable', 'array'],
+            'attendees.*'           => ['string'],
         ]);
     }
 

@@ -143,6 +143,65 @@
                                     </select>
                                 </div>
 
+                                {{-- Wiederholung --}}
+                                <div x-data="wiederholungBlock(modal)" x-init="syncFromModal()">
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Wiederholung</label>
+                                    <div class="flex flex-wrap gap-1.5 mb-3">
+                                        @foreach([''=>'Keine','daily'=>'Täglich','weekly'=>'Wöchentlich','monthly'=>'Monatlich','yearly'=>'Jährlich'] as $val => $lbl)
+                                        <button type="button"
+                                                @click="setTyp('{{ $val }}')"
+                                                :disabled="!modal.canEdit"
+                                                :class="wTyp === '{{ $val }}'
+                                                    ? 'bg-indigo-600 text-white border-indigo-600'
+                                                    : 'bg-white text-gray-700 border-gray-300 hover:border-indigo-400 disabled:opacity-40'"
+                                                class="px-3 py-1.5 text-xs font-medium border rounded-md transition-colors">
+                                            {{ $lbl }}
+                                        </button>
+                                        @endforeach
+                                    </div>
+
+                                    {{-- täglich: alle X Tage --}}
+                                    <div x-show="wTyp === 'daily'" x-cloak class="flex items-center gap-2 mb-2">
+                                        <span class="text-sm text-gray-600">Alle</span>
+                                        <input type="number" min="1" x-model="wEvery" :disabled="!modal.canEdit"
+                                               @input="push()" class="w-16 border-gray-300 rounded-md shadow-sm text-sm">
+                                        <span class="text-sm text-gray-600">Tag(e)</span>
+                                    </div>
+
+                                    {{-- wöchentlich: Wochentage --}}
+                                    <div x-show="wTyp === 'weekly'" x-cloak class="mb-2">
+                                        <div class="flex flex-wrap gap-1.5">
+                                            @foreach(['Mo','Di','Mi','Do','Fr','Sa','So'] as $wt)
+                                            <button type="button" :disabled="!modal.canEdit"
+                                                    @click="toggleDay('{{ $wt }}')"
+                                                    :class="wDays.includes('{{ $wt }}')
+                                                        ? 'bg-indigo-600 text-white border-indigo-600'
+                                                        : 'bg-white text-gray-700 border-gray-300'"
+                                                    class="px-2.5 py-1 text-xs font-medium border rounded-md transition-colors">
+                                                {{ $wt }}
+                                            </button>
+                                            @endforeach
+                                        </div>
+                                    </div>
+
+                                    {{-- monatlich: alle X Monate --}}
+                                    <div x-show="wTyp === 'monthly'" x-cloak class="flex items-center gap-2 mb-2">
+                                        <span class="text-sm text-gray-600">Alle</span>
+                                        <input type="number" min="1" x-model="wEvery" :disabled="!modal.canEdit"
+                                               @input="push()" class="w-16 border-gray-300 rounded-md shadow-sm text-sm">
+                                        <span class="text-sm text-gray-600">Monat(e)</span>
+                                    </div>
+
+                                    {{-- Wiederholen bis --}}
+                                    <div x-show="wTyp" x-cloak class="flex items-center gap-2 mt-2">
+                                        <span class="text-sm text-gray-600">Bis</span>
+                                        <input type="date" x-model="wBis" :disabled="!modal.canEdit"
+                                               @input="push()" class="border-gray-300 rounded-md shadow-sm text-sm">
+                                        <button type="button" x-show="wBis" @click="wBis='';push()"
+                                                class="text-xs text-gray-400 hover:text-gray-600">✕ kein Ende</button>
+                                    </div>
+                                </div>
+
                                 {{-- Teilnehmer --}}
                                 <div x-show="modal.canEdit" x-data="emailTagInput(modal.attendeeEmails, {{ json_encode($allUsers->pluck('email')->filter()->values()) }})">
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Teilnehmer einladen</label>
@@ -248,6 +307,8 @@ function calendarApp() {
             titel: '', beschreibung: '', start_at: '', end_at: '',
             ganztag: false, typ: 'termin', farbe: '#4f46e5',
             erinnerung: '', attendeeEmails: [], attendees: [], intervall: '',
+                wiederholung_typ: '', wiederholung_config: {}, wiederholung_bis: '',
+            wiederholung_typ: '', wiederholung_config: {}, wiederholung_bis: '',
         },
 
         init() {
@@ -299,6 +360,7 @@ function calendarApp() {
                 start_at: start, end_at: end,
                 ganztag: allDay, typ: 'termin', farbe: '#4f46e5',
                 erinnerung: '', attendeeEmails: [], attendees: [], intervall: '',
+                wiederholung_typ: '', wiederholung_config: {}, wiederholung_bis: '',
             };
         },
 
@@ -324,6 +386,9 @@ function calendarApp() {
                 attendeeEmails: (p.attendees ?? []).map(a => a.email),
                 attendees:  p.attendees ?? [],
                 intervall:  p.intervall ?? '',
+                wiederholung_typ:    p.wiederholung_typ ?? '',
+                wiederholung_config: p.wiederholung_config ?? {},
+                wiederholung_bis:    p.wiederholung_bis ?? '',
             };
         },
 
@@ -348,7 +413,10 @@ function calendarApp() {
                 typ:                this.modal.typ,
                 farbe:              this.modal.farbe || null,
                 erinnerung_minuten: this.modal.erinnerung || null,
-                attendees:          this.modal.attendeeEmails,
+                attendees:              this.modal.attendeeEmails,
+                wiederholung_typ:       this.modal.wiederholung_typ || null,
+                wiederholung_config:    this.modal.wiederholung_config || null,
+                wiederholung_bis:       this.modal.wiederholung_bis || null,
                 _token:             document.querySelector('meta[name="csrf-token"]').content,
             };
 
@@ -402,6 +470,30 @@ function calendarApp() {
     };
 }
 
+function wiederholungBlock(modal) {
+    return {
+        wTyp: '', wEvery: 1, wDays: [], wBis: '',
+        syncFromModal() {
+            this.wTyp   = modal.wiederholung_typ || '';
+            this.wEvery = (modal.wiederholung_config && modal.wiederholung_config.every) ? modal.wiederholung_config.every : 1;
+            this.wDays  = (modal.wiederholung_config && modal.wiederholung_config.days)  ? modal.wiederholung_config.days  : [];
+            this.wBis   = modal.wiederholung_bis || '';
+        },
+        setTyp(typ) { this.wTyp = typ; this.push(); },
+        toggleDay(d) {
+            if (this.wDays.includes(d)) this.wDays = this.wDays.filter(x => x !== d);
+            else this.wDays.push(d);
+            this.push();
+        },
+        push() {
+            modal.wiederholung_typ = this.wTyp;
+            modal.wiederholung_bis = this.wBis;
+            if (this.wTyp === 'weekly') modal.wiederholung_config = { days: this.wDays };
+            else if (this.wTyp === 'daily' || this.wTyp === 'monthly') modal.wiederholung_config = { every: parseInt(this.wEvery) || 1 };
+            else modal.wiederholung_config = {};
+        },
+    };
+}
 // Wiederverwendung der emailTagInput-Funktion aus reminders (inline für Unabhängigkeit)
 function emailTagInput(initial, suggestions) {
     return {
