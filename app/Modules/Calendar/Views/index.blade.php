@@ -403,11 +403,6 @@ function calendarApp() {
             this.modal.open = false;
         },
 
-        localDT(d) {
-            if (!d) return '';
-            const pad = n => String(n).padStart(2,'0');
-            return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());
-        },
 
         toggleWDay(d) {
             const days = (this.modal.wiederholung_config && this.modal.wiederholung_config.days)
@@ -489,6 +484,12 @@ function calendarApp() {
             }
         },
     };
+}
+
+function localDT(d) {
+    if (!d) return '';
+    const pad = n => String(n).padStart(2,'0');
+    return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());
 }
 
 // Wiederverwendung der emailTagInput-Funktion aus reminders (inline für Unabhängigkeit)
