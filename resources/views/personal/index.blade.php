@@ -18,9 +18,17 @@
     <div class="py-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
         @if(session('success'))
-            <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 3000)"
+            <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)"
                  class="p-4 bg-green-100 border border-green-300 text-green-800 rounded-md text-sm">
                 {{ session('success') }}
+            </div>
+        @endif
+        @if(session('error'))
+            <div class="p-4 bg-red-100 border border-red-300 text-red-800 rounded-md text-sm">{{ session('error') }}</div>
+        @endif
+        @if($errors->has('avatar'))
+            <div class="p-4 bg-red-100 border border-red-300 text-red-800 rounded-md text-sm">
+                Profilbild: {{ $errors->first('avatar') }}
             </div>
         @endif
 
@@ -29,36 +37,28 @@
             <div class="h-24 bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-500"></div>
             <div class="px-6 pb-6">
                 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 -mt-12">
-                    <div x-data="{ preview: null }">
-                        <form id="avatar-form" action="{{ route('personal.avatar') }}" method="POST" enctype="multipart/form-data">
-                            @csrf
-                            <label class="relative cursor-pointer group block w-24 h-24" title="Profilbild ändern">
-                                <div class="w-24 h-24 rounded-full ring-4 ring-white shadow-lg overflow-hidden bg-indigo-600 flex items-center justify-center">
-                                    <template x-if="preview"><img :src="preview" class="w-full h-full object-cover"></template>
-                                    <template x-if="!preview">
-                                        @if($user->avatarUrl())
-                                            <img src="{{ $user->avatarUrl() }}" class="w-full h-full object-cover" alt="">
-                                        @else
-                                            <span class="text-white text-3xl font-bold select-none">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
-                                        @endif
-                                    </template>
-                                </div>
-                                <div class="absolute inset-0 rounded-full bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                    </svg>
-                                </div>
-                                <input type="file" name="avatar" accept="image/*" class="hidden"
-                                       @change="
-                                           if ($event.target.files[0]) {
-                                               preview = URL.createObjectURL($event.target.files[0]);
-                                               $nextTick(() => document.getElementById('avatar-form').submit());
-                                           }
-                                       ">
-                            </label>
-                        </form>
-                    </div>
+                    <form id="avatar-form" action="{{ route('personal.avatar') }}" method="POST" enctype="multipart/form-data"
+                          x-data="{ preview: '{{ $user->avatarUrl() }}' }">
+                        @csrf
+                        <label class="relative cursor-pointer group block w-24 h-24" title="Profilbild ändern">
+                            <div class="w-24 h-24 rounded-full ring-4 ring-white shadow-lg overflow-hidden bg-indigo-600 flex items-center justify-center">
+                                <template x-if="preview">
+                                    <img :src="preview" class="w-full h-full object-cover" alt="">
+                                </template>
+                                <template x-if="!preview">
+                                    <span class="text-white text-3xl font-bold select-none">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
+                                </template>
+                            </div>
+                            <div class="absolute inset-0 rounded-full bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                            </div>
+                            <input type="file" name="avatar" accept="image/*" class="hidden"
+                                   onchange="if(this.files[0]){ document.getElementById('avatar-form').submit(); }">
+                        </label>
+                    </form>
                     <div class="flex-1 min-w-0 sm:ml-4">
                         <h3 class="text-2xl font-bold text-gray-900 leading-tight">{{ $user->name }}</h3>
                         <p class="text-sm text-gray-500 mt-0.5">{{ $user->email }}</p>

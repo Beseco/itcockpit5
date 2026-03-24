@@ -54,19 +54,27 @@ class PersonalController extends Controller
     public function uploadAvatar(Request $request)
     {
         $request->validate([
-            'avatar' => 'required|image|mimes:jpg,jpeg,png,gif,webp|max:2048',
+            'avatar' => 'required|image|mimes:jpg,jpeg,png,gif,webp|max:4096',
         ]);
 
         $user = Auth::user();
 
-        // Delete old avatar
-        if ($user->avatar_path) {
-            Storage::disk('public')->delete($user->avatar_path);
+        try {
+            if ($user->avatar_path) {
+                Storage::disk('public')->delete($user->avatar_path);
+            }
+
+            $path = $request->file('avatar')->store('avatars', 'public');
+
+            if (!$path) {
+                return back()->with('error', 'Datei konnte nicht gespeichert werden. Bitte Schreibrechte auf storage/app/public prüfen.');
+            }
+
+            $user->update(['avatar_path' => $path]);
+
+            return back()->with('success', 'Profilbild wurde aktualisiert.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Fehler beim Upload: ' . $e->getMessage());
         }
-
-        $path = $request->file('avatar')->store('avatars', 'public');
-        $user->update(['avatar_path' => $path]);
-
-        return back()->with('success', 'Profilbild wurde aktualisiert.');
     }
 }
