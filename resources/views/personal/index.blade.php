@@ -6,6 +6,7 @@
     @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
+        marked.setOptions({ breaks: true });
         document.addEventListener('DOMContentLoaded', function () {
             document.querySelectorAll('.md-render[data-md]').forEach(function (el) {
                 el.innerHTML = marked.parse(el.dataset.md);
@@ -28,30 +29,36 @@
             <div class="h-24 bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-500"></div>
             <div class="px-6 pb-6">
                 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 -mt-12">
-                    <form action="{{ route('personal.avatar') }}" method="POST" enctype="multipart/form-data"
-                          x-data="{ preview: null }"
-                          @change="const file = $event.target.files[0]; if (file) { preview = URL.createObjectURL(file); $el.submit(); }">
-                        @csrf
-                        <label class="relative cursor-pointer group block w-24 h-24" title="Profilbild ändern">
-                            <div class="w-24 h-24 rounded-full ring-4 ring-white shadow-lg overflow-hidden bg-indigo-600 flex items-center justify-center">
-                                <template x-if="preview"><img :src="preview" class="w-full h-full object-cover"></template>
-                                <template x-if="!preview">
-                                    @if($user->avatarUrl())
-                                        <img src="{{ $user->avatarUrl() }}" class="w-full h-full object-cover" alt="">
-                                    @else
-                                        <span class="text-white text-3xl font-bold select-none">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
-                                    @endif
-                                </template>
-                            </div>
-                            <div class="absolute inset-0 rounded-full bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                </svg>
-                            </div>
-                            <input type="file" name="avatar" accept="image/*" class="hidden">
-                        </label>
-                    </form>
+                    <div x-data="{ preview: null }">
+                        <form id="avatar-form" action="{{ route('personal.avatar') }}" method="POST" enctype="multipart/form-data">
+                            @csrf
+                            <label class="relative cursor-pointer group block w-24 h-24" title="Profilbild ändern">
+                                <div class="w-24 h-24 rounded-full ring-4 ring-white shadow-lg overflow-hidden bg-indigo-600 flex items-center justify-center">
+                                    <template x-if="preview"><img :src="preview" class="w-full h-full object-cover"></template>
+                                    <template x-if="!preview">
+                                        @if($user->avatarUrl())
+                                            <img src="{{ $user->avatarUrl() }}" class="w-full h-full object-cover" alt="">
+                                        @else
+                                            <span class="text-white text-3xl font-bold select-none">{{ strtoupper(substr($user->name, 0, 1)) }}</span>
+                                        @endif
+                                    </template>
+                                </div>
+                                <div class="absolute inset-0 rounded-full bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    </svg>
+                                </div>
+                                <input type="file" name="avatar" accept="image/*" class="hidden"
+                                       @change="
+                                           if ($event.target.files[0]) {
+                                               preview = URL.createObjectURL($event.target.files[0]);
+                                               $nextTick(() => document.getElementById('avatar-form').submit());
+                                           }
+                                       ">
+                            </label>
+                        </form>
+                    </div>
                     <div class="flex-1 min-w-0 sm:ml-4">
                         <h3 class="text-2xl font-bold text-gray-900 leading-tight">{{ $user->name }}</h3>
                         <p class="text-sm text-gray-500 mt-0.5">{{ $user->email }}</p>

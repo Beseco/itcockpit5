@@ -70,6 +70,7 @@
     @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
+        marked.setOptions({ breaks: true });
         document.addEventListener('DOMContentLoaded', function () {
             document.querySelectorAll('.md-render[data-md]').forEach(function (el) {
                 el.innerHTML = marked.parse(el.dataset.md);
