@@ -19,7 +19,7 @@ class ReminderMailController extends Controller
         $reminders = ReminderMail::orderBy('nextsend')->get();
 
         $lastHeartbeat   = ReminderMailLog::where('typ', 4)->latest()->first();
-        $schedulerActive = $lastHeartbeat && $lastHeartbeat->created_at->diffInMinutes(now()) < 2;
+        $schedulerActive = $lastHeartbeat && $lastHeartbeat->created_at->diffInMinutes(now()) < 15;
 
         return view('reminders.index', compact('reminders', 'lastHeartbeat', 'schedulerActive'));
     }
