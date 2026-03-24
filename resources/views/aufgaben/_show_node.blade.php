@@ -7,10 +7,23 @@
         @if($depth === 0)
             <h3 style="font-size:1.1rem; font-weight:700; color:#1e293b; margin:0;">{{ $node->name }}</h3>
         @elseif($depth === 1)
-            <h4 style="font-size:1rem; font-weight:600; color:#334155; margin:0;">{{ $node->name }}</h4>
+            <h4 style="font-size:1rem; font-weight:600; color:#334155; margin:0;">
+                <a href="{{ route('aufgaben.show', $node) }}" style="color:#334155; text-decoration:none;" class="no-print-link">{{ $node->name }}</a>
+            </h4>
         @else
-            <h5 style="font-size:0.9rem; font-weight:600; color:#475569; margin:0;">{{ $node->name }}</h5>
+            <h5 style="font-size:0.9rem; font-weight:600; color:#475569; margin:0;">
+                <a href="{{ route('aufgaben.show', $node) }}" style="color:#475569; text-decoration:none;" class="no-print-link">{{ $node->name }}</a>
+            </h5>
         @endif
+        @can('base.aufgaben.edit')
+            @if($depth > 0)
+                <a href="{{ route('aufgaben.edit', $node) }}"
+                   class="no-print"
+                   style="font-size:0.7rem; color:#6366f1; text-decoration:none; padding:1px 6px; border:1px solid #c7d2fe; border-radius:4px; background:#eef2ff; white-space:nowrap;">
+                    Bearbeiten
+                </a>
+            @endif
+        @endcan
     </div>
 
     {{-- Beschreibung --}}

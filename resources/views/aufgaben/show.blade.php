@@ -58,6 +58,10 @@
 
             /* Drucktitel */
             .print-title { display: block !important; }
+
+            /* Links im Druck als normalen Text */
+            .no-print-link { color: inherit !important; text-decoration: none !important; }
+            .no-print { display: none !important; }
         }
         .print-title { display: none; }
     </style>
