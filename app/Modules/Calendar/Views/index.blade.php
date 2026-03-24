@@ -261,10 +261,17 @@ function calendarApp() {
                 headerToolbar: {
                     left:   'prev,next today',
                     center: 'title',
-                    right:  'dayGridMonth,timeGridWeek,listWeek',
+                    right:  'dayGridMonth,timeGridWeek,list60',
                 },
                 buttonText: {
-                    today: 'Heute', month: 'Monat', week: 'Woche', list: 'Liste',
+                    today: 'Heute', month: 'Monat', week: 'Woche',
+                },
+                views: {
+                    list60: {
+                        type: 'list',
+                        duration: { days: 60 },
+                        buttonText: 'Liste',
+                    },
                 },
                 events: {
                     url: '{{ route('calendar.events') }}',
