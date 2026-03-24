@@ -19,7 +19,7 @@ class GruppeController extends Controller
     {
         $this->authorize('base.gruppen.view');
 
-        $gruppen = Gruppe::with(['children.children', 'roles', 'users'])
+        $gruppen = Gruppe::with(['children.children', 'roles', 'users', 'vorgesetzter', 'children.vorgesetzter', 'children.children.vorgesetzter'])
             ->roots()
             ->orderBy('sort_order')
             ->orderBy('name')
@@ -34,9 +34,10 @@ class GruppeController extends Controller
 
         $allGruppen = Gruppe::orderBy('name')->get();
         $roles = Role::orderBy('name')->get();
+        $allUsers = \App\Models\User::orderBy('name')->get();
         $selectedParent = $request->filled('parent_id') ? Gruppe::find($request->parent_id) : null;
 
-        return view('gruppen.create', compact('allGruppen', 'roles', 'selectedParent'));
+        return view('gruppen.create', compact('allGruppen', 'roles', 'allUsers', 'selectedParent'));
     }
 
     public function store(Request $request)
@@ -44,17 +45,19 @@ class GruppeController extends Controller
         $this->authorize('base.gruppen.create');
 
         $validated = $request->validate([
-            'name'      => 'required|string|max:255',
-            'parent_id' => 'nullable|exists:gruppen,id',
-            'sort_order'=> 'nullable|integer',
-            'role_ids'  => 'nullable|array',
-            'role_ids.*'=> 'exists:roles,id',
+            'name'                 => 'required|string|max:255',
+            'parent_id'            => 'nullable|exists:gruppen,id',
+            'sort_order'           => 'nullable|integer',
+            'vorgesetzter_user_id' => 'nullable|exists:users,id',
+            'role_ids'             => 'nullable|array',
+            'role_ids.*'           => 'exists:roles,id',
         ]);
 
         $gruppe = Gruppe::create([
-            'name'       => $validated['name'],
-            'parent_id'  => $validated['parent_id'] ?? null,
-            'sort_order' => $validated['sort_order'] ?? 0,
+            'name'                 => $validated['name'],
+            'parent_id'            => $validated['parent_id'] ?? null,
+            'sort_order'           => $validated['sort_order'] ?? 0,
+            'vorgesetzter_user_id' => $validated['vorgesetzter_user_id'] ?? null,
         ]);
 
         if (!empty($validated['role_ids'])) {
@@ -86,13 +89,14 @@ class GruppeController extends Controller
         $this->authorize('base.gruppen.edit');
 
         $validated = $request->validate([
-            'name'      => 'required|string|max:255',
-            'parent_id' => 'nullable|exists:gruppen,id',
-            'sort_order'=> 'nullable|integer',
-            'role_ids'  => 'nullable|array',
-            'role_ids.*'=> 'exists:roles,id',
-            'user_ids'  => 'nullable|array',
-            'user_ids.*'=> 'exists:users,id',
+            'name'                 => 'required|string|max:255',
+            'parent_id'            => 'nullable|exists:gruppen,id',
+            'sort_order'           => 'nullable|integer',
+            'vorgesetzter_user_id' => 'nullable|exists:users,id',
+            'role_ids'             => 'nullable|array',
+            'role_ids.*'           => 'exists:roles,id',
+            'user_ids'             => 'nullable|array',
+            'user_ids.*'           => 'exists:users,id',
         ]);
 
         // Prevent setting parent to self or own descendant
@@ -104,9 +108,10 @@ class GruppeController extends Controller
         }
 
         $gruppe->update([
-            'name'       => $validated['name'],
-            'parent_id'  => $validated['parent_id'] ?? null,
-            'sort_order' => $validated['sort_order'] ?? 0,
+            'name'                 => $validated['name'],
+            'parent_id'            => $validated['parent_id'] ?? null,
+            'sort_order'           => $validated['sort_order'] ?? 0,
+            'vorgesetzter_user_id' => $validated['vorgesetzter_user_id'] ?? null,
         ]);
 
         $rolesChanged = false;

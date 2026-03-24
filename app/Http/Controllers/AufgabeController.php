@@ -125,7 +125,9 @@ class AufgabeController extends Controller
             $childRel('children.children.children.children'),
         ));
 
-        return view('aufgaben.show', compact('aufgabe'));
+        $allUsers = User::orderBy('name')->get();
+
+        return view('aufgaben.show', compact('aufgabe', 'allUsers'));
     }
 
     public function edit(Aufgabe $aufgabe)

@@ -3,6 +3,7 @@
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\ApplikationController;
 use App\Http\Controllers\AufgabeController;
+use App\Http\Controllers\AufgabeZuweisungController;
 use App\Http\Controllers\GruppeController;
 use App\Http\Controllers\ReminderMailController;
 use App\Http\Controllers\AuditLogController;
@@ -68,6 +69,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('aufgaben', AufgabeController::class, [
         'parameters' => ['aufgaben' => 'aufgabe'],
     ]);
+    Route::patch('/aufgaben-zuweisungen/{zuweisung}', [AufgabeZuweisungController::class, 'update'])
+        ->name('aufgaben-zuweisungen.update');
 
     // Announcement management routes
     Route::resource('announcements', AnnouncementController::class);

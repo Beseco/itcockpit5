@@ -10,11 +10,16 @@ class Gruppe extends Model
 {
     protected $table = 'gruppen';
 
-    protected $fillable = ['name', 'parent_id', 'sort_order'];
+    protected $fillable = ['name', 'parent_id', 'sort_order', 'vorgesetzter_user_id'];
 
     public function parent()
     {
         return $this->belongsTo(Gruppe::class, 'parent_id');
+    }
+
+    public function vorgesetzter()
+    {
+        return $this->belongsTo(User::class, 'vorgesetzter_user_id');
     }
 
     public function children()

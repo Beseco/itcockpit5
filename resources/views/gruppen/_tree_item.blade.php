@@ -15,6 +15,13 @@
                         {{ $role->name }}
                     </span>
                 @endforeach
+                {{-- Vorgesetzter --}}
+                @if($gruppe->vorgesetzter)
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
+                        <svg width="10" height="10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        {{ $gruppe->vorgesetzter->name }}
+                    </span>
+                @endif
                 {{-- Member count --}}
                 @if($gruppe->users->count() > 0)
                     <span class="text-xs text-gray-500">{{ $gruppe->users->count() }} Mitglied(er)</span>

@@ -40,6 +40,23 @@
             value="{{ old('sort_order', $gruppe?->sort_order ?? 0) }}" />
     </div>
 
+    {{-- Vorgesetzter --}}
+    <div>
+        <x-input-label for="vorgesetzter_user_id" value="Vorgesetzter/in" />
+        <select id="vorgesetzter_user_id" name="vorgesetzter_user_id"
+                class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+            <option value="">— Kein/e Vorgesetzte/r —</option>
+            @foreach($allUsers as $u)
+                <option value="{{ $u->id }}"
+                    @selected(old('vorgesetzter_user_id', $gruppe?->vorgesetzter_user_id) == $u->id)>
+                    {{ $u->name }}
+                </option>
+            @endforeach
+        </select>
+        <p class="text-xs text-gray-500 mt-1">Der/Die Vorgesetzte kann Admin und Stellvertreter bei Aufgaben seiner/ihrer Gruppe ändern.</p>
+        <x-input-error :messages="$errors->get('vorgesetzter_user_id')" class="mt-1" />
+    </div>
+
     {{-- Rollen --}}
     <div>
         <x-input-label value="Rollen (werden an Mitglieder vererbt)" />
