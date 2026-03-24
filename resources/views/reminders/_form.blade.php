@@ -114,7 +114,8 @@
                         {{ $wt }}
                     </button>
                     <input type="checkbox" name="config_days[]" value="{{ $wt }}"
-                           x-bind:checked="days.includes('{{ $wt }}')" class="hidden">
+                           x-bind:checked="days.includes('{{ $wt }}')"
+                           x-bind:disabled="typ !== 'weekly'" class="hidden">
                 @endforeach
             </div>
             <x-input-error :messages="$errors->get('config_days')" />
@@ -124,13 +125,13 @@
         <div x-show="typ === 'monthly'" x-cloak>
             <div class="flex items-center gap-3 flex-wrap">
                 <span class="text-sm text-gray-600">Am</span>
-                <select name="config_nth"
+                <select name="config_nth" :disabled="typ !== 'monthly'"
                         class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                     @foreach([1=>'1.',2=>'2.',3=>'3.',4=>'4.',5=>'5.','last'=>'Letzten'] as $val => $lbl)
                         <option value="{{ $val }}" @selected((string)$oldNth === (string)$val)>{{ $lbl }}</option>
                     @endforeach
                 </select>
-                <select name="config_weekday"
+                <select name="config_weekday" :disabled="typ !== 'monthly'"
                         class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                     @foreach(['Mo'=>'Montag','Di'=>'Dienstag','Mi'=>'Mittwoch','Do'=>'Donnerstag','Fr'=>'Freitag','Sa'=>'Samstag','So'=>'Sonntag'] as $val => $lbl)
                         <option value="{{ $val }}" @selected($oldWeekday === $val)>{{ $lbl }}</option>
@@ -145,9 +146,9 @@
             <div class="flex items-center gap-2 flex-wrap">
                 <span class="text-sm text-gray-600">Am</span>
                 <x-text-input name="config_day" type="number" min="1" max="31" class="w-16"
-                              value="{{ $oldDay }}" />
+                              value="{{ $oldDay }}" x-bind:disabled="typ !== 'yearly'" />
                 <span class="text-sm text-gray-600">.</span>
-                <select name="config_month"
+                <select name="config_month" :disabled="typ !== 'yearly'"
                         class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                     @foreach([1=>'Januar',2=>'Februar',3=>'März',4=>'April',5=>'Mai',6=>'Juni',7=>'Juli',8=>'August',9=>'September',10=>'Oktober',11=>'November',12=>'Dezember'] as $val => $lbl)
                         <option value="{{ $val }}" @selected((int)$oldMonth === $val)>{{ $lbl }}</option>
@@ -163,6 +164,7 @@
             <div class="flex items-center gap-3">
                 <span class="text-sm text-gray-600">Um</span>
                 <input type="time" name="config_time" value="{{ $oldConfigTime }}"
+                       :disabled="typ !== 'weekly' && typ !== 'monthly' && typ !== 'yearly'"
                        class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                 <span class="text-sm text-gray-500">Uhr</span>
             </div>
