@@ -75,14 +75,29 @@
     {{-- Konfiguration je Typ --}}
     <div class="p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-4">
 
-        {{-- Minuten / Stunden / Tage --}}
-        <div x-show="typ === 'minutes' || typ === 'hours' || typ === 'days'" x-cloak>
+        {{-- Minuten --}}
+        <div x-show="typ === 'minutes'" x-cloak>
+            <div class="flex items-center gap-3 flex-wrap">
+                <span class="text-sm text-gray-600">Alle</span>
+                <select name="config_every" :disabled="typ !== 'minutes'"
+                        class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                    @foreach([5 => '5 Minuten', 10 => '10 Minuten', 30 => '30 Minuten'] as $val => $lbl)
+                        <option value="{{ $val }}" @selected((int)$oldEvery === $val)>{{ $lbl }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <x-input-error :messages="$errors->get('config_every')" class="mt-1" />
+        </div>
+
+        {{-- Stunden / Tage --}}
+        <div x-show="typ === 'hours' || typ === 'days'" x-cloak>
             <div class="flex items-center gap-3 flex-wrap">
                 <span class="text-sm text-gray-600">Alle</span>
                 <x-text-input name="config_every" type="number" min="1" class="w-24"
-                              value="{{ $oldEvery }}" />
+                              value="{{ $oldEvery }}"
+                              x-bind:disabled="typ !== 'hours' && typ !== 'days'" />
                 <span class="text-sm text-gray-600"
-                      x-text="{'minutes':'Minute(n)','hours':'Stunde(n)','days':'Tag(e)'}[typ] ?? ''"></span>
+                      x-text="{'hours':'Stunde(n)','days':'Tag(e)'}[typ] ?? ''"></span>
             </div>
             <x-input-error :messages="$errors->get('config_every')" class="mt-1" />
         </div>
@@ -166,6 +181,7 @@
                      class="flex items-center gap-2">
                     <span class="text-sm text-gray-500">um</span>
                     <input type="time" name="start_time" value="{{ $oldStartTime }}"
+                           :disabled="typ !== 'minutes' && typ !== 'hours' && typ !== 'days'"
                            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                 </div>
             </div>

@@ -18,9 +18,11 @@
                 <form action="{{ route('reminders.log') }}" method="GET" class="flex gap-2">
                     <select name="typ" onchange="this.form.submit()"
                             class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
-                        <option value="">Alle Typen</option>
+                        <option value="no_heartbeat" @selected($typ === 'no_heartbeat')>Alle (ohne Heartbeat)</option>
+                        <option value="all" @selected($typ === 'all')>Alle inkl. Heartbeat</option>
+                        <option disabled>──────────</option>
                         @foreach ($typen as $val => $label)
-                            <option value="{{ $val }}" {{ $typ == $val ? 'selected' : '' }}>{{ $label }}</option>
+                            <option value="{{ $val }}" @selected($typ == $val)>{{ $label }}</option>
                         @endforeach
                     </select>
                 </form>

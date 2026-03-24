@@ -105,9 +105,13 @@ class ReminderMailController extends Controller
     {
         $this->authorize('reminders.view');
 
-        $typ   = $request->get('typ', '');
+        // Default: alle außer Heartbeat (typ=4); 'all' = wirklich alle
+        $typ   = $request->get('typ', 'no_heartbeat');
         $query = ReminderMailLog::orderBy('created_at', 'desc');
-        if ($typ !== '') {
+
+        if ($typ === 'no_heartbeat') {
+            $query->where('typ', '!=', 4);
+        } elseif ($typ !== '' && $typ !== 'all') {
             $query->where('typ', (int) $typ);
         }
 
