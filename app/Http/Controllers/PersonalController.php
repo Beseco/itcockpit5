@@ -13,7 +13,12 @@ class PersonalController extends Controller
 {
     public function index()
     {
-        $user = Auth::user()->load(['gruppen.roles', 'stellen.stellenbeschreibung.arbeitsvorgaenge', 'stellen.gruppe']);
+        $user = Auth::user()->load([
+            'gruppen.roles',
+            'gruppen.users',
+            'stellen.stellenbeschreibung.arbeitsvorgaenge',
+            'stellen.gruppe',
+        ]);
 
         // Eigene Bestellungen (via buyer_username, kein FK in it_orders)
         $bestellungen = Order::where('buyer_username', $user->name)
