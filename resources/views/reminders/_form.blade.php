@@ -99,7 +99,7 @@
     <div>
         <x-input-label value="Wiederholung *" />
         <div class="mt-2 flex flex-wrap gap-2">
-            @foreach(['minutes'=>'Minuten','hours'=>'Stunden','days'=>'Tage','weekly'=>'Wöchentlich','monthly'=>'Monatlich','yearly'=>'Jährlich'] as $val => $label)
+            @foreach(['minutes'=>'Minuten','hours'=>'Stunden','days'=>'Tage','months'=>'Monate','weekly'=>'Wöchentlich','monthly'=>'Monatlich','yearly'=>'Jährlich'] as $val => $label)
                 <label class="cursor-pointer">
                     <input type="radio" name="intervall_typ" value="{{ $val }}" x-model="typ" class="sr-only">
                     <span :class="typ === '{{ $val }}' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:border-indigo-400'"
@@ -128,15 +128,15 @@
             <x-input-error :messages="$errors->get('config_every')" class="mt-1" />
         </div>
 
-        {{-- Stunden / Tage --}}
-        <div x-show="typ === 'hours' || typ === 'days'" x-cloak>
+        {{-- Stunden / Tage / Monate --}}
+        <div x-show="typ === 'hours' || typ === 'days' || typ === 'months'" x-cloak>
             <div class="flex items-center gap-3 flex-wrap">
                 <span class="text-sm text-gray-600">Alle</span>
                 <x-text-input name="config_every" type="number" min="1" class="w-24"
                               value="{{ $oldEvery }}"
-                              x-bind:disabled="typ !== 'hours' && typ !== 'days'" />
+                              x-bind:disabled="typ !== 'hours' && typ !== 'days' && typ !== 'months'" />
                 <span class="text-sm text-gray-600"
-                      x-text="{'hours':'Stunde(n)','days':'Tag(e)'}[typ] ?? ''"></span>
+                      x-text="{'hours':'Stunde(n)','days':'Tag(e)','months':'Monat(e)'}[typ] ?? ''"></span>
             </div>
             <x-input-error :messages="$errors->get('config_every')" class="mt-1" />
         </div>
@@ -214,15 +214,15 @@
         <div class="pt-3 border-t border-gray-200">
             <div class="flex items-center gap-3 flex-wrap">
                 <span class="text-sm text-gray-600 w-32"
-                      x-text="(typ==='minutes'||typ==='hours'||typ==='days') ? 'Erster Versand:' : 'Frühestens ab:'">
+                      x-text="['minutes','hours','days','months'].includes(typ) ? 'Erster Versand:' : 'Frühestens ab:'">
                 </span>
                 <x-text-input name="start_datum" type="text" placeholder="TT.MM.JJJJ" class="w-36"
                               value="{{ $oldStartDatum }}" />
-                <div x-show="typ === 'minutes' || typ === 'hours' || typ === 'days'" x-cloak
+                <div x-show="typ === 'minutes' || typ === 'hours' || typ === 'days' || typ === 'months'" x-cloak
                      class="flex items-center gap-2">
                     <span class="text-sm text-gray-500">um</span>
                     <input type="time" name="start_time" value="{{ $oldStartTime }}"
-                           :disabled="typ !== 'minutes' && typ !== 'hours' && typ !== 'days'"
+                           :disabled="!['minutes','hours','days','months'].includes(typ)"
                            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                 </div>
             </div>

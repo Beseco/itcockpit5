@@ -36,6 +36,7 @@ class ReminderMail extends Model
         'minutes' => 'Minuten',
         'hours'   => 'Stunden',
         'days'    => 'Tage',
+        'months'  => 'Monate',
         'weekly'  => 'Wöchentlich',
         'monthly' => 'Monatlich',
         'yearly'  => 'Jährlich',
@@ -61,6 +62,7 @@ class ReminderMail extends Model
             'minutes' => 'Alle ' . ($config['every'] ?? '?') . ' Minute(n)',
             'hours'   => 'Alle ' . ($config['every'] ?? '?') . ' Stunde(n)',
             'days'    => 'Alle ' . ($config['every'] ?? '?') . ' Tag(e)',
+            'months'  => 'Alle ' . ($config['every'] ?? '?') . ' Monat(e)',
             'weekly'  => 'Wöchentlich ' . implode(', ', $config['days'] ?? []) . ' um ' . ($config['time'] ?? '?'),
             'monthly' => 'Monatlich am ' . $this->nthLabel($config['nth'] ?? 1) . ' '
                        . ($config['weekday'] ?? '?') . ' um ' . ($config['time'] ?? '?'),
@@ -107,6 +109,7 @@ class ReminderMail extends Model
             'minutes' => $from->addMinutes((int)($config['every'] ?? 1)),
             'hours'   => $from->addHours((int)($config['every'] ?? 1)),
             'days'    => $from->addDays((int)($config['every'] ?? 1)),
+            'months'  => $from->addMonths((int)($config['every'] ?? 1)),
             'weekly'  => $this->calcNextWeekly($from, $config),
             'monthly' => $this->calcNextMonthly($from, $config),
             'yearly'  => $this->calcNextYearly($from, $config),

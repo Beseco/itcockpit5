@@ -133,12 +133,12 @@ class ReminderMailController extends Controller
             'nachricht'     => ['required', 'string'],
             'mailto'        => ['required', 'array', 'min:1'],
             'mailto.*'      => ['required', 'email', 'max:255'],
-            'intervall_typ' => ['required', 'string', 'in:minutes,hours,days,weekly,monthly,yearly'],
+            'intervall_typ' => ['required', 'string', 'in:minutes,hours,days,months,weekly,monthly,yearly'],
             'start_datum'   => ['required', 'date_format:d.m.Y'],
         ];
 
         $typRules = match ($typ) {
-            'minutes', 'hours', 'days' => [
+            'minutes', 'hours', 'days', 'months' => [
                 'start_time'   => ['required', 'regex:/^\d{2}:\d{2}$/'],
                 'config_every' => ['required', 'integer', 'min:1'],
             ],
@@ -164,7 +164,7 @@ class ReminderMailController extends Controller
 
         // Build config array
         $config = match ($typ) {
-            'minutes', 'hours', 'days' => ['every' => (int)$request->config_every],
+            'minutes', 'hours', 'days', 'months' => ['every' => (int)$request->config_every],
             'weekly'  => ['days' => $request->config_days ?? [], 'time' => $request->config_time],
             'monthly' => ['nth' => $request->config_nth, 'weekday' => $request->config_weekday, 'time' => $request->config_time],
             'yearly'  => ['day' => (int)$request->config_day, 'month' => (int)$request->config_month, 'time' => $request->config_time],
@@ -174,7 +174,7 @@ class ReminderMailController extends Controller
         // Calculate nextsend
         $start = Carbon::createFromFormat('d.m.Y', $request->start_datum)->startOfDay();
 
-        if (in_array($typ, ['minutes', 'hours', 'days'])) {
+        if (in_array($typ, ['minutes', 'hours', 'days', 'months'])) {
             [$h, $m] = explode(':', $request->start_time);
             $nextsend = $start->setHour((int)$h)->setMinute((int)$m)->setSecond(0);
         } else {
