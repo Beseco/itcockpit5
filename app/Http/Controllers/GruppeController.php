@@ -21,7 +21,6 @@ class GruppeController extends Controller
 
         $gruppen = Gruppe::with(['children.children', 'roles', 'users', 'vorgesetzter', 'children.vorgesetzter', 'children.children.vorgesetzter'])
             ->roots()
-            ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
 

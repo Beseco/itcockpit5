@@ -24,7 +24,7 @@ class Gruppe extends Model
 
     public function children()
     {
-        return $this->hasMany(Gruppe::class, 'parent_id')->orderBy('sort_order')->orderBy('name');
+        return $this->hasMany(Gruppe::class, 'parent_id')->orderBy('name');
     }
 
     public function users()
@@ -65,6 +65,6 @@ class Gruppe extends Model
      */
     public function scopeRoots($query)
     {
-        return $query->whereNull('parent_id')->orderBy('sort_order')->orderBy('name');
+        return $query->whereNull('parent_id')->orderBy('name');
     }
 }
