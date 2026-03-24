@@ -15,11 +15,13 @@ class EventController extends Controller
 {
     public function store(Request $request): JsonResponse
     {
-        $data = $this->validate($request);
-        $data['user_id'] = Auth::id();
+        $validated = $this->validate($request);
+        $attendees = $validated['attendees'] ?? [];
+        unset($validated['attendees']);
 
-        $event = CalendarEvent::create($data);
-        $this->syncAttendees($event, $request->input('attendees', []));
+        $validated['user_id'] = Auth::id();
+        $event = CalendarEvent::create($validated);
+        $this->syncAttendees($event, $attendees);
 
         return response()->json(['id' => $event->id], 201);
     }
@@ -27,8 +29,13 @@ class EventController extends Controller
     public function update(Request $request, CalendarEvent $event): JsonResponse
     {
         $this->authorizeAccess($event);
-        $event->update($this->validate($request));
-        $this->syncAttendees($event, $request->input('attendees', []));
+
+        $validated = $this->validate($request);
+        $attendees = $validated['attendees'] ?? [];
+        unset($validated['attendees']);
+
+        $event->update($validated);
+        $this->syncAttendees($event, $attendees);
 
         return response()->json(['ok' => true]);
     }

@@ -353,9 +353,9 @@ function calendarApp() {
             };
 
             try {
-                const url    = this.modal.id
-                    ? `/calendar/events/${this.modal.id}`
-                    : `/calendar/events`;
+                const storeUrl  = '{{ route('calendar.events.store') }}';
+                const updateUrl = '{{ route('calendar.events.update', ['event' => '__ID__']) }}';
+                const url    = this.modal.id ? updateUrl.replace('__ID__', this.modal.id) : storeUrl;
                 const method = this.modal.id ? 'PUT' : 'POST';
 
                 const res = await fetch(url, {
@@ -364,7 +364,15 @@ function calendarApp() {
                     body: JSON.stringify(payload),
                 });
 
-                if (!res.ok) throw new Error('Fehler beim Speichern');
+                if (!res.ok) {
+                    let msg = 'HTTP ' + res.status;
+                    try {
+                        const body = await res.json();
+                        if (body.message) msg = body.message;
+                        if (body.errors)  msg = Object.values(body.errors).flat().join('\n');
+                    } catch {}
+                    throw new Error(msg);
+                }
                 this.calendar.refetchEvents();
                 this.closeModal();
             } catch (e) {
@@ -378,8 +386,10 @@ function calendarApp() {
             if (!confirm('Termin wirklich löschen?')) return;
             const token = document.querySelector('meta[name="csrf-token"]').content;
 
+            const deleteUrl = '{{ route('calendar.events.destroy', ['event' => '__ID__']) }}'
+                .replace('__ID__', this.modal.id);
             try {
-                await fetch(`/calendar/events/${this.modal.id}`, {
+                await fetch(deleteUrl, {
                     method: 'DELETE',
                     headers: { 'X-CSRF-TOKEN': token, 'Content-Type': 'application/json' },
                 });
