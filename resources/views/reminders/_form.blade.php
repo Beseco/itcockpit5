@@ -8,8 +8,8 @@
     $oldWeekday    = old('config_weekday', $cfg['weekday'] ?? 'Mo');
     $oldDay        = old('config_day',     $cfg['day']     ?? 1);
     $oldMonth      = old('config_month',   $cfg['month']   ?? 1);
-    $oldStartDatum = old('start_datum', isset($reminder) ? $reminder->nextsend->format('d.m.Y') : now()->addDay()->format('d.m.Y'));
-    $oldStartTime  = old('start_time',  isset($reminder) ? $reminder->nextsend->format('H:i') : '08:00');
+    $oldStartDatum = old('start_datum', isset($reminder) ? $reminder->nextsend->format('d.m.Y') : now()->format('d.m.Y'));
+    $oldStartTime  = old('start_time',  isset($reminder) ? $reminder->nextsend->format('H:i') : now()->format('H:i'));
 @endphp
 
 <div x-data="{
