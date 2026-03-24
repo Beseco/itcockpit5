@@ -10,13 +10,12 @@
                     $totalFrei = $alleStellen->sum(fn($s) => $s->isFrei() ? 100 : max(0, 100 - ($s->belegung ?? 100)));
                     $freiCount = $alleStellen->filter->isFrei()->count();
                 @endphp
-                <div class="text-sm" style="display:flex; align-items:center; gap:0.75rem;">
-                    <span style="color:#6b7280;">{{ $totalStellen }} Stellen</span>
-                    <span style="color:#d1d5db;">·</span>
+                <span class="text-sm" style="color:#6b7280;">
+                    {{ $totalStellen }} Stellen &nbsp;&middot;&nbsp;
                     <span style="color:#d97706; font-weight:500;">{{ $freiCount }} unbesetzt</span>
-                    <span style="color:#d1d5db;">·</span>
-                    <span style="color:#dc2626; font-weight:500;">{{ number_format($totalFrei, 0) }} % freie Kapazität</span>
-                </div>
+                    &nbsp;&middot;&nbsp;
+                    <span style="color:#dc2626; font-weight:500;">{{ number_format($totalFrei, 0) }}&nbsp;% freie Kapazität</span>
+                </span>
                 @can('base.stellen.edit')
                     <a href="{{ route('stellen.create') }}"
                        class="inline-flex items-center px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-md hover:bg-gray-700">
