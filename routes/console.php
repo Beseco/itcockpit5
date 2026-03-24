@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // Erinnerungsmails jede Minute prüfen und versenden
 Schedule::command('reminders:send')->everyMinute();
+
+// Kalender-Erinnerungen jede Minute prüfen
+Schedule::command('calendar:send-reminders')->everyMinute();
