@@ -114,7 +114,16 @@ class AufgabeController extends Controller
     {
         $this->authorize('base.aufgaben.view');
 
-        $aufgabe->load(['zuweisungen.gruppe', 'zuweisungen.admin', 'zuweisungen.stellvertreter', 'parent', 'children']);
+        $rel = ['zuweisungen.gruppe', 'zuweisungen.admin', 'zuweisungen.stellvertreter'];
+        $childRel = fn(string $prefix) => array_map(fn($r) => "{$prefix}.{$r}", $rel);
+        $aufgabe->load(array_merge(
+            $rel,
+            ['parent'],
+            $childRel('children'),
+            $childRel('children.children'),
+            $childRel('children.children.children'),
+            $childRel('children.children.children.children'),
+        ));
 
         return view('aufgaben.show', compact('aufgabe'));
     }
