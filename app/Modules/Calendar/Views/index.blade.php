@@ -14,7 +14,7 @@
                               d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                     </svg>
                     <span class="font-medium text-gray-700">Kalender abonnieren (ICS):</span>
-                    <code id="ics-url" class="truncate text-indigo-600 font-mono text-xs">{{ url(route('calendar.ics', auth()->user()->ics_token, false)) }}</code>
+                    <code id="ics-url" class="truncate text-indigo-600 font-mono text-xs">{{ url(route('calendar.ics', $icsToken, false)) }}</code>
                 </div>
                 <button onclick="navigator.clipboard.writeText(document.getElementById('ics-url').textContent);this.textContent='✓ Kopiert!';setTimeout(()=>this.textContent='Kopieren',2000)"
                         class="flex-shrink-0 px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-medium rounded-md transition-colors">

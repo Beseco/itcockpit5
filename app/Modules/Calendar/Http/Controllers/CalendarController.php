@@ -17,14 +17,16 @@ class CalendarController extends Controller
 
         // ICS-Token on-demand generieren
         if (!$user->ics_token) {
-            $user->update(['ics_token' => Str::random(64)]);
+            $user->ics_token = Str::random(64);
+            $user->save();
         }
 
         $allUsers   = User::orderBy('name')->get(['id', 'name', 'email']);
         $eventTypen = CalendarEvent::TYPEN;
         $erinnerungOptionen = CalendarEvent::ERINNERUNG_OPTIONEN;
+        $icsToken   = $user->ics_token;
 
-        return view('calendar::index', compact('allUsers', 'eventTypen', 'erinnerungOptionen'));
+        return view('calendar::index', compact('allUsers', 'eventTypen', 'erinnerungOptionen', 'icsToken'));
     }
 
     public function generateIcsToken(Request $request)

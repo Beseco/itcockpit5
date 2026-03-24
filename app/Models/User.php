@@ -23,6 +23,7 @@ class User extends Authenticatable
         'password',
         'is_active',
         'avatar_path',
+        'ics_token',
     ];
 
     /**
