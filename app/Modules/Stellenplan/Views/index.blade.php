@@ -57,12 +57,14 @@
                 {{-- Gruppenheader --}}
                 <div class="px-5 py-3 bg-indigo-50 border-b border-indigo-100 flex items-center justify-between">
                     <h3 class="text-sm font-semibold text-indigo-800">{{ $gruppe->name }}</h3>
-                    <div class="flex items-center gap-3 text-xs text-gray-500">
+                    <div class="flex items-center gap-1.5 text-xs text-gray-500">
                         <span>{{ $gCount }} Stellen</span>
                         @if($gFreiCount > 0)
+                            <span class="text-gray-300">·</span>
                             <span class="text-amber-600 font-medium">{{ $gFreiCount }} unbesetzt</span>
                         @endif
                         @if($gFrei > 0)
+                            <span class="text-gray-300">·</span>
                             <span class="font-medium text-red-500">{{ number_format($gFrei, 0) }} % frei</span>
                         @endif
                     </div>
