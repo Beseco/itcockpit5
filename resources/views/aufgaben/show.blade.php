@@ -25,13 +25,40 @@
         </div>
     </x-slot>
 
+    @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const el = document.getElementById('md-content');
+            if (el) {
+                el.innerHTML = marked.parse(@json($aufgabe->beschreibung ?? ''));
+            }
+        });
+    </script>
+    @endpush
+
     <div class="py-6 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
         {{-- Beschreibung --}}
         <div class="bg-white shadow rounded-lg p-6">
             <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">Beschreibung</h3>
             @if($aufgabe->beschreibung)
-                <div id="md-content" class="prose prose-sm max-w-none text-gray-800"></div>
+                <div id="md-content"
+                     class="text-sm text-gray-800 leading-relaxed space-y-3
+                            [&_h1]:text-xl [&_h1]:font-bold [&_h1]:mt-4 [&_h1]:mb-2
+                            [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:mt-3 [&_h2]:mb-2
+                            [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mt-2 [&_h3]:mb-1
+                            [&_p]:mb-2
+                            [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:mb-2
+                            [&_ol]:list-decimal [&_ol]:pl-5 [&_ol]:mb-2
+                            [&_li]:mb-1
+                            [&_strong]:font-semibold
+                            [&_em]:italic
+                            [&_blockquote]:border-l-4 [&_blockquote]:border-gray-300 [&_blockquote]:pl-4 [&_blockquote]:text-gray-600 [&_blockquote]:italic
+                            [&_code]:bg-gray-100 [&_code]:px-1 [&_code]:rounded [&_code]:font-mono [&_code]:text-xs
+                            [&_pre]:bg-gray-100 [&_pre]:p-3 [&_pre]:rounded [&_pre]:overflow-x-auto [&_pre]:text-xs
+                            [&_a]:text-indigo-600 [&_a]:underline [&_a]:hover:text-indigo-800
+                            [&_hr]:border-gray-200 [&_hr]:my-4"></div>
             @else
                 <p class="text-gray-400 text-sm italic">Keine Beschreibung vorhanden.</p>
             @endif
@@ -85,15 +112,3 @@
 
     </div>
 </x-app-layout>
-
-@push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const el = document.getElementById('md-content');
-        if (el) {
-            el.innerHTML = marked.parse(@json($aufgabe->beschreibung ?? ''));
-        }
-    });
-</script>
-@endpush
