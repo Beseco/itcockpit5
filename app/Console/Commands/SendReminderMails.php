@@ -38,8 +38,7 @@ class SendReminderMails extends Command
                 ]);
 
                 // Nächsten Sendezeitpunkt berechnen
-                $sekunden = $reminder->intervall_nummer * $reminder->intervall_faktor;
-                $reminder->update(['nextsend' => now()->addSeconds($sekunden)]);
+                $reminder->update(['nextsend' => $reminder->calculateNextSend()]);
 
             } catch (\Exception $e) {
                 ReminderMailLog::create([

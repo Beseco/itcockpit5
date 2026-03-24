@@ -88,8 +88,8 @@
                                         {{ $reminder->nextsend->isPast() ? 'text-red-600 font-medium' : 'text-gray-500' }}">
                                         {{ $reminder->restzeit }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
-                                        alle {{ $reminder->intervall_nummer }} {{ $reminder->faktor_label }}
+                                    <td class="px-4 py-3 text-sm text-gray-500">
+                                        {{ $reminder->intervall_label }}
                                     </td>
                                     <td class="px-4 py-3 text-sm text-gray-500">{{ $reminder->mailto }}</td>
                                     <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium" x-data="{ showDelete: false }">

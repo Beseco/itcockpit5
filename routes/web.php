@@ -90,6 +90,7 @@ Route::middleware('auth')->group(function () {
     // Erinnerungsmails
     Route::resource('reminders', ReminderMailController::class)->except(['show']);
     Route::post('/reminders/{reminder}/toggle', [ReminderMailController::class, 'toggleStatus'])->name('reminders.toggle');
+    Route::post('/reminders/{reminder}/test', [ReminderMailController::class, 'sendTest'])->name('reminders.test');
     Route::get('/reminders-log', [ReminderMailController::class, 'log'])->name('reminders.log');
 
     // Kostenstellen & Sachkonten
