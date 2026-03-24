@@ -72,7 +72,7 @@ class EventController extends Controller
     private function authorizeAccess(CalendarEvent $event): void
     {
         $user = Auth::user();
-        if ($user->can('module.calendar.edit') || $event->user_id === $user->id) return;
+        if ($user->can('calendar.edit') || $event->user_id === $user->id) return;
         abort(403);
     }
 

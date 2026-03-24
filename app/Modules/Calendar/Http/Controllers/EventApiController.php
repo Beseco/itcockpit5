@@ -27,7 +27,7 @@ class EventApiController extends Controller
             })
             ->get()
             ->each(function (CalendarEvent $event) use (&$events, $start, $end) {
-                $canEdit   = Auth::user()->can('module.calendar.edit') || $event->user_id === Auth::id();
+                $canEdit   = Auth::user()->can('calendar.edit') || $event->user_id === Auth::id();
                 $duration  = $event->end_at ? $event->start_at->diffInSeconds($event->end_at) : 0;
                 $attendees = $event->attendees->map(fn($a) => [
                     'user_id' => $a->user_id,

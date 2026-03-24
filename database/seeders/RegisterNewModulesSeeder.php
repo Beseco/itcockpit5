@@ -163,8 +163,8 @@ class RegisterNewModulesSeeder extends Seeder
             ['name' => 'base.stellenbeschreibungen.edit',   'module_id' => $stellenbeschreibungenModule->id],
 
             // Kalender
-            ['name' => 'module.calendar.view',  'module_id' => $calendarModule->id],
-            ['name' => 'module.calendar.edit',  'module_id' => $calendarModule->id],
+            ['name' => 'calendar.view',  'module_id' => $calendarModule->id],
+            ['name' => 'calendar.edit',  'module_id' => $calendarModule->id],
         ];
 
         foreach ($permissions as $perm) {
@@ -197,7 +197,7 @@ class RegisterNewModulesSeeder extends Seeder
                 'base.aufgaben.view', 'base.aufgaben.create', 'base.aufgaben.edit',
                 'module.stellenplan.view', 'module.stellenplan.view_sensitive',
                 'base.stellenbeschreibungen.view', 'base.stellenbeschreibungen.edit',
-                'module.calendar.view', 'module.calendar.edit',
+                'calendar.view', 'calendar.edit',
             ];
             $admin->givePermissionTo($adminPermissions);
         }

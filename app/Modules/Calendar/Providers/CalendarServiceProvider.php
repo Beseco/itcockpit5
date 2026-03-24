@@ -20,7 +20,7 @@ class CalendarServiceProvider extends ServiceProvider
             'label'      => 'Kalender',
             'route'      => 'calendar.index',
             'icon'       => 'heroicon-o-calendar-days',
-            'permission' => 'module.calendar.view',
+            'permission' => 'calendar.view',
             'module'     => 'calendar',
         ]);
     }
