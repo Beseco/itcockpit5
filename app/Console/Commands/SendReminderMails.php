@@ -34,7 +34,7 @@ class SendReminderMails extends Command
 
                 ReminderMailLog::create([
                     'typ'      => 1,
-                    'nachricht' => "Mail gesendet: [{$reminder->id}] \"{$reminder->titel}\" → {$reminder->mailto}",
+                    'nachricht' => "Mail gesendet: [{$reminder->id}] \"{$reminder->titel}\" → {$reminder->mailto_label}",
                 ]);
 
                 // Nächsten Sendezeitpunkt berechnen

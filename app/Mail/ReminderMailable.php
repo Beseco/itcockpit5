@@ -12,7 +12,7 @@ class ReminderMailable extends Mailable
     public function build(): static
     {
         return $this
-            ->to($this->reminder->mailto)
+            ->to((array)$this->reminder->mailto)
             ->subject($this->reminder->titel)
             ->view('emails.reminder');
     }

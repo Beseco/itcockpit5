@@ -24,7 +24,13 @@ class ReminderMail extends Model
         'nextsend'         => 'datetime',
         'status'           => 'integer',
         'intervall_config' => 'array',
+        'mailto'           => 'array',
     ];
+
+    public function getMailtoLabelAttribute(): string
+    {
+        return implode(', ', (array)($this->mailto ?? []));
+    }
 
     const TYPEN = [
         'minutes' => 'Minuten',

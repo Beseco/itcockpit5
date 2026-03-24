@@ -87,7 +87,7 @@
                                     <td class="px-4 py-3 text-sm text-gray-500">
                                         {{ $reminder->intervall_label }}
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-gray-500">{{ $reminder->mailto }}</td>
+                                    <td class="px-4 py-3 text-sm text-gray-500">{{ $reminder->mailto_label }}</td>
                                     <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium" x-data="{ showDelete: false }">
                                         @php
                                             $canEdit   = auth()->user()->can('reminders.edit')   || (auth()->user()->can('reminders.create') && $reminder->user_id === auth()->id());

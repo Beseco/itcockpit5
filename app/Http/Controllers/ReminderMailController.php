@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Mail\ReminderMailable;
 use App\Models\ReminderMail;
 use App\Models\ReminderMailLog;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -28,7 +29,7 @@ class ReminderMailController extends Controller
     {
         $this->authorize('reminders.create');
 
-        return view('reminders.create');
+        return view('reminders.create', ['emailSuggestions' => $this->emailSuggestions()]);
     }
 
     public function store(Request $request)
@@ -53,7 +54,7 @@ class ReminderMailController extends Controller
     {
         $this->authorizeReminderAccess($reminder);
 
-        return view('reminders.edit', compact('reminder'));
+        return view('reminders.edit', ['reminder' => $reminder, 'emailSuggestions' => $this->emailSuggestions()]);
     }
 
     public function update(Request $request, ReminderMail $reminder)
@@ -89,9 +90,9 @@ class ReminderMailController extends Controller
             Mail::send(new ReminderMailable($reminder));
             ReminderMailLog::create([
                 'typ'       => 2,
-                'nachricht' => "Testnachricht gesendet: [{$reminder->id}] \"{$reminder->titel}\" → {$reminder->mailto}",
+                'nachricht' => "Testnachricht gesendet: [{$reminder->id}] \"{$reminder->titel}\" → {$reminder->mailto_label}",
             ]);
-            return back()->with('success', "Testnachricht wurde an {$reminder->mailto} gesendet.");
+            return back()->with('success', "Testnachricht wurde an {$reminder->mailto_label} gesendet.");
         } catch (\Exception $e) {
             ReminderMailLog::create([
                 'typ'       => 3,
@@ -130,7 +131,8 @@ class ReminderMailController extends Controller
         $baseRules = [
             'titel'         => ['required', 'string', 'max:255'],
             'nachricht'     => ['required', 'string'],
-            'mailto'        => ['required', 'email', 'max:255'],
+            'mailto'        => ['required', 'array', 'min:1'],
+            'mailto.*'      => ['required', 'email', 'max:255'],
             'intervall_typ' => ['required', 'string', 'in:minutes,hours,days,weekly,monthly,yearly'],
             'start_datum'   => ['required', 'date_format:d.m.Y'],
         ];
@@ -183,11 +185,23 @@ class ReminderMailController extends Controller
         return [
             'titel'            => $request->titel,
             'nachricht'        => $request->nachricht,
-            'mailto'           => $request->mailto,
+            'mailto'           => array_values(array_filter($request->input('mailto', []))),
             'intervall_typ'    => $typ,
             'intervall_config' => $config,
             'nextsend'         => $nextsend,
         ];
+    }
+
+    private function emailSuggestions(): array
+    {
+        $fromReminders = ReminderMail::pluck('mailto')
+            ->filter()
+            ->flatMap(fn($m) => (array)$m)
+            ->filter();
+
+        $fromUsers = User::whereNotNull('email')->pluck('email');
+
+        return $fromReminders->merge($fromUsers)->unique()->sort()->values()->toArray();
     }
 
     private function authorizeReminderAccess(ReminderMail $reminder): void

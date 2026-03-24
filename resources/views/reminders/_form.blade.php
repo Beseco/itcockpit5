@@ -1,4 +1,6 @@
 @php
+    $oldMailto     = old('mailto', $reminder->mailto ?? []);
+    if (is_string($oldMailto)) $oldMailto = array_filter([$oldMailto]);
     $oldTyp        = old('intervall_typ', $reminder->intervall_typ ?? 'days');
     $cfg           = isset($reminder) ? ($reminder->intervall_config ?? []) : [];
     $oldEvery      = old('config_every',   $cfg['every']   ?? 1);
@@ -49,11 +51,48 @@
     </div>
 
     {{-- Empfänger --}}
-    <div>
-        <x-input-label for="mailto" value="Empfänger (E-Mail) *" />
-        <x-text-input id="mailto" name="mailto" type="email" class="mt-1 block w-full"
-                      value="{{ old('mailto', $reminder->mailto ?? '') }}" required />
+    <div x-data="emailTagInput({{ json_encode($oldMailto) }}, {{ json_encode($emailSuggestions ?? []) }})"
+         @click.outside="open = false">
+        <x-input-label value="Empfänger (E-Mail) *" />
+
+        {{-- Tag-Container --}}
+        <div class="mt-1 min-h-[42px] flex flex-wrap gap-1.5 items-center px-3 py-2
+                    border border-gray-300 rounded-md bg-white focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 cursor-text"
+             @click="$refs.input.focus()">
+
+            <template x-for="(email, i) in tags" :key="i">
+                <span class="inline-flex items-center gap-1 pl-2.5 pr-1 py-0.5 bg-indigo-100 text-indigo-800 text-sm rounded-full">
+                    <span x-text="email"></span>
+                    <button type="button" @click.stop="removeTag(i)"
+                            class="w-4 h-4 rounded-full hover:bg-indigo-200 flex items-center justify-center leading-none text-indigo-600 font-bold">×</button>
+                    <input type="hidden" name="mailto[]" :value="email">
+                </span>
+            </template>
+
+            <input x-ref="input" type="text" x-model="input"
+                   @focus="open = true"
+                   @input="open = true"
+                   @keydown="handleKey($event)"
+                   @keydown.escape="open = false"
+                   placeholder="E-Mail eingeben …"
+                   class="flex-1 min-w-[200px] border-none outline-none p-0 text-sm bg-transparent focus:ring-0">
+        </div>
+
+        {{-- Autocomplete-Dropdown --}}
+        <div x-show="open && filtered.length > 0" x-cloak
+             class="relative">
+            <ul class="absolute z-50 w-full bg-white border border-gray-200 rounded-md shadow-lg mt-1 max-h-48 overflow-y-auto text-sm">
+                <template x-for="s in filtered" :key="s">
+                    <li @mousedown.prevent="addTag(s)"
+                        class="px-3 py-2 cursor-pointer hover:bg-indigo-50 hover:text-indigo-700"
+                        x-text="s"></li>
+                </template>
+            </ul>
+        </div>
+
         <x-input-error :messages="$errors->get('mailto')" class="mt-1" />
+        <x-input-error :messages="$errors->get('mailto.*')" class="mt-1" />
+        <p class="mt-1 text-xs text-gray-400">Enter, Tab oder Komma zum Hinzufügen · Backspace zum Entfernen</p>
     </div>
 
     {{-- Wiederholung: Typ-Auswahl --}}
@@ -212,5 +251,41 @@ document.addEventListener('DOMContentLoaded', function () {
         minHeight: '200px',
     });
 });
+
+function emailTagInput(initial, suggestions) {
+    return {
+        tags: Array.isArray(initial) ? [...initial] : [],
+        input: '',
+        open: false,
+        get filtered() {
+            if (!this.input) return suggestions.filter(s => !this.tags.includes(s)).slice(0, 8);
+            const q = this.input.toLowerCase();
+            return suggestions.filter(s => s.toLowerCase().includes(q) && !this.tags.includes(s)).slice(0, 8);
+        },
+        addTag(email) {
+            email = (email || '').trim().toLowerCase();
+            if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !this.tags.includes(email)) {
+                this.tags.push(email);
+            }
+            this.input = '';
+            this.open = false;
+        },
+        removeTag(i) {
+            this.tags.splice(i, 1);
+        },
+        handleKey(e) {
+            if (['Enter', 'Tab', ',', ';'].includes(e.key)) {
+                e.preventDefault();
+                if (this.input.trim()) {
+                    this.addTag(this.input);
+                } else if (e.key === 'Tab') {
+                    this.open = false;
+                }
+            } else if (e.key === 'Backspace' && !this.input && this.tags.length) {
+                this.tags.pop();
+            }
+        }
+    };
+}
 </script>
 @endpush
