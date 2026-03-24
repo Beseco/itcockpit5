@@ -2,35 +2,36 @@
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold text-gray-800">Stellenplan</h2>
-            <div class="flex items-center gap-4">
-                @php
-                    $alleStellen = $gruppen->flatMap->stellen;
-                    $totalStellen = $alleStellen->count();
-                    $totalBelegung = $alleStellen->sum(fn($s) => $s->isFrei() ? 0 : ($s->belegung ?? 0));
-                    $totalFrei = $alleStellen->sum(fn($s) => $s->isFrei() ? 100 : max(0, 100 - ($s->belegung ?? 100)));
-                    $freiCount = $alleStellen->filter->isFrei()->count();
-                @endphp
-                <span class="text-sm" style="color:#6b7280;">
-                    {{ $totalStellen }} Stellen &nbsp;&middot;&nbsp;
-                    <span style="color:#d97706; font-weight:500;">{{ $freiCount }} unbesetzt</span>
-                    &nbsp;&middot;&nbsp;
-                    <span style="color:#dc2626; font-weight:500;">{{ number_format($totalFrei, 0) }}&nbsp;% freie Kapazität</span>
-                </span>
-                @can('base.stellen.edit')
-                    <a href="{{ route('stellen.create') }}"
-                       class="inline-flex items-center px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-md hover:bg-gray-700">
-                        <svg width="16" height="16" class="mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                        </svg>
-                        Neue Stelle
-                    </a>
-                @endcan
-            </div>
+            @can('base.stellen.edit')
+                <a href="{{ route('stellen.create') }}"
+                   class="inline-flex items-center px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-md hover:bg-gray-700">
+                    <svg width="16" height="16" class="mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Neue Stelle
+                </a>
+            @endcan
         </div>
     </x-slot>
 
+    @php
+        $alleStellen = $gruppen->flatMap->stellen;
+        $totalStellen = $alleStellen->count();
+        $totalFrei = $alleStellen->sum(fn($s) => $s->isFrei() ? 100 : max(0, 100 - ($s->belegung ?? 100)));
+        $freiCount = $alleStellen->filter->isFrei()->count();
+    @endphp
+
     <div class="py-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4"
          x-data="{ deleteId: null, deleteName: '' }">
+
+        {{-- Zusammenfassung --}}
+        <div style="display:flex;align-items:center;gap:12px;font-size:0.875rem;">
+            <span style="color:#6b7280;">{{ $totalStellen }} Stellen</span>
+            <span style="color:#d1d5db;">·</span>
+            <span style="color:#d97706;font-weight:500;">{{ $freiCount }} unbesetzt</span>
+            <span style="color:#d1d5db;">·</span>
+            <span style="color:#dc2626;font-weight:500;">{{ number_format($totalFrei, 0) }} % freie Kapazität</span>
+        </div>
 
         @if(session('success'))
             <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 3000)"
