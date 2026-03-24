@@ -9,7 +9,7 @@ class Aufgabe extends Model
 {
     protected $table = 'aufgaben';
 
-    protected $fillable = ['name', 'parent_id', 'sort_order'];
+    protected $fillable = ['name', 'beschreibung', 'parent_id', 'sort_order'];
 
     public function parent()
     {

@@ -67,7 +67,7 @@ Route::middleware('auth')->group(function () {
     // Aufgaben / Rollen & Aufgaben
     Route::resource('aufgaben', AufgabeController::class, [
         'parameters' => ['aufgaben' => 'aufgabe'],
-    ])->except(['show']);
+    ]);
 
     // Announcement management routes
     Route::resource('announcements', AnnouncementController::class);

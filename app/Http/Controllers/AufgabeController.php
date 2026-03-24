@@ -76,9 +76,10 @@ class AufgabeController extends Controller
         $this->authorize('base.aufgaben.create');
 
         $validated = $request->validate([
-            'name'       => 'required|string|max:255',
-            'parent_id'  => 'nullable|exists:aufgaben,id',
-            'sort_order' => 'nullable|integer',
+            'name'        => 'required|string|max:255',
+            'beschreibung'=> 'nullable|string',
+            'parent_id'   => 'nullable|exists:aufgaben,id',
+            'sort_order'  => 'nullable|integer',
             'zuweisungen'                       => 'nullable|array',
             'zuweisungen.*.gruppe_id'           => 'nullable|exists:gruppen,id',
             'zuweisungen.*.admin_user_id'       => 'nullable|exists:users,id',
@@ -86,9 +87,10 @@ class AufgabeController extends Controller
         ]);
 
         $aufgabe = Aufgabe::create([
-            'name'       => $validated['name'],
-            'parent_id'  => $validated['parent_id'] ?? null,
-            'sort_order' => $validated['sort_order'] ?? 0,
+            'name'         => $validated['name'],
+            'beschreibung' => $validated['beschreibung'] ?? null,
+            'parent_id'    => $validated['parent_id'] ?? null,
+            'sort_order'   => $validated['sort_order'] ?? 0,
         ]);
 
         foreach (($validated['zuweisungen'] ?? []) as $zuw) {
@@ -106,6 +108,15 @@ class AufgabeController extends Controller
 
         return redirect()->route('aufgaben.index')
             ->with('success', "Aufgabe \"{$aufgabe->name}\" wurde angelegt.");
+    }
+
+    public function show(Aufgabe $aufgabe)
+    {
+        $this->authorize('base.aufgaben.view');
+
+        $aufgabe->load(['zuweisungen.gruppe', 'zuweisungen.admin', 'zuweisungen.stellvertreter', 'parent', 'children']);
+
+        return view('aufgaben.show', compact('aufgabe'));
     }
 
     public function edit(Aufgabe $aufgabe)
@@ -128,9 +139,10 @@ class AufgabeController extends Controller
         $this->authorize('base.aufgaben.edit');
 
         $validated = $request->validate([
-            'name'       => 'required|string|max:255',
-            'parent_id'  => 'nullable|exists:aufgaben,id',
-            'sort_order' => 'nullable|integer',
+            'name'        => 'required|string|max:255',
+            'beschreibung'=> 'nullable|string',
+            'parent_id'   => 'nullable|exists:aufgaben,id',
+            'sort_order'  => 'nullable|integer',
             'zuweisungen'                       => 'nullable|array',
             'zuweisungen.*.gruppe_id'           => 'nullable|exists:gruppen,id',
             'zuweisungen.*.admin_user_id'       => 'nullable|exists:users,id',
@@ -138,9 +150,10 @@ class AufgabeController extends Controller
         ]);
 
         $aufgabe->update([
-            'name'       => $validated['name'],
-            'parent_id'  => $validated['parent_id'] ?? null,
-            'sort_order' => $validated['sort_order'] ?? 0,
+            'name'         => $validated['name'],
+            'beschreibung' => $validated['beschreibung'] ?? null,
+            'parent_id'    => $validated['parent_id'] ?? null,
+            'sort_order'   => $validated['sort_order'] ?? 0,
         ]);
 
         // Sync zuweisungen

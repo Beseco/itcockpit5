@@ -26,6 +26,8 @@
                 <a href="{{ route('aufgaben.create', ['parent_id' => $aufgabe->id]) }}"
                    class="text-green-600 hover:text-green-800 text-xs font-medium mr-2">+ Unteraufgabe</a>
             @endcan
+            <a href="{{ route('aufgaben.show', $aufgabe) }}"
+               class="text-gray-500 hover:text-gray-700 text-xs font-medium mr-2">Ansicht</a>
             @can('base.aufgaben.edit')
                 <a href="{{ route('aufgaben.edit', $aufgabe) }}"
                    class="text-indigo-600 hover:text-indigo-800 text-xs font-medium mr-2">Bearbeiten</a>
@@ -63,6 +65,8 @@
                         <a href="{{ route('aufgaben.create', ['parent_id' => $aufgabe->id]) }}"
                            class="text-green-600 hover:text-green-800 text-xs font-medium mr-2">+ Unteraufgabe</a>
                     @endcan
+                    <a href="{{ route('aufgaben.show', $aufgabe) }}"
+                       class="text-gray-500 hover:text-gray-700 text-xs font-medium mr-2">Ansicht</a>
                     @can('base.aufgaben.edit')
                         <a href="{{ route('aufgaben.edit', $aufgabe) }}"
                            class="text-indigo-600 hover:text-indigo-800 text-xs font-medium mr-2">Bearbeiten</a>

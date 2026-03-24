@@ -33,6 +33,14 @@
         <x-input-error :messages="$errors->get('name')" class="mt-1" />
     </div>
 
+    {{-- Beschreibung --}}
+    <div>
+        <x-input-label for="beschreibung" value="Beschreibung (Markdown)" />
+        <textarea id="beschreibung" name="beschreibung"
+                  class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm">{{ old('beschreibung', $aufgabe?->beschreibung) }}</textarea>
+        <x-input-error :messages="$errors->get('beschreibung')" class="mt-1" />
+    </div>
+
     {{-- Übergeordnete Aufgabe --}}
     <div>
         <x-input-label for="parent_id" value="Übergeordnete Aufgabe" />
@@ -122,3 +130,27 @@
         <x-primary-button>Speichern</x-primary-button>
     </div>
 </div>
+
+@push('styles')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+<style>
+    .EasyMDEContainer .CodeMirror { font-size: 14px; min-height: 160px; }
+    .editor-toolbar { border-radius: 0.375rem 0.375rem 0 0; }
+    .CodeMirror { border-radius: 0 0 0.375rem 0.375rem; }
+</style>
+@endpush
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        new EasyMDE({
+            element: document.getElementById('beschreibung'),
+            spellChecker: false,
+            autosave: { enabled: false },
+            toolbar: ['bold','italic','heading','|','quote','unordered-list','ordered-list','|','link','|','preview','side-by-side','fullscreen','|','guide'],
+            minHeight: '160px',
+        });
+    });
+</script>
+@endpush
