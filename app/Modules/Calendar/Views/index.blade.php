@@ -346,6 +346,9 @@ function calendarApp() {
                     self.openNew(info.dateStr, info.allDay);
                 },
                 eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+                slotMinTime: '07:00:00',
+                slotMaxTime: '18:00:00',
+                scrollTime:  '07:00:00',
                 noEventsText: 'Keine Termine',
             });
             this.calendar.render();
