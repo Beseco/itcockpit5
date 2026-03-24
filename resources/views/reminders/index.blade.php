@@ -59,7 +59,6 @@
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Betreff</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nächste Mail</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Verbleibend</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Intervall</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mail an</th>
                                 <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aktionen</th>
@@ -81,12 +80,9 @@
                                         </form>
                                     </td>
                                     <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $reminder->titel }}</td>
-                                    <td class="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
-                                        {{ $reminder->nextsend->format('d.m.Y H:i') }}
-                                    </td>
                                     <td class="px-4 py-3 text-sm whitespace-nowrap
                                         {{ $reminder->nextsend->isPast() ? 'text-red-600 font-medium' : 'text-gray-500' }}">
-                                        {{ $reminder->restzeit }}
+                                        {{ $reminder->nextsend->format('d.m.Y H:i') }}
                                     </td>
                                     <td class="px-4 py-3 text-sm text-gray-500">
                                         {{ $reminder->intervall_label }}
