@@ -4,8 +4,6 @@ namespace App\Modules\AdUsers\Services;
 
 use App\Modules\AdUsers\Models\AdUserSettings;
 use Illuminate\Support\Collection;
-use LdapRecord\Connection;
-use LdapRecord\LdapRecordException;
 
 class LdapConnectionService
 {
@@ -16,24 +14,42 @@ class LdapConnectionService
         $this->settings = AdUserSettings::getSingleton();
     }
 
-    /** LdapRecord-Connection aus den Einstellungen aufbauen */
-    public function buildConnection(): Connection
+    /** LDAP-Verbindung aufbauen (native PHP) */
+    private function connect(): mixed
     {
-        $config = [
-            'hosts'    => [$this->settings->server],
-            'port'     => $this->settings->port,
-            'base_dn'  => $this->settings->base_dn,
-            'username' => $this->settings->anonymous_bind ? null : $this->settings->bind_dn,
-            'password' => $this->settings->anonymous_bind ? null : $this->settings->bind_password,
-            'use_ssl'  => $this->settings->use_ssl,
-            'use_tls'  => false,
-            'timeout'  => 5,
-        ];
+        if (!extension_loaded('ldap')) {
+            throw new \RuntimeException('PHP LDAP-Extension ist nicht aktiviert.');
+        }
 
-        return new Connection($config);
+        $host = ($this->settings->use_ssl ? 'ldaps://' : 'ldap://') . $this->settings->server;
+        $conn = ldap_connect($host, $this->settings->port);
+
+        if (!$conn) {
+            throw new \RuntimeException('Verbindung zu ' . $host . ' konnte nicht hergestellt werden.');
+        }
+
+        ldap_set_option($conn, LDAP_OPT_PROTOCOL_VERSION, 3);
+        ldap_set_option($conn, LDAP_OPT_REFERRALS, 0);
+        ldap_set_option($conn, LDAP_OPT_NETWORK_TIMEOUT, 5);
+
+        return $conn;
     }
 
-    /** Verbindung testen (Bind) */
+    /** Bind (mit oder ohne Credentials) */
+    private function bind(mixed $conn): void
+    {
+        if ($this->settings->anonymous_bind) {
+            $ok = @ldap_bind($conn);
+        } else {
+            $ok = @ldap_bind($conn, $this->settings->bind_dn, $this->settings->bind_password);
+        }
+
+        if (!$ok) {
+            throw new \RuntimeException('Authentifizierung fehlgeschlagen: ' . ldap_error($conn));
+        }
+    }
+
+    /** Verbindung testen */
     public function testConnection(): array
     {
         if (empty($this->settings->server)) {
@@ -41,53 +57,80 @@ class LdapConnectionService
         }
 
         try {
-            $connection = $this->buildConnection();
-            $connection->connect();
-
+            $conn = $this->connect();
+            $this->bind($conn);
+            ldap_unbind($conn);
             return ['success' => true, 'message' => 'Verbindung erfolgreich hergestellt.'];
-        } catch (LdapRecordException $e) {
-            return ['success' => false, 'message' => 'LDAP-Fehler: ' . $e->getMessage()];
         } catch (\Exception $e) {
-            return ['success' => false, 'message' => 'Verbindungsfehler: ' . $e->getMessage()];
+            return ['success' => false, 'message' => $e->getMessage()];
         }
     }
 
     /** Testabfrage: Anzahl gefundener Benutzer */
     public function testQuery(): array
     {
+        if (empty($this->settings->server) || empty($this->settings->base_dn)) {
+            return ['success' => false, 'count' => 0, 'message' => 'Server oder Base DN nicht konfiguriert.'];
+        }
+
         try {
-            $connection = $this->buildConnection();
-            $connection->connect();
+            $conn = $this->connect();
+            $this->bind($conn);
 
-            $results = $connection->query()
-                ->in($this->settings->base_dn)
-                ->rawFilter('(&(objectClass=user)(objectCategory=person))')
-                ->select(['samaccountname'])
-                ->get();
+            $result = @ldap_search(
+                $conn,
+                $this->settings->base_dn,
+                '(&(objectClass=user)(objectCategory=person))',
+                ['samaccountname']
+            );
 
-            return ['success' => true, 'count' => count($results), 'message' => count($results) . ' Benutzer gefunden.'];
+            if (!$result) {
+                throw new \RuntimeException('Suchanfrage fehlgeschlagen: ' . ldap_error($conn));
+            }
+
+            $count = ldap_count_entries($conn, $result);
+            ldap_unbind($conn);
+
+            return ['success' => true, 'count' => $count, 'message' => "{$count} Benutzer gefunden."];
         } catch (\Exception $e) {
-            return ['success' => false, 'count' => 0, 'message' => 'Fehler: ' . $e->getMessage()];
+            return ['success' => false, 'count' => 0, 'message' => $e->getMessage()];
         }
     }
 
     /** Alle Benutzer aus dem AD laden */
     public function getAllUsers(): Collection
     {
-        $connection = $this->buildConnection();
-        $connection->connect();
+        $conn = $this->connect();
+        $this->bind($conn);
 
-        $results = $connection->query()
-            ->in($this->settings->base_dn)
-            ->rawFilter('(&(objectClass=user)(objectCategory=person))')
-            ->select([
-                'samaccountname', 'givenname', 'sn', 'displayname',
-                'mail', 'company', 'department', 'telephonenumber',
-                'distinguishedname', 'useraccountcontrol',
-            ])
-            ->paginate(1000);
+        $attrs = [
+            'samaccountname', 'givenname', 'sn', 'displayname',
+            'mail', 'company', 'department', 'telephonenumber',
+            'distinguishedname', 'useraccountcontrol',
+        ];
 
-        return collect($results);
+        $result = @ldap_search(
+            $conn,
+            $this->settings->base_dn,
+            '(&(objectClass=user)(objectCategory=person))',
+            $attrs,
+            0,    // attrsonly
+            0,    // sizelimit (0 = unlimitiert)
+        );
+
+        if (!$result) {
+            throw new \RuntimeException('Suchanfrage fehlgeschlagen: ' . ldap_error($conn));
+        }
+
+        $entries = ldap_get_entries($conn, $result);
+        ldap_unbind($conn);
+
+        $users = collect();
+        for ($i = 0; $i < ($entries['count'] ?? 0); $i++) {
+            $users->push($entries[$i]);
+        }
+
+        return $users;
     }
 
     /** Prüft ob ein Konto deaktiviert ist (Bit 2 von userAccountControl) */
@@ -97,9 +140,10 @@ class LdapConnectionService
         return (bool) ($uac & 2);
     }
 
+    /** Attributwert sicher auslesen */
     public static function getAttr(array $user, string $key): ?string
     {
         $val = $user[$key][0] ?? null;
-        return $val !== null ? (string) $val : null;
+        return $val !== null && $val !== '' ? (string) $val : null;
     }
 }
