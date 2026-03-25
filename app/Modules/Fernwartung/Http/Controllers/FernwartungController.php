@@ -2,6 +2,7 @@
 
 namespace App\Modules\Fernwartung\Http\Controllers;
 
+use App\Models\Dienstleister;
 use App\Models\User;
 use App\Modules\Fernwartung\Models\Fernwartung;
 use App\Modules\Fernwartung\Models\FernwartungTool;
