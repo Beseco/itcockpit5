@@ -114,39 +114,7 @@
             </div>
 
             {{-- Test-Bereich --}}
-            <div class="bg-white shadow-sm sm:rounded-lg p-6"
-                 x-data="{
-                     connResult: null,
-                     queryResult: null,
-                     loading: false,
-                     async doFetch(url) {
-                         const r = await fetch(url, {
-                             method: 'POST',
-                             headers: {
-                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                                 'Accept': 'application/json',
-                             }
-                         });
-                         const text = await r.text();
-                         try {
-                             return JSON.parse(text);
-                         } catch(e) {
-                             return { success: false, message: 'HTTP ' + r.status + ' – Server antwortete kein JSON. Bitte Migrations auf Produktion ausführen: keyhelp-php83 artisan migrate' };
-                         }
-                     },
-                     async testConnection() {
-                         this.loading = true; this.connResult = null;
-                         try { this.connResult = await this.doFetch('{{ route('adusers.settings.test-connection') }}'); }
-                         catch(e) { this.connResult = { success: false, message: e.message }; }
-                         this.loading = false;
-                     },
-                     async testQuery() {
-                         this.loading = true; this.queryResult = null;
-                         try { this.queryResult = await this.doFetch('{{ route('adusers.settings.test-query') }}'); }
-                         catch(e) { this.queryResult = { success: false, message: e.message }; }
-                         this.loading = false;
-                     }
-                 }">
+            <div class="bg-white shadow-sm sm:rounded-lg p-6" x-data="ldapTestBlock()">
                 <h3 class="text-sm font-semibold text-gray-700 mb-4">Verbindungstest</h3>
                 <div class="flex flex-wrap gap-3">
                     <button type="button" @click="testConnection()" :disabled="loading"
@@ -207,5 +175,44 @@
 document.getElementById('anonymous_bind').addEventListener('change', function() {
     document.getElementById('bind-fields').classList.toggle('hidden', this.checked);
 });
+
+const _ldapUrls = {
+    connection: '{{ route("adusers.settings.test-connection") }}',
+    query:      '{{ route("adusers.settings.test-query") }}',
+};
+
+async function _ldapFetch(url) {
+    const token = document.querySelector('meta[name="csrf-token"]');
+    const r = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': token ? token.content : '',
+            'Accept': 'application/json',
+        }
+    });
+    const text = await r.text();
+    try { return JSON.parse(text); }
+    catch(e) { return { success: false, message: 'HTTP ' + r.status + ' – keine JSON-Antwort' }; }
+}
+
+function ldapTestBlock() {
+    return {
+        connResult:  null,
+        queryResult: null,
+        loading:     false,
+        async testConnection() {
+            this.loading = true; this.connResult = null;
+            try { this.connResult = await _ldapFetch(_ldapUrls.connection); }
+            catch(e) { this.connResult = { success: false, message: e.message }; }
+            this.loading = false;
+        },
+        async testQuery() {
+            this.loading = true; this.queryResult = null;
+            try { this.queryResult = await _ldapFetch(_ldapUrls.query); }
+            catch(e) { this.queryResult = { success: false, message: e.message }; }
+            this.loading = false;
+        }
+    };
+}
 </script>
 @endpush
