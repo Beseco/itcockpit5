@@ -45,11 +45,8 @@
                     <table class="min-w-full divide-y divide-gray-200 text-sm">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Datum</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Beginn</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Ende</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Externer</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Firma</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Datum / Zeit</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Firma / Externer</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Beobachter</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Ziel</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Tool</th>
@@ -60,26 +57,29 @@
                         <tbody class="divide-y divide-gray-100">
                             @forelse($eintraege as $fw)
                             <tr class="hover:bg-gray-50">
-                                <td class="px-4 py-3 whitespace-nowrap text-gray-700">
-                                    {{ $fw->datum->format('d.m.Y') }}
-                                </td>
-                                <td class="px-4 py-3 whitespace-nowrap text-gray-700">{{ $fw->beginn }}</td>
+                                {{-- Datum / Beginn / Ende --}}
                                 <td class="px-4 py-3 whitespace-nowrap">
-                                    @if($fw->ende)
-                                        <span class="text-gray-700">{{ $fw->ende }}</span>
-                                    @else
-                                        <form method="POST" action="{{ route('fernwartung.ende', $fw) }}" class="inline">
-                                            @csrf
-                                            <button type="submit"
-                                                    class="px-2 py-1 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded hover:bg-amber-100 transition-colors"
-                                                    title="Aktuelle Uhrzeit als Ende setzen">
-                                                Ende setzen
-                                            </button>
-                                        </form>
-                                    @endif
+                                    <div class="text-gray-900 font-medium">{{ $fw->datum->format('d.m.Y') }}</div>
+                                    <div class="text-gray-500 text-xs mt-0.5">
+                                        {{ $fw->beginn }}
+                                        @if($fw->ende)
+                                            – {{ $fw->ende }}
+                                        @else
+                                            <form method="POST" action="{{ route('fernwartung.ende', $fw) }}" class="inline">
+                                                @csrf
+                                                <button type="submit"
+                                                        class="px-1.5 py-0.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded hover:bg-amber-100 transition-colors">
+                                                    Ende setzen
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
                                 </td>
-                                <td class="px-4 py-3 text-gray-900 font-medium">{{ $fw->externer_name }}</td>
-                                <td class="px-4 py-3 text-gray-700">{{ $fw->firma }}</td>
+                                {{-- Firma / Externer --}}
+                                <td class="px-4 py-3">
+                                    <div class="text-gray-900 font-medium">{{ $fw->firma }}</div>
+                                    <div class="text-gray-500 text-xs mt-0.5">{{ $fw->externer_name }}</div>
+                                </td>
                                 <td class="px-4 py-3 text-gray-700">{{ $fw->beobachter_label }}</td>
                                 <td class="px-4 py-3 text-gray-700">{{ $fw->ziel }}</td>
                                 <td class="px-4 py-3">
@@ -87,8 +87,10 @@
                                         {{ $fw->tool }}
                                     </span>
                                 </td>
-                                <td class="px-4 py-3 text-gray-500 max-w-xs">
-                                    <span class="block truncate" title="{{ $fw->grund }}">{{ $fw->grund }}</span>
+                                <td class="px-4 py-3 text-gray-400 text-center">
+                                    <span title="{{ $fw->grund }}"
+                                          class="cursor-help inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                                          style="font-size:0.75rem">?</span>
                                 </td>
                                 <td class="px-4 py-3 whitespace-nowrap text-right">
                                     <div class="flex items-center justify-end gap-1">
@@ -121,7 +123,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="10" class="px-4 py-8 text-center text-gray-400 text-sm">
+                                <td colspan="7" class="px-4 py-8 text-center text-gray-400 text-sm">
                                     Keine Einträge gefunden.
                                 </td>
                             </tr>
