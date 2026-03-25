@@ -1,0 +1,6 @@
+{
+    "name": "AdUsers",
+    "slug": "adusers",
+    "version": "1.0.0",
+    "description": "Active Directory Benutzerverwaltung – Import, Sync und Anzeige von AD-Benutzern"
+}

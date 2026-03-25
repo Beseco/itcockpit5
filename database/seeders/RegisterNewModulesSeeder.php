@@ -114,6 +114,15 @@ class RegisterNewModulesSeeder extends Seeder
             ]
         );
 
+        $adusersModule = Module::firstOrCreate(
+            ['name' => 'adusers'],
+            [
+                'display_name' => 'AD-Benutzer',
+                'description'  => 'Active Directory Benutzerverwaltung – Import, Sync und Anzeige von AD-Benutzern',
+                'is_active'    => true,
+            ]
+        );
+
         // --- Permissions anlegen ---
 
         $permissions = [
@@ -175,6 +184,12 @@ class RegisterNewModulesSeeder extends Seeder
             ['name' => 'calendar.view',  'module_id' => $calendarModule->id],
             ['name' => 'calendar.edit',  'module_id' => $calendarModule->id],
 
+            // AD-Benutzer
+            ['name' => 'adusers.view',   'module_id' => $adusersModule->id],
+            ['name' => 'adusers.delete', 'module_id' => $adusersModule->id],
+            ['name' => 'adusers.sync',   'module_id' => $adusersModule->id],
+            ['name' => 'adusers.config', 'module_id' => $adusersModule->id],
+
             // Fernwartung
             ['name' => 'fernwartung.view',         'module_id' => $fernwartungModule->id],
             ['name' => 'fernwartung.create',        'module_id' => $fernwartungModule->id],
@@ -214,6 +229,7 @@ class RegisterNewModulesSeeder extends Seeder
                 'module.stellenplan.view', 'module.stellenplan.view_sensitive',
                 'base.stellenbeschreibungen.view', 'base.stellenbeschreibungen.edit',
                 'calendar.view', 'calendar.edit',
+                'adusers.view', 'adusers.delete', 'adusers.sync', 'adusers.config',
                 'fernwartung.view', 'fernwartung.create', 'fernwartung.edit',
                 'fernwartung.delete', 'fernwartung.tools.manage',
             ];
