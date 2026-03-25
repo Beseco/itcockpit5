@@ -2,7 +2,6 @@
 
 namespace App\Modules\Fernwartung\Http\Controllers;
 
-use App\Models\Dienstleister;
 use App\Models\User;
 use App\Modules\Fernwartung\Models\Fernwartung;
 use App\Modules\Fernwartung\Models\FernwartungTool;
@@ -101,8 +100,7 @@ class FernwartungController extends Controller
     {
         $request->validate([
             'externer_name'      => ['required', 'string', 'max:255'],
-            'firma_select'       => ['required', 'string'],
-            'firma_custom'       => ['nullable', 'string', 'max:255'],
+            'firma_select'       => ['required', 'string', 'max:255'],
             'beobachter_user_id' => ['nullable', 'exists:users,id'],
             'ziel'               => ['required', 'string', 'max:255'],
             'tool_select'        => ['required', 'string'],
@@ -113,18 +111,7 @@ class FernwartungController extends Controller
             'grund'              => ['required', 'string'],
         ]);
 
-        // Firma bestimmen – ggf. als neuen Dienstleister anlegen
-        if ($request->firma_select === '__other__') {
-            $firmaName = trim($request->firma_custom);
-            if ($firmaName) {
-                Dienstleister::firstOrCreate(
-                    ['firmenname' => $firmaName],
-                    ['firmenname' => $firmaName]
-                );
-            }
-        } else {
-            $firmaName = $request->firma_select;
-        }
+        $firmaName = $request->firma_select;
 
         $tool = $request->tool_select === '__other__'
             ? trim($request->tool_custom)

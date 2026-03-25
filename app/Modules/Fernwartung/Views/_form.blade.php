@@ -9,19 +9,14 @@
     $initToolSel  = $isCustomTool ? '__other__' : $currentTool;
     // Firma: alter Wert oder Firma des vorhandenen Eintrags
     $currentFirma = old('firma_select', $fw?->firma ?? '');
-    $firmaInList  = $dienstleister->pluck('firmenname')->contains($currentFirma);
-    $isCustomFirma = $isEdit && !$firmaInList && $currentFirma !== '';
-    $initCustomFirma = $isCustomFirma ? 'true' : 'false';
-    $initFirmaSel    = $isCustomFirma ? '__other__' : $currentFirma;
+    $initFirmaSel = $currentFirma;
     // Beobachter-Default: eingeloggter User (nur bei Neuerstellung)
     $defaultBeobachter = old('beobachter_user_id', $fw?->beobachter_user_id ?? auth()->id());
 @endphp
 
 <div x-data="{
-    customTool:  {{ $initCustom }},
-    customFirma: {{ $initCustomFirma }},
-    setTool(val)  { this.customTool  = (val === '__other__'); },
-    setFirma(val) { this.customFirma = (val === '__other__'); }
+    customTool: {{ $initCustom }},
+    setTool(val) { this.customTool = (val === '__other__'); }
 }" class="space-y-5">
 
     @if ($errors->any())
@@ -38,7 +33,6 @@
         <div>
             <x-input-label for="firma_select" value="Firma *" />
             <select id="firma_select" name="firma_select"
-                    @change="setFirma($event.target.value)"
                     class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                 <option value="">— bitte wählen —</option>
                 @foreach($dienstleister as $dl)
@@ -46,19 +40,16 @@
                         {{ $dl->firmenname }}
                     </option>
                 @endforeach
-                <option value="__other__" @selected($initFirmaSel === '__other__')>
-                    Andere / Neu eintragen
-                </option>
             </select>
-            {{-- Neue Firma direkt eintragen --}}
-            <div x-show="customFirma" x-cloak class="mt-2 space-y-1">
-                <x-text-input name="firma_custom" type="text" class="block w-full"
-                              value="{{ old('firma_custom', $isCustomFirma ? $currentFirma : '') }}"
-                              placeholder="Firmenname" />
-                <p class="text-xs text-gray-400">Wird als neuer Dienstleister gespeichert.</p>
-            </div>
+            <p class="mt-1 text-xs text-gray-500">
+                Nicht dabei?
+                <a href="{{ route('dienstleister.create') }}" target="_blank"
+                   class="text-indigo-600 hover:text-indigo-800 underline">
+                    Neuen Dienstleister anlegen ↗
+                </a>
+                – danach diese Seite neu laden.
+            </p>
             <x-input-error :messages="$errors->get('firma_select')" class="mt-1" />
-            <x-input-error :messages="$errors->get('firma_custom')" class="mt-1" />
         </div>
 
         {{-- Name des Externen --}}
