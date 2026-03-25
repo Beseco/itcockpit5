@@ -53,13 +53,21 @@ class AdUserSettingsController extends Controller
 
     public function testConnection(): JsonResponse
     {
-        $result = (new LdapConnectionService())->testConnection();
+        try {
+            $result = (new LdapConnectionService())->testConnection();
+        } catch (\Exception $e) {
+            $result = ['success' => false, 'message' => 'Serverfehler: ' . $e->getMessage()];
+        }
         return response()->json($result);
     }
 
     public function testQuery(): JsonResponse
     {
-        $result = (new LdapConnectionService())->testQuery();
+        try {
+            $result = (new LdapConnectionService())->testQuery();
+        } catch (\Exception $e) {
+            $result = ['success' => false, 'message' => 'Serverfehler: ' . $e->getMessage()];
+        }
         return response()->json($result);
     }
 
