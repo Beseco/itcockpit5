@@ -95,14 +95,20 @@
                                             <div class="text-xs text-gray-400">Admin: {{ $app->admin }}</div>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3 whitespace-nowrap">
-                                        <div class="flex gap-1">
-                                            @foreach (['confidentiality' => 'V', 'integrity' => 'I', 'availability' => 'V'] as $field => $prefix)
-                                                @php $farbe = \App\Models\Applikation::SCHUTZBEDARF_FARBEN[$app->$field] ?? 'bg-gray-100 text-gray-700'; @endphp
-                                                <span class="px-1.5 py-0.5 text-xs font-bold rounded {{ $farbe }}"
-                                                      title="{{ ['confidentiality'=>'Vertraulichkeit','integrity'=>'Integrität','availability'=>'Verfügbarkeit'][$field] }}: {{ \App\Models\Applikation::SCHUTZBEDARF[$app->$field] ?? $app->$field }}">
-                                                    {{ $app->$field }}
-                                                </span>
+                                    <td class="px-4 py-3">
+                                        @php
+                                            $sbLabels = ['confidentiality'=>'Vertraulichkeit','integrity'=>'Integrität','availability'=>'Verfügbarkeit'];
+                                            $sbDot    = ['A'=>'bg-green-500','B'=>'bg-yellow-400','C'=>'bg-red-500'];
+                                            $sbTxt    = ['A'=>'text-green-700','B'=>'text-yellow-700','C'=>'text-red-700'];
+                                        @endphp
+                                        <div class="space-y-0.5">
+                                            @foreach($sbLabels as $field => $label)
+                                                @php $val = $app->$field; @endphp
+                                                <div class="flex items-center gap-1.5 text-xs">
+                                                    <span class="w-2 h-2 rounded-full flex-shrink-0 {{ $sbDot[$val] ?? 'bg-gray-400' }}"></span>
+                                                    <span class="text-gray-400 w-24">{{ $label }}</span>
+                                                    <span class="font-semibold {{ $sbTxt[$val] ?? 'text-gray-600' }}">{{ $val }}</span>
+                                                </div>
                                             @endforeach
                                         </div>
                                     </td>

@@ -35,36 +35,35 @@
                 <x-input-error :messages="$errors->get('baustein')" class="mt-2" />
             </div>
 
-            {{-- Hersteller Autocomplete --}}
-            <div x-data="{
-                    open: false,
-                    search: '{{ old('hersteller', $app->hersteller ?? '') }}',
-                    vendors: {{ Js::from($vendors->map(fn($v) => $v->firmenname)) }},
-                    get filtered() {
-                        if (this.search.trim() === '') return this.vendors;
-                        return this.vendors.filter(v => v.toLowerCase().includes(this.search.toLowerCase()));
-                    },
-                    select(name) { this.search = name; this.open = false; }
-                }" @click.outside="open = false">
+            {{-- Hersteller / Lieferant --}}
+            <div>
                 <x-input-label for="hersteller" value="Hersteller / Lieferant" />
-                <div class="relative mt-1">
-                    <input id="hersteller" name="hersteller" type="text"
-                           x-model="search" @focus="open = true" @input="open = true"
-                           @keydown.escape="open = false"
-                           placeholder="Hersteller suchen..."
-                           autocomplete="off"
-                           class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                    <ul x-show="open && filtered.length > 0" x-cloak
-                        class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-auto">
-                        <template x-for="vendor in filtered" :key="vendor">
-                            <li>
-                                <button type="button" @click="select(vendor)"
-                                        class="w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-gray-50"
-                                        x-text="vendor"></button>
-                            </li>
-                        </template>
-                    </ul>
-                </div>
+                @php
+                    $currentHersteller = old('hersteller', $app->hersteller ?? '');
+                    $herstellerInList  = $vendors->pluck('firmenname')->contains($currentHersteller);
+                @endphp
+                <select id="hersteller" name="hersteller"
+                        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                    <option value="">— kein / unbekannt —</option>
+                    @foreach($vendors as $v)
+                        <option value="{{ $v->firmenname }}" @selected($currentHersteller === $v->firmenname)>
+                            {{ $v->firmenname }}
+                        </option>
+                    @endforeach
+                    @if($currentHersteller && !$herstellerInList)
+                        <option value="{{ $currentHersteller }}" selected>
+                            {{ $currentHersteller }} (nicht in Liste)
+                        </option>
+                    @endif
+                </select>
+                <p class="mt-1 text-xs text-gray-500">
+                    Nicht dabei?
+                    <a href="{{ route('dienstleister.create') }}" target="_blank"
+                       class="text-indigo-600 hover:text-indigo-800 underline">
+                        Neuen Dienstleister anlegen ↗
+                    </a>
+                    – danach diese Seite neu laden.
+                </p>
                 <x-input-error :messages="$errors->get('hersteller')" class="mt-2" />
             </div>
 
