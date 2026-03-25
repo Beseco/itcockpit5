@@ -105,6 +105,15 @@ class RegisterNewModulesSeeder extends Seeder
             ]
         );
 
+        $fernwartungModule = Module::firstOrCreate(
+            ['name' => 'fernwartung'],
+            [
+                'display_name' => 'Fernwartung',
+                'description'  => 'Dokumentation von Fernwartungszugriffen externer Dienstleister',
+                'is_active'    => true,
+            ]
+        );
+
         // --- Permissions anlegen ---
 
         $permissions = [
@@ -165,6 +174,13 @@ class RegisterNewModulesSeeder extends Seeder
             // Kalender
             ['name' => 'calendar.view',  'module_id' => $calendarModule->id],
             ['name' => 'calendar.edit',  'module_id' => $calendarModule->id],
+
+            // Fernwartung
+            ['name' => 'fernwartung.view',         'module_id' => $fernwartungModule->id],
+            ['name' => 'fernwartung.create',        'module_id' => $fernwartungModule->id],
+            ['name' => 'fernwartung.edit',          'module_id' => $fernwartungModule->id],
+            ['name' => 'fernwartung.delete',        'module_id' => $fernwartungModule->id],
+            ['name' => 'fernwartung.tools.manage',  'module_id' => $fernwartungModule->id],
         ];
 
         foreach ($permissions as $perm) {
@@ -198,11 +214,13 @@ class RegisterNewModulesSeeder extends Seeder
                 'module.stellenplan.view', 'module.stellenplan.view_sensitive',
                 'base.stellenbeschreibungen.view', 'base.stellenbeschreibungen.edit',
                 'calendar.view', 'calendar.edit',
+                'fernwartung.view', 'fernwartung.create', 'fernwartung.edit',
+                'fernwartung.delete', 'fernwartung.tools.manage',
             ];
             $admin->givePermissionTo($adminPermissions);
         }
 
-        $this->command->info('✓ Module registriert: orders, dienstleister, reminders, gruppen, stellen, aufgaben, stellenplan, stellenbeschreibungen, calendar');
+        $this->command->info('✓ Module registriert: orders, dienstleister, reminders, gruppen, stellen, aufgaben, stellenplan, stellenbeschreibungen, calendar, fernwartung');
         $this->command->info('✓ ' . count($permissions) . ' Permissions angelegt');
         $this->command->info('✓ Superadmin und Admin aktualisiert');
     }
