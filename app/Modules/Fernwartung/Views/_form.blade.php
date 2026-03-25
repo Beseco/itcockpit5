@@ -1,17 +1,27 @@
 @php
     $fw ??= null;
     $isEdit = $fw !== null;
-    // Aktuelle Tool-Auswahl: in der Liste oder 'Anderer'?
-    $currentTool   = old('tool_select',  $fw?->tool ?? '');
-    $toolInList    = $tools->pluck('name')->contains($currentTool);
-    $isCustomTool  = $isEdit && !$toolInList && $currentTool !== '';
-    $initCustom    = $isCustomTool ? 'true' : 'false';
-    $initToolSel   = $isCustomTool ? '__other__' : $currentTool;
+    // Tool-Auswahl
+    $currentTool  = old('tool_select', $fw?->tool ?? '');
+    $toolInList   = $tools->pluck('name')->contains($currentTool);
+    $isCustomTool = $isEdit && !$toolInList && $currentTool !== '';
+    $initCustom   = $isCustomTool ? 'true' : 'false';
+    $initToolSel  = $isCustomTool ? '__other__' : $currentTool;
+    // Firma: alter Wert oder Firma des vorhandenen Eintrags
+    $currentFirma = old('firma_select', $fw?->firma ?? '');
+    $firmaInList  = $dienstleister->pluck('firmenname')->contains($currentFirma);
+    $isCustomFirma = $isEdit && !$firmaInList && $currentFirma !== '';
+    $initCustomFirma = $isCustomFirma ? 'true' : 'false';
+    $initFirmaSel    = $isCustomFirma ? '__other__' : $currentFirma;
+    // Beobachter-Default: eingeloggter User (nur bei Neuerstellung)
+    $defaultBeobachter = old('beobachter_user_id', $fw?->beobachter_user_id ?? auth()->id());
 @endphp
 
 <div x-data="{
-    customTool: {{ $initCustom }},
-    setTool(val) { this.customTool = (val === '__other__'); }
+    customTool:  {{ $initCustom }},
+    customFirma: {{ $initCustomFirma }},
+    setTool(val)  { this.customTool  = (val === '__other__'); },
+    setFirma(val) { this.customFirma = (val === '__other__'); }
 }" class="space-y-5">
 
     @if ($errors->any())
@@ -22,31 +32,52 @@
         </div>
     @endif
 
-    {{-- Externer Name + Firma --}}
+    {{-- Firma (Dienstleister-Auswahl) + Name des Externen --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {{-- Firma --}}
+        <div>
+            <x-input-label for="firma_select" value="Firma *" />
+            <select id="firma_select" name="firma_select"
+                    @change="setFirma($event.target.value)"
+                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                <option value="">— bitte wählen —</option>
+                @foreach($dienstleister as $dl)
+                    <option value="{{ $dl->firmenname }}" @selected($initFirmaSel === $dl->firmenname)>
+                        {{ $dl->firmenname }}
+                    </option>
+                @endforeach
+                <option value="__other__" @selected($initFirmaSel === '__other__')>
+                    Andere / Neu eintragen
+                </option>
+            </select>
+            {{-- Neue Firma direkt eintragen --}}
+            <div x-show="customFirma" x-cloak class="mt-2 space-y-1">
+                <x-text-input name="firma_custom" type="text" class="block w-full"
+                              value="{{ old('firma_custom', $isCustomFirma ? $currentFirma : '') }}"
+                              placeholder="Firmenname" />
+                <p class="text-xs text-gray-400">Wird als neuer Dienstleister gespeichert.</p>
+            </div>
+            <x-input-error :messages="$errors->get('firma_select')" class="mt-1" />
+            <x-input-error :messages="$errors->get('firma_custom')" class="mt-1" />
+        </div>
+
+        {{-- Name des Externen --}}
         <div>
             <x-input-label for="externer_name" value="Name des Externen *" />
             <x-text-input id="externer_name" name="externer_name" type="text" class="mt-1 block w-full"
                           value="{{ old('externer_name', $fw?->externer_name) }}" required placeholder="Vorname Nachname" />
             <x-input-error :messages="$errors->get('externer_name')" class="mt-1" />
         </div>
-        <div>
-            <x-input-label for="firma" value="Firma *" />
-            <x-text-input id="firma" name="firma" type="text" class="mt-1 block w-full"
-                          value="{{ old('firma', $fw?->firma) }}" required placeholder="Name der Firma" />
-            <x-input-error :messages="$errors->get('firma')" class="mt-1" />
-        </div>
     </div>
 
-    {{-- Beobachter (User-Auswahl) --}}
+    {{-- Beobachter (User-Auswahl, Default = eingeloggter User) --}}
     <div>
         <x-input-label for="beobachter_user_id" value="Beobachter / Admin *" />
         <select id="beobachter_user_id" name="beobachter_user_id"
                 class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
             <option value="">— bitte wählen —</option>
             @foreach($users as $user)
-                <option value="{{ $user->id }}"
-                    @selected(old('beobachter_user_id', $fw?->beobachter_user_id) == $user->id)>
+                <option value="{{ $user->id }}" @selected($defaultBeobachter == $user->id)>
                     {{ $user->name }}
                 </option>
             @endforeach
@@ -97,8 +128,7 @@
             <x-input-label for="beginn" value="Beginn *" />
             <div class="mt-1 flex items-center gap-2">
                 <input id="beginn" name="beginn" type="time"
-                       value="{{ old('beginn', $fw?->beginn ?? '') }}"
-                       required
+                       value="{{ old('beginn', $fw?->beginn ?? '') }}" required
                        class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                 <button type="button"
                         onclick="document.getElementById('beginn').value = new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit',hour12:false})"
@@ -120,7 +150,7 @@
                     Jetzt
                 </button>
             </div>
-            <p class="mt-1 text-xs text-gray-400">Kann auch später aus der Liste heraus gesetzt werden.</p>
+            <p class="mt-1 text-xs text-gray-400">Kann auch später aus der Liste gesetzt werden.</p>
             <x-input-error :messages="$errors->get('ende')" class="mt-1" />
         </div>
     </div>

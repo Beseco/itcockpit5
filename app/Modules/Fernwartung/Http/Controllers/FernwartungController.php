@@ -2,6 +2,7 @@
 
 namespace App\Modules\Fernwartung\Http\Controllers;
 
+use App\Models\Dienstleister;
 use App\Models\User;
 use App\Modules\Fernwartung\Models\Fernwartung;
 use App\Modules\Fernwartung\Models\FernwartungTool;
@@ -35,11 +36,12 @@ class FernwartungController extends Controller
 
     public function create()
     {
-        $tools    = FernwartungTool::active()->get();
-        $users    = User::where('is_active', true)->orderBy('name')->get(['id', 'name']);
-        $fernwartung = null;
+        $tools        = FernwartungTool::active()->get();
+        $users        = User::where('is_active', true)->orderBy('name')->get(['id', 'name']);
+        $dienstleister = Dienstleister::orderBy('firmenname')->get(['id', 'firmenname']);
+        $fernwartung  = null;
 
-        return view('fernwartung::create', compact('tools', 'users', 'fernwartung'));
+        return view('fernwartung::create', compact('tools', 'users', 'dienstleister', 'fernwartung'));
     }
 
     public function store(Request $request)
@@ -56,10 +58,11 @@ class FernwartungController extends Controller
     public function edit(Fernwartung $fw)
     {
         $this->authorizeEdit($fw);
-        $tools = FernwartungTool::active()->get();
-        $users = User::where('is_active', true)->orderBy('name')->get(['id', 'name']);
+        $tools         = FernwartungTool::active()->get();
+        $users         = User::where('is_active', true)->orderBy('name')->get(['id', 'name']);
+        $dienstleister = Dienstleister::orderBy('firmenname')->get(['id', 'firmenname']);
 
-        return view('fernwartung::edit', compact('fw', 'tools', 'users'));
+        return view('fernwartung::edit', compact('fw', 'tools', 'users', 'dienstleister'));
     }
 
     public function update(Request $request, Fernwartung $fw)
@@ -98,7 +101,8 @@ class FernwartungController extends Controller
     {
         $request->validate([
             'externer_name'      => ['required', 'string', 'max:255'],
-            'firma'              => ['required', 'string', 'max:255'],
+            'firma_select'       => ['required', 'string'],
+            'firma_custom'       => ['nullable', 'string', 'max:255'],
             'beobachter_user_id' => ['nullable', 'exists:users,id'],
             'ziel'               => ['required', 'string', 'max:255'],
             'tool_select'        => ['required', 'string'],
@@ -109,17 +113,30 @@ class FernwartungController extends Controller
             'grund'              => ['required', 'string'],
         ]);
 
+        // Firma bestimmen – ggf. als neuen Dienstleister anlegen
+        if ($request->firma_select === '__other__') {
+            $firmaName = trim($request->firma_custom);
+            if ($firmaName) {
+                Dienstleister::firstOrCreate(
+                    ['firmenname' => $firmaName],
+                    ['firmenname' => $firmaName]
+                );
+            }
+        } else {
+            $firmaName = $request->firma_select;
+        }
+
         $tool = $request->tool_select === '__other__'
             ? trim($request->tool_custom)
             : $request->tool_select;
 
         $beobachterUser = $request->beobachter_user_id
-            ? \App\Models\User::find($request->beobachter_user_id)
+            ? User::find($request->beobachter_user_id)
             : null;
 
         return [
             'externer_name'      => $request->externer_name,
-            'firma'              => $request->firma,
+            'firma'              => $firmaName,
             'beobachter_user_id' => $request->beobachter_user_id ?: null,
             'beobachter_name'    => $beobachterUser?->name,
             'ziel'               => $request->ziel,
