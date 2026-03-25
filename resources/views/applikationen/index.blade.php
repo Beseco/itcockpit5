@@ -86,13 +86,29 @@
                                     </td>
                                     <td class="px-4 py-3 text-sm text-gray-600">{{ $app->sg ?: '–' }}</td>
                                     <td class="px-4 py-3 text-sm text-gray-600">
-                                        @if ($app->verantwortlich_sg)
-                                            <div>{{ $app->verantwortlich_sg }}</div>
+                                        {{-- Verfahrensverantwortlicher --}}
+                                        @if ($app->verantwortlichAdUser)
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="w-2 h-2 rounded-full flex-shrink-0 bg-green-500" title="In AD-Datenbank gefunden"></span>
+                                                {{ $app->verantwortlichAdUser->anzeigenameOrName }}
+                                            </div>
+                                        @elseif ($app->verantwortlich_sg)
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="w-2 h-2 rounded-full flex-shrink-0 bg-red-500" title="Nicht in AD-Datenbank gefunden"></span>
+                                                {{ $app->verantwortlich_sg }}
+                                            </div>
                                         @endif
+                                        {{-- IT-Administrator --}}
                                         @if ($app->adminUser)
-                                            <div class="text-xs text-gray-400">Admin: {{ $app->adminUser->name }}</div>
+                                            <div class="flex items-center gap-1.5 mt-0.5">
+                                                <span class="w-2 h-2 rounded-full flex-shrink-0 bg-green-500" title="In Benutzerdatenbank gefunden"></span>
+                                                <span class="text-xs text-gray-500">Admin: {{ $app->adminUser->name }}</span>
+                                            </div>
                                         @elseif ($app->admin)
-                                            <div class="text-xs text-gray-400">Admin: {{ $app->admin }}</div>
+                                            <div class="flex items-center gap-1.5 mt-0.5">
+                                                <span class="w-2 h-2 rounded-full flex-shrink-0 bg-red-500" title="Nicht in Benutzerdatenbank gefunden"></span>
+                                                <span class="text-xs text-gray-500">Admin: {{ $app->admin }}</span>
+                                            </div>
                                         @endif
                                     </td>
                                     <td class="px-4 py-3">

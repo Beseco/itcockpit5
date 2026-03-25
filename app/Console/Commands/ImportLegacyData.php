@@ -266,8 +266,15 @@ class ImportLegacyData extends Command
         $this->info('→ Applikationen...');
 
         $rows = $this->oldPdo->query('SELECT * FROM applikationen')->fetchAll(PDO::FETCH_ASSOC);
-        $imported = 0;
-        $skipped  = 0;
+        $imported   = 0;
+        $skipped    = 0;
+        $adminMatched = 0;
+
+        // Benutzer-Index für Admin-Zuordnung (Name → ID, case-insensitive)
+        $usersByName = DB::table('users')
+            ->select('id', 'name')
+            ->get()
+            ->keyBy(fn($u) => strtolower(trim($u->name)));
 
         foreach ($rows as $row) {
             $exists = DB::table('applikationen')->where('id', $row['id'])->exists();
@@ -275,6 +282,17 @@ class ImportLegacyData extends Command
             if ($exists && !$force) {
                 $skipped++;
                 continue;
+            }
+
+            // Admin-Textwert gegen users-Tabelle abgleichen
+            $adminText   = $row['admin'] ?? null;
+            $adminUserId = null;
+            if ($adminText) {
+                $match = $usersByName[strtolower(trim($adminText))] ?? null;
+                if ($match) {
+                    $adminUserId = $match->id;
+                    $adminMatched++;
+                }
             }
 
             DB::table('applikationen')->updateOrInsert(
@@ -288,7 +306,8 @@ class ImportLegacyData extends Command
                     'availability'      => $row['availability'] ?? 'A',
                     'baustein'          => $row['baustein'] ?? null,
                     'verantwortlich_sg' => $row['verantwortlich_sg'] ?? null,
-                    'admin'             => $row['admin'] ?? null,
+                    'admin'             => $adminText,
+                    'admin_user_id'     => $adminUserId,
                     'ansprechpartner'   => $row['ansprechpartner'] ?? null,
                     'hersteller'        => $row['Hersteller'] ?? null, // Altes Feld: Großschreibung
                     'revision_date'     => !empty($row['revision_date']) ? $row['revision_date'] : null,
@@ -301,7 +320,7 @@ class ImportLegacyData extends Command
             $imported++;
         }
 
-        $this->line("   Importiert: {$imported} | Übersprungen: {$skipped}");
+        $this->line("   Importiert: {$imported} | Übersprungen: {$skipped} | Admins zugeordnet: {$adminMatched}");
     }
 
     private function importErinnerungsmails(bool $force): void

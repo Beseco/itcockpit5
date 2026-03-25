@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Applikation extends Model
 {
@@ -11,13 +12,18 @@ class Applikation extends Model
     protected $fillable = [
         'name', 'sg', 'einsatzzweck',
         'confidentiality', 'integrity', 'availability',
-        'baustein', 'verantwortlich_sg', 'admin_user_id', 'admin', 'ansprechpartner',
+        'baustein', 'verantwortlich_sg', 'verantwortlich_ad_user_id', 'admin_user_id', 'admin', 'ansprechpartner',
         'hersteller', 'revision_date', 'doc_url', 'updated_by',
     ];
 
-    public function adminUser()
+    public function adminUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'admin_user_id');
+    }
+
+    public function verantwortlichAdUser(): BelongsTo
+    {
+        return $this->belongsTo(\App\Modules\AdUsers\Models\AdUser::class, 'verantwortlich_ad_user_id');
     }
 
     protected $casts = [

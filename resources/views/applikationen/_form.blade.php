@@ -67,6 +67,14 @@
                 <x-input-error :messages="$errors->get('hersteller')" class="mt-2" />
             </div>
 
+            {{-- Ansprechpartner (beim Lieferanten) --}}
+            <div>
+                <x-input-label for="ansprechpartner" value="Ansprechpartner (beim Lieferanten)" />
+                <x-text-input id="ansprechpartner" name="ansprechpartner" type="text" class="mt-1 block w-full"
+                              value="{{ old('ansprechpartner', $app->ansprechpartner ?? '') }}" />
+                <x-input-error :messages="$errors->get('ansprechpartner')" class="mt-2" />
+            </div>
+
             <div>
                 <x-input-label for="doc_url" value="Dokumentations-URL" />
                 <x-text-input id="doc_url" name="doc_url" type="text" class="mt-1 block w-full"
@@ -96,11 +104,52 @@
                 <x-input-error :messages="$errors->get('sg')" class="mt-2" />
             </div>
 
-            <div>
-                <x-input-label for="verantwortlich_sg" value="Verfahrensverantwortlicher" />
-                <x-text-input id="verantwortlich_sg" name="verantwortlich_sg" type="text" class="mt-1 block w-full"
-                              value="{{ old('verantwortlich_sg', $app->verantwortlich_sg ?? '') }}" />
-                <x-input-error :messages="$errors->get('verantwortlich_sg')" class="mt-2" />
+            {{-- Verfahrensverantwortlicher (AdUser-Picker) --}}
+            <div x-data="{
+                    open: false,
+                    search: '{{ old('verantwortlich_ad_user_id') ? ($adUsers->firstWhere('id', old('verantwortlich_ad_user_id'))?->anzeigenameOrName ?? '') : ($app?->verantwortlichAdUser?->anzeigenameOrName ?? '') }}',
+                    selectedId: '{{ old('verantwortlich_ad_user_id', $app?->verantwortlich_ad_user_id ?? '') }}',
+                    users: {{ Js::from($adUsers->map(fn($u) => ['id' => $u->id, 'name' => $u->anzeigenameOrName])) }},
+                    get filtered() {
+                        if (!this.search) return this.users;
+                        const q = this.search.toLowerCase();
+                        return this.users.filter(u => u.name.toLowerCase().includes(q));
+                    },
+                    select(u) { this.search = u.name; this.selectedId = u.id; this.open = false; },
+                    clear() { this.search = ''; this.selectedId = ''; }
+                }" @click.outside="open = false">
+                <x-input-label for="verantwortlich_ad_user_id" value="Verfahrensverantwortlicher" />
+                <input type="hidden" name="verantwortlich_ad_user_id" :value="selectedId">
+                <div class="relative mt-1">
+                    <input type="text" id="verantwortlich_ad_user_id"
+                           x-model="search" @focus="open = true" @input="open = true" @keydown.escape="open = false"
+                           placeholder="AD-Benutzer suchen…" autocomplete="off"
+                           class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                    <button x-show="selectedId" type="button" @click="clear()"
+                            class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                    <ul x-show="open && filtered.length > 0" x-cloak
+                        class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-auto">
+                        <template x-for="u in filtered" :key="u.id">
+                            <li>
+                                <button type="button" @click="select(u)"
+                                        class="w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-gray-50"
+                                        x-text="u.name"></button>
+                            </li>
+                        </template>
+                    </ul>
+                </div>
+                {{-- Legacy-Hinweis: alter Textwert ohne AD-Zuordnung --}}
+                @if(isset($app) && $app->verantwortlich_sg && !$app->verantwortlich_ad_user_id)
+                    <p class="mt-1 text-xs text-amber-600">
+                        Bisheriger Eintrag (nicht zugeordnet): <span class="font-medium">{{ $app->verantwortlich_sg }}</span>
+                    </p>
+                    <input type="hidden" name="verantwortlich_sg" value="{{ $app->verantwortlich_sg }}">
+                @endif
+                <x-input-error :messages="$errors->get('verantwortlich_ad_user_id')" class="mt-2" />
             </div>
 
             {{-- IT-Administrator (User-Picker) --}}
@@ -141,14 +190,13 @@
                         </template>
                     </ul>
                 </div>
+                {{-- Legacy-Hinweis: alter Textwert ohne Benutzer-Zuordnung --}}
+                @if(isset($app) && $app->admin && !$app->admin_user_id)
+                    <p class="mt-1 text-xs text-amber-600">
+                        Bisheriger Eintrag (nicht zugeordnet): <span class="font-medium">{{ $app->admin }}</span>
+                    </p>
+                @endif
                 <x-input-error :messages="$errors->get('admin_user_id')" class="mt-2" />
-            </div>
-
-            <div>
-                <x-input-label for="ansprechpartner" value="Ansprechpartner" />
-                <x-text-input id="ansprechpartner" name="ansprechpartner" type="text" class="mt-1 block w-full"
-                              value="{{ old('ansprechpartner', $app->ansprechpartner ?? '') }}" />
-                <x-input-error :messages="$errors->get('ansprechpartner')" class="mt-2" />
             </div>
 
         </div>
