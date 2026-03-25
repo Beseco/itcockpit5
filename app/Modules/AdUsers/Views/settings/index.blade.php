@@ -119,26 +119,31 @@
                      connResult: null,
                      queryResult: null,
                      loading: false,
+                     async doFetch(url) {
+                         const r = await fetch(url, {
+                             method: 'POST',
+                             headers: {
+                                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                 'Accept': 'application/json',
+                             }
+                         });
+                         const text = await r.text();
+                         try {
+                             return JSON.parse(text);
+                         } catch(e) {
+                             return { success: false, message: 'HTTP ' + r.status + ' – Server antwortete kein JSON. Bitte Migrations auf Produktion ausführen: keyhelp-php83 artisan migrate' };
+                         }
+                     },
                      async testConnection() {
                          this.loading = true; this.connResult = null;
-                         try {
-                             const r = await fetch('{{ route('adusers.settings.test-connection') }}', {
-                                 method: 'POST',
-                                 headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content }
-                             });
-                             this.connResult = await r.json();
-                         } catch(e) { this.connResult = { success: false, message: e.message }; }
+                         try { this.connResult = await this.doFetch('{{ route('adusers.settings.test-connection') }}'); }
+                         catch(e) { this.connResult = { success: false, message: e.message }; }
                          this.loading = false;
                      },
                      async testQuery() {
                          this.loading = true; this.queryResult = null;
-                         try {
-                             const r = await fetch('{{ route('adusers.settings.test-query') }}', {
-                                 method: 'POST',
-                                 headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content }
-                             });
-                             this.queryResult = await r.json();
-                         } catch(e) { this.queryResult = { success: false, message: e.message }; }
+                         try { this.queryResult = await this.doFetch('{{ route('adusers.settings.test-query') }}'); }
+                         catch(e) { this.queryResult = { success: false, message: e.message }; }
                          this.loading = false;
                      }
                  }">
