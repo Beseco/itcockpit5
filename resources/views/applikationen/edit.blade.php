@@ -12,15 +12,16 @@
                         @method('PUT')
                         @include('applikationen._form')
                         <div class="flex items-center justify-between mt-6">
-                            @can('applikationen.delete')
-                            <form action="{{ route('applikationen.destroy', $app) }}" method="POST"
-                                  onsubmit="return confirm('Applikation wirklich löschen?')">
-                                @csrf @method('DELETE')
-                                <button type="submit" class="text-sm text-red-600 hover:text-red-800">Löschen</button>
-                            </form>
-                            @else
-                            <div></div>
-                            @endcan
+                            <div>
+                                @can('applikationen.delete')
+                                    {{-- Delete-Formular AUSSERHALB des Update-Formulars via JS-Submit --}}
+                                    <button type="button"
+                                            onclick="if(confirm('Applikation wirklich löschen?')) document.getElementById('delete-form-{{ $app->id }}').submit()"
+                                            class="text-sm text-red-600 hover:text-red-800">
+                                        Löschen
+                                    </button>
+                                @endcan
+                            </div>
                             <div class="flex gap-3">
                                 <a href="{{ route('applikationen.index') }}"
                                    class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50">
@@ -30,6 +31,13 @@
                             </div>
                         </div>
                     </form>
+
+                    @can('applikationen.delete')
+                    <form id="delete-form-{{ $app->id }}"
+                          action="{{ route('applikationen.destroy', $app) }}" method="POST" class="hidden">
+                        @csrf @method('DELETE')
+                    </form>
+                    @endcan
                 </div>
             </div>
         </div>
