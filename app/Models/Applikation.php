@@ -14,6 +14,7 @@ class Applikation extends Model
         'confidentiality', 'integrity', 'availability',
         'baustein', 'verantwortlich_sg', 'verantwortlich_ad_user_id', 'admin_user_id', 'admin', 'ansprechpartner',
         'hersteller', 'revision_date', 'doc_url', 'updated_by',
+        'revision_token', 'revision_notified_at', 'revision_completed_at',
     ];
 
     public function adminUser(): BelongsTo
@@ -32,7 +33,9 @@ class Applikation extends Model
     }
 
     protected $casts = [
-        'revision_date' => 'date',
+        'revision_date'          => 'date',
+        'revision_notified_at'   => 'datetime',
+        'revision_completed_at'  => 'datetime',
     ];
 
     const BAUSTEINE = [

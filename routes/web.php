@@ -20,8 +20,13 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PersonalController;
 use App\Http\Controllers\StellenbeschreibungController;
 use App\Http\Controllers\StelleController;
+use App\Http\Controllers\RevisionController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
+
+// Revisionsformular – kein Login erforderlich (tokenbasiert)
+Route::get('/revision/{token}',  [RevisionController::class, 'show'])->name('revision.show');
+Route::post('/revision/{token}', [RevisionController::class, 'submit'])->name('revision.submit');
 
 Route::get('/', function () {
     return redirect()->route('dashboard');
