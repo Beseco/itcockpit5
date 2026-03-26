@@ -178,7 +178,8 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse ($apps as $app)
-                                <tr class="hover:bg-gray-50">
+                                @php $revisionFaellig = $app->revision_date && $app->revision_date->isPast(); @endphp
+                                <tr class="hover:bg-gray-50 {{ $revisionFaellig ? 'border-l-2 border-l-red-400' : '' }}">
                                     <td class="px-4 py-3">
                                         <div class="font-medium text-gray-900">{{ $app->name }}</div>
                                         @if ($app->hersteller)
