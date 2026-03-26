@@ -24,6 +24,8 @@ export default {
         'text-green-700', 'text-yellow-700', 'text-red-700',
         // Dot-Größe (w-2 h-2) falls noch nicht durch statische Scans erkannt
         'w-2', 'h-2',
+        // Revisions-Fälligkeit (dynamisch per PHP-Bedingung)
+        'border-l-red-400',
     ],
 
     plugins: [forms],
