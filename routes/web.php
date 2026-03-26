@@ -4,6 +4,7 @@ use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\ApplikationController;
 use App\Http\Controllers\AufgabeController;
 use App\Http\Controllers\AufgabeZuweisungController;
+use App\Http\Controllers\AbteilungController;
 use App\Http\Controllers\GruppeController;
 use App\Http\Controllers\ReminderMailController;
 use App\Http\Controllers\AuditLogController;
@@ -81,6 +82,11 @@ Route::middleware('auth')->group(function () {
 
     // Dienstleister / Lieferanten
     Route::resource('dienstleister', DienstleisterController::class);
+
+    // Abteilungen / Sachgebiete
+    Route::resource('abteilungen', AbteilungController::class, [
+        'parameters' => ['abteilungen' => 'abteilung'],
+    ])->except(['show']);
 
     // Applikationen
     Route::resource('applikationen', ApplikationController::class, [

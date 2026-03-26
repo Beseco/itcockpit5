@@ -14,14 +14,22 @@
             @endif
 
             {{-- Suche + Neu-Button --}}
-            <div class="flex items-center justify-between mb-4 gap-4">
-                <form action="{{ route('applikationen.index') }}" method="GET" class="flex gap-2">
+            <div class="flex items-center justify-between mb-3 gap-4">
+                <form action="{{ route('applikationen.index') }}" method="GET" class="flex gap-2" id="search-form">
                     <x-text-input name="search" type="text" placeholder="Name, Zweck, SG, Hersteller..."
                                   value="{{ $search }}" class="w-72" />
-                    @if ($sort !== 'name') <input type="hidden" name="sort" value="{{ $sort }}"> @endif
-                    @if ($order !== 'ASC') <input type="hidden" name="order" value="{{ $order }}"> @endif
+                    {{-- Filter-Werte als Hidden-Inputs für Suche --}}
+                    @if($filterAbteilungId)     <input type="hidden" name="filter_abteilung_id"     value="{{ $filterAbteilungId }}"> @endif
+                    @if($filterBaustein)        <input type="hidden" name="filter_baustein"         value="{{ $filterBaustein }}"> @endif
+                    @if($filterAdminUserId)        <input type="hidden" name="filter_admin_user_id"       value="{{ $filterAdminUserId }}"> @endif
+                    @if($filterOhneVerantwortlich) <input type="hidden" name="filter_ohne_verantwortlich" value="1"> @endif
+                    @if($filterConfidentiality)      <input type="hidden" name="filter_confidentiality"     value="{{ $filterConfidentiality }}"> @endif
+                    @if($filterIntegrity)            <input type="hidden" name="filter_integrity"           value="{{ $filterIntegrity }}"> @endif
+                    @if($filterAvailability)         <input type="hidden" name="filter_availability"        value="{{ $filterAvailability }}"> @endif
+                    @if ($sort !== 'name')           <input type="hidden" name="sort"  value="{{ $sort }}"> @endif
+                    @if ($order !== 'ASC')           <input type="hidden" name="order" value="{{ $order }}"> @endif
                     <x-primary-button type="submit">Suchen</x-primary-button>
-                    @if ($search)
+                    @if ($search || $filterAbteilungId || $filterBaustein || $filterAdminUserId || $filterOhneVerantwortlich || $filterConfidentiality || $filterIntegrity || $filterAvailability)
                         <a href="{{ route('applikationen.index') }}"
                            class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md text-xs font-semibold text-gray-700 uppercase tracking-widest hover:bg-gray-50">
                             Zurücksetzen
@@ -39,6 +47,109 @@
                 @endcan
             </div>
 
+            {{-- Filterleiste --}}
+            <form action="{{ route('applikationen.index') }}" method="GET"
+                  class="bg-white border border-gray-200 rounded-lg p-3 mb-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-2">
+                @if ($sort !== 'name')  <input type="hidden" name="sort"  value="{{ $sort }}"> @endif
+                @if ($order !== 'ASC')  <input type="hidden" name="order" value="{{ $order }}"> @endif
+                @if ($search !== '')    <input type="hidden" name="search" value="{{ $search }}"> @endif
+
+                {{-- Sachgebiet --}}
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Sachgebiet</label>
+                    <select name="filter_abteilung_id" onchange="this.form.submit()"
+                            class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                        <option value="">Alle</option>
+                        @foreach($abteilungen as $abt)
+                            <option value="{{ $abt->id }}" {{ $filterAbteilungId == $abt->id ? 'selected' : '' }}>
+                                {{ $abt->anzeigename }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Baustein --}}
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Baustein</label>
+                    <select name="filter_baustein" onchange="this.form.submit()"
+                            class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                        <option value="">Alle</option>
+                        @foreach(\App\Models\Applikation::BAUSTEINE as $key => $label)
+                            <option value="{{ $key }}" {{ $filterBaustein === $key ? 'selected' : '' }}>
+                                {{ $key }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Administrator --}}
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Administrator</label>
+                    <select name="filter_admin_user_id" onchange="this.form.submit()"
+                            class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                        <option value="">Alle</option>
+                        <option value="none" {{ $filterAdminUserId === 'none' ? 'selected' : '' }}>— Ohne Administrator —</option>
+                        @foreach($adminUsers as $u)
+                            <option value="{{ $u->id }}" {{ $filterAdminUserId == $u->id ? 'selected' : '' }}>
+                                {{ $u->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Verantwortlicher --}}
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Verantwortlicher</label>
+                    <select name="filter_ohne_verantwortlich" onchange="this.form.submit()"
+                            class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                        <option value="">Alle</option>
+                        <option value="1" {{ $filterOhneVerantwortlich ? 'selected' : '' }}>— Ohne Verantwortlichen —</option>
+                    </select>
+                </div>
+
+                {{-- Vertraulichkeit --}}
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Vertraulichkeit</label>
+                    <select name="filter_confidentiality" onchange="this.form.submit()"
+                            class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                        <option value="">Alle</option>
+                        @foreach(\App\Models\Applikation::SCHUTZBEDARF as $key => $label)
+                            <option value="{{ $key }}" {{ $filterConfidentiality === $key ? 'selected' : '' }}>
+                                {{ $key }} – {{ $label }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Integrität --}}
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Integrität</label>
+                    <select name="filter_integrity" onchange="this.form.submit()"
+                            class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                        <option value="">Alle</option>
+                        @foreach(\App\Models\Applikation::SCHUTZBEDARF as $key => $label)
+                            <option value="{{ $key }}" {{ $filterIntegrity === $key ? 'selected' : '' }}>
+                                {{ $key }} – {{ $label }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Verfügbarkeit --}}
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Verfügbarkeit</label>
+                    <select name="filter_availability" onchange="this.form.submit()"
+                            class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                        <option value="">Alle</option>
+                        @foreach(\App\Models\Applikation::SCHUTZBEDARF as $key => $label)
+                            <option value="{{ $key }}" {{ $filterAvailability === $key ? 'selected' : '' }}>
+                                {{ $key }} – {{ $label }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </form>
+
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
@@ -52,7 +163,7 @@
                                     'verantwortlich_sg'=> 'Verantwortlichkeiten',
                                 ] as $col => $label)
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                    <a href="{{ route('applikationen.index', ['sort' => $col, 'order' => $sort === $col ? $nextOrder : 'ASC', 'search' => $search]) }}"
+                                    <a href="{{ route('applikationen.index', array_merge(request()->query(), ['sort' => $col, 'order' => $sort === $col ? $nextOrder : 'ASC'])) }}"
                                        class="hover:text-gray-800 flex items-center gap-1">
                                         {{ $label }}
                                         @if($sort === $col) <span>{{ $order === 'ASC' ? '↑' : '↓' }}</span> @endif
@@ -84,7 +195,22 @@
                                             <span class="text-gray-300">–</span>
                                         @endif
                                     </td>
-                                    <td class="px-4 py-3 text-sm text-gray-600">{{ $app->sg ?: '–' }}</td>
+                                    <td class="px-4 py-3 text-sm text-gray-600">
+                                        {{-- Sachgebiet: grün wenn DB-verknüpft, rot wenn nur Legacy-Text --}}
+                                        @if ($app->abteilung)
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="w-2 h-2 rounded-full flex-shrink-0 bg-green-500" title="In Abteilungsdatenbank gefunden"></span>
+                                                {{ $app->abteilung->anzeigename }}
+                                            </div>
+                                        @elseif ($app->sg)
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="w-2 h-2 rounded-full flex-shrink-0 bg-red-500" title="Nicht in Abteilungsdatenbank zugeordnet"></span>
+                                                {{ $app->sg }}
+                                            </div>
+                                        @else
+                                            <span class="text-gray-300">–</span>
+                                        @endif
+                                    </td>
                                     <td class="px-4 py-3 text-sm text-gray-600">
                                         {{-- Verfahrensverantwortlicher --}}
                                         @if ($app->verantwortlichAdUser)
@@ -97,6 +223,13 @@
                                                 <span class="w-2 h-2 rounded-full flex-shrink-0 bg-red-500" title="Nicht in AD-Datenbank gefunden"></span>
                                                 {{ $app->verantwortlich_sg }}
                                             </div>
+                                        @elseif ($app->verantwortlich_ad_user_id)
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="w-2 h-2 rounded-full flex-shrink-0 bg-red-500" title="AD-Benutzer nicht mehr in Datenbank gefunden"></span>
+                                                <span class="text-gray-400 italic text-xs">Verantwortl. nicht gefunden</span>
+                                            </div>
+                                        @else
+                                            <span class="text-gray-300">–</span>
                                         @endif
                                         {{-- IT-Administrator --}}
                                         @if ($app->adminUser)
@@ -108,6 +241,11 @@
                                             <div class="flex items-center gap-1.5 mt-0.5">
                                                 <span class="w-2 h-2 rounded-full flex-shrink-0 bg-red-500" title="Nicht in Benutzerdatenbank gefunden"></span>
                                                 <span class="text-xs text-gray-500">Admin: {{ $app->admin }}</span>
+                                            </div>
+                                        @elseif ($app->admin_user_id)
+                                            <div class="flex items-center gap-1.5 mt-0.5">
+                                                <span class="w-2 h-2 rounded-full flex-shrink-0 bg-red-500" title="Admin-Benutzer nicht mehr in Datenbank gefunden"></span>
+                                                <span class="text-xs text-gray-400 italic">Admin nicht gefunden</span>
                                             </div>
                                         @endif
                                     </td>

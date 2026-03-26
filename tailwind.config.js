@@ -18,5 +18,13 @@ export default {
         },
     },
 
+    safelist: [
+        // Schutzbedarf-Dots (dynamisch per PHP-Array generiert)
+        'bg-green-500', 'bg-yellow-400', 'bg-red-500', 'bg-gray-400',
+        'text-green-700', 'text-yellow-700', 'text-red-700',
+        // Dot-Größe (w-2 h-2) falls noch nicht durch statische Scans erkannt
+        'w-2', 'h-2',
+    ],
+
     plugins: [forms],
 };

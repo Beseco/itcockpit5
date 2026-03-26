@@ -10,7 +10,7 @@ class Applikation extends Model
     protected $table = 'applikationen';
 
     protected $fillable = [
-        'name', 'sg', 'einsatzzweck',
+        'name', 'sg', 'abteilung_id', 'einsatzzweck',
         'confidentiality', 'integrity', 'availability',
         'baustein', 'verantwortlich_sg', 'verantwortlich_ad_user_id', 'admin_user_id', 'admin', 'ansprechpartner',
         'hersteller', 'revision_date', 'doc_url', 'updated_by',
@@ -24,6 +24,11 @@ class Applikation extends Model
     public function verantwortlichAdUser(): BelongsTo
     {
         return $this->belongsTo(\App\Modules\AdUsers\Models\AdUser::class, 'verantwortlich_ad_user_id');
+    }
+
+    public function abteilung(): BelongsTo
+    {
+        return $this->belongsTo(Abteilung::class, 'abteilung_id');
     }
 
     protected $casts = [

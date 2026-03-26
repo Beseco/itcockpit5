@@ -98,10 +98,25 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
             <div>
-                <x-input-label for="sg" value="Sachgebiet / Abteilung" />
-                <x-text-input id="sg" name="sg" type="text" class="mt-1 block w-full"
-                              value="{{ old('sg', $app->sg ?? '') }}" />
-                <x-input-error :messages="$errors->get('sg')" class="mt-2" />
+                <x-input-label for="abteilung_id" value="Sachgebiet / Abteilung" />
+                <select id="abteilung_id" name="abteilung_id"
+                        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                    <option value="">— keine Zuordnung —</option>
+                    @foreach($abteilungen as $abt)
+                        <option value="{{ $abt->id }}"
+                            {{ old('abteilung_id', $app?->abteilung_id ?? '') == $abt->id ? 'selected' : '' }}>
+                            {{ $abt->anzeigename }}
+                        </option>
+                    @endforeach
+                </select>
+                {{-- Legacy-Hinweis: alter Textwert ohne Datenbankzuordnung --}}
+                @if(isset($app) && $app->sg && !$app->abteilung_id)
+                    <p class="mt-1 text-xs text-amber-600">
+                        Bisheriger Eintrag (nicht zugeordnet): <span class="font-medium">{{ $app->sg }}</span>
+                    </p>
+                    <input type="hidden" name="sg" value="{{ $app->sg }}">
+                @endif
+                <x-input-error :messages="$errors->get('abteilung_id')" class="mt-2" />
             </div>
 
             {{-- Verfahrensverantwortlicher (AdUser-Picker) --}}
