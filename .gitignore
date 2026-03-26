@@ -1,6 +1,6 @@
 /.phpunit.cache
 /node_modules
-/public/build
+# /public/build wird committed, damit kein npm-Build auf dem Server nötig ist
 /public/hot
 /public/storage
 /storage/*.key
