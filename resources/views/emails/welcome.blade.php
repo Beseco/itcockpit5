@@ -4,149 +4,112 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Willkommen im IT-Cockpit</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 15px;
-            color: #333333;
-            background-color: #f0f2f5;
-            margin: 0;
-            padding: 0;
-        }
-        .wrapper {
-            max-width: 620px;
-            margin: 40px auto;
-            background-color: #ffffff;
-            border-radius: 6px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        }
-        .header {
-            background-color: #1e3a5f;
-            padding: 32px 40px;
-            text-align: center;
-        }
-        .header h1 {
-            color: #ffffff;
-            font-size: 22px;
-            margin: 0 0 4px 0;
-            letter-spacing: 0.5px;
-        }
-        .header p {
-            color: #a8c4e0;
-            font-size: 13px;
-            margin: 0;
-        }
-        .content {
-            padding: 36px 40px;
-        }
-        .greeting {
-            font-size: 16px;
-            margin-bottom: 16px;
-        }
-        .description {
-            background-color: #f0f4f8;
-            border-left: 4px solid #1e3a5f;
-            padding: 14px 18px;
-            margin: 20px 0;
-            font-size: 14px;
-            color: #444444;
-            line-height: 1.6;
-        }
-        .credentials {
-            background-color: #f9f9f9;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
-            padding: 18px 22px;
-            margin: 24px 0;
-        }
-        .credentials table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-        .credentials td {
-            padding: 7px 0;
-            vertical-align: top;
-            font-size: 14px;
-        }
-        .credentials td:first-child {
-            font-weight: bold;
-            width: 150px;
-            color: #555555;
-        }
-        .btn {
-            display: inline-block;
-            margin: 8px 0 24px 0;
-            background-color: #1e3a5f;
-            color: #ffffff !important;
-            text-decoration: none;
-            padding: 12px 28px;
-            border-radius: 4px;
-            font-size: 14px;
-            font-weight: bold;
-        }
-        .hint {
-            background-color: #fff8e1;
-            border-left: 4px solid #f0a500;
-            padding: 12px 16px;
-            margin: 20px 0;
-            font-size: 14px;
-            color: #555555;
-        }
-        .footer {
-            background-color: #f7f7f7;
-            border-top: 1px solid #eeeeee;
-            padding: 20px 40px;
-            font-size: 12px;
-            color: #999999;
-            text-align: center;
-        }
-    </style>
 </head>
-<body>
-    <div class="wrapper">
-        <div class="header">
-            <h1>IT-Cockpit</h1>
-            <p>Landratsamt Freising – IT-Infrastruktur-Management</p>
-        </div>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#374151;">
 
-        <div class="content">
-            <p class="greeting">Hallo {{ $user->name }},</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 0;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
 
-            <p>herzlich willkommen im <strong>IT-Cockpit</strong> des Landratsamts Freising. Ihr Zugang wurde erfolgreich eingerichtet.</p>
-
-            <div class="description">
-                Das IT-Cockpit ist die zentrale Plattform zur Verwaltung der IT-Infrastruktur. Es bietet Ihnen unter anderem Zugriff auf Netzwerk- und VLAN-Übersichten, Störungsmeldungen, IT-Bestellungen sowie organisatorische Informationen – abgestimmt auf Ihre persönlichen Zugriffsrechte.
-            </div>
-
-            <p>Ihre Zugangsdaten:</p>
-
-            <div class="credentials">
-                <table>
+                    {{-- Header --}}
                     <tr>
-                        <td>Benutzername:</td>
-                        <td>{{ $user->email }}</td>
+                        <td style="background:#4f46e5;border-radius:8px 8px 0 0;padding:24px 32px;">
+                            <span style="font-size:11px;color:#c7d2fe;text-transform:uppercase;letter-spacing:1px;font-weight:600;">IT Cockpit · Willkommen</span>
+                            <h1 style="margin:6px 0 0;font-size:20px;font-weight:700;color:#ffffff;line-height:1.3;">Ihr Zugang wurde eingerichtet</h1>
+                        </td>
                     </tr>
+
+                    {{-- Content --}}
                     <tr>
-                        <td>Passwort:</td>
-                        <td><strong>{{ $plaintextPassword }}</strong></td>
+                        <td style="background:#ffffff;padding:32px;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;">
+
+                            <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f2937;">
+                                Hallo <strong>{{ $user->name }}</strong>,
+                            </p>
+                            <p style="margin:0 0 20px;line-height:1.7;color:#374151;">
+                                herzlich willkommen im <strong>IT-Cockpit</strong> des Landratsamts Freising.
+                                Ihr Zugang wurde erfolgreich eingerichtet.
+                            </p>
+
+                            {{-- Beschreibung --}}
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+                                <tr>
+                                    <td style="border-left:3px solid #4f46e5;padding:12px 16px;background:#f5f3ff;border-radius:0 4px 4px 0;font-size:14px;color:#374151;line-height:1.6;">
+                                        Das IT-Cockpit ist die zentrale Plattform zur Verwaltung der IT-Infrastruktur.
+                                        Es bietet Ihnen Zugriff auf Netzwerk- und VLAN-Übersichten, Störungsmeldungen,
+                                        IT-Bestellungen sowie organisatorische Informationen – abgestimmt auf Ihre persönlichen Zugriffsrechte.
+                                    </td>
+                                </tr>
+                            </table>
+
+                            {{-- Zugangsdaten --}}
+                            <p style="margin:0 0 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;">Ihre Zugangsdaten</p>
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                   style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;margin:0 0 28px;">
+                                <tr>
+                                    <td style="padding:16px 20px;">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding:5px 0;color:#9ca3af;width:140px;font-size:13px;">Benutzername</td>
+                                                <td style="padding:5px 0;font-size:13px;color:#1f2937;">{{ $user->email }}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:5px 0;color:#9ca3af;font-size:13px;">Passwort</td>
+                                                <td style="padding:5px 0;font-size:15px;font-weight:700;color:#1f2937;letter-spacing:.05em;">{{ $plaintextPassword }}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            {{-- Button --}}
+                            <table cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+                                <tr>
+                                    <td style="background:#4f46e5;border-radius:6px;">
+                                        <a href="{{ config('app.url') . '/login' }}"
+                                           style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;">
+                                            Zum IT-Cockpit &rarr;
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            {{-- Hinweis --}}
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td style="background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;padding:14px 18px;">
+                                        <p style="margin:0 0 4px;font-size:13px;font-weight:700;color:#92400e;">&#9888; Wichtiger Hinweis</p>
+                                        <p style="margin:0;font-size:13px;color:#78350f;line-height:1.6;">
+                                            Bitte ändern Sie Ihr Passwort nach dem ersten Login über Ihr Benutzerprofil.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                        </td>
                     </tr>
+
+                    {{-- Footer --}}
+                    <tr>
+                        <td style="background:#f9fafb;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;padding:16px 32px;">
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td style="font-size:12px;color:#9ca3af;">
+                                        Diese E-Mail wurde automatisch vom <strong style="color:#6b7280;">IT Cockpit</strong> versendet.
+                                    </td>
+                                    <td align="right" style="font-size:12px;color:#d1d5db;">
+                                        {{ now()->format('d.m.Y H:i') }} Uhr
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
                 </table>
-            </div>
+            </td>
+        </tr>
+    </table>
 
-            <a href="{{ config('app.url') . '/login' }}" class="btn">Zum IT-Cockpit &rarr;</a>
-
-            <div class="hint">
-                <strong>Wichtiger Hinweis:</strong> Bitte ändern Sie Ihr Passwort nach dem ersten Login über Ihr Benutzerprofil.
-            </div>
-
-            <p>Bei Fragen oder Problemen wenden Sie sich bitte an Ihren IT-Administrator.</p>
-        </div>
-
-        <div class="footer">
-            Diese E-Mail wurde automatisch vom IT-Cockpit generiert. Bitte antworten Sie nicht auf diese Nachricht.<br>
-            &copy; {{ date('Y') }} Landratsamt Freising – IT-Abteilung
-        </div>
-    </div>
 </body>
 </html>
