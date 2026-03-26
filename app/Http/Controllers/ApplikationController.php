@@ -19,6 +19,21 @@ class ApplikationController extends Controller
     {
         $this->authorize('applikationen.view');
 
+        $sessionKey = 'applikationen_filters';
+
+        // Reset: Session löschen und zur sauberen URL weiterleiten
+        if ($request->has('reset')) {
+            session()->forget($sessionKey);
+            return redirect()->route('applikationen.index');
+        }
+
+        // Frischer Aufruf ohne explizit gesetzten Filter: Session laden und weiterleiten
+        if (!$request->has('filter_applied') && session()->has($sessionKey)) {
+            return redirect()->route('applikationen.index',
+                array_merge(session($sessionKey), ['filter_applied' => '1'])
+            );
+        }
+
         $allowed = ['name', 'sg', 'hersteller', 'baustein', 'verantwortlich_sg'];
         $sort    = in_array($request->get('sort'), $allowed) ? $request->get('sort') : 'name';
         $order   = $request->get('order') === 'DESC' ? 'DESC' : 'ASC';
@@ -31,6 +46,20 @@ class ApplikationController extends Controller
         $filterConfidentiality    = $request->get('filter_confidentiality', '');
         $filterIntegrity          = $request->get('filter_integrity', '');
         $filterAvailability       = $request->get('filter_availability', '');
+
+        // Aktive Filter in Session speichern (nur bei expliziter Filterübergabe)
+        if ($request->has('filter_applied')) {
+            session([$sessionKey => [
+                'search'                    => $search,
+                'filter_abteilung_id'       => $filterAbteilungId,
+                'filter_baustein'           => $filterBaustein,
+                'filter_admin_user_id'      => $filterAdminUserId,
+                'filter_ohne_verantwortlich'=> $filterOhneVerantwortlich ? '1' : '',
+                'filter_confidentiality'    => $filterConfidentiality,
+                'filter_integrity'          => $filterIntegrity,
+                'filter_availability'       => $filterAvailability,
+            ]]);
+        }
 
         $query = Applikation::with(['adminUser', 'verantwortlichAdUser', 'abteilung'])->orderBy($sort, $order);
 

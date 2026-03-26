@@ -16,21 +16,22 @@
             {{-- Suche + Neu-Button --}}
             <div class="flex items-center justify-between mb-3 gap-4">
                 <form action="{{ route('applikationen.index') }}" method="GET" class="flex gap-2" id="search-form">
+                    <input type="hidden" name="filter_applied" value="1">
                     <x-text-input name="search" type="text" placeholder="Name, Zweck, SG, Hersteller..."
                                   value="{{ $search }}" class="w-72" />
                     {{-- Filter-Werte als Hidden-Inputs für Suche --}}
-                    @if($filterAbteilungId)     <input type="hidden" name="filter_abteilung_id"     value="{{ $filterAbteilungId }}"> @endif
-                    @if($filterBaustein)        <input type="hidden" name="filter_baustein"         value="{{ $filterBaustein }}"> @endif
+                    @if($filterAbteilungId)        <input type="hidden" name="filter_abteilung_id"        value="{{ $filterAbteilungId }}"> @endif
+                    @if($filterBaustein)           <input type="hidden" name="filter_baustein"            value="{{ $filterBaustein }}"> @endif
                     @if($filterAdminUserId)        <input type="hidden" name="filter_admin_user_id"       value="{{ $filterAdminUserId }}"> @endif
                     @if($filterOhneVerantwortlich) <input type="hidden" name="filter_ohne_verantwortlich" value="1"> @endif
-                    @if($filterConfidentiality)      <input type="hidden" name="filter_confidentiality"     value="{{ $filterConfidentiality }}"> @endif
-                    @if($filterIntegrity)            <input type="hidden" name="filter_integrity"           value="{{ $filterIntegrity }}"> @endif
-                    @if($filterAvailability)         <input type="hidden" name="filter_availability"        value="{{ $filterAvailability }}"> @endif
-                    @if ($sort !== 'name')           <input type="hidden" name="sort"  value="{{ $sort }}"> @endif
-                    @if ($order !== 'ASC')           <input type="hidden" name="order" value="{{ $order }}"> @endif
+                    @if($filterConfidentiality)    <input type="hidden" name="filter_confidentiality"     value="{{ $filterConfidentiality }}"> @endif
+                    @if($filterIntegrity)          <input type="hidden" name="filter_integrity"           value="{{ $filterIntegrity }}"> @endif
+                    @if($filterAvailability)       <input type="hidden" name="filter_availability"        value="{{ $filterAvailability }}"> @endif
+                    @if ($sort !== 'name')         <input type="hidden" name="sort"  value="{{ $sort }}"> @endif
+                    @if ($order !== 'ASC')         <input type="hidden" name="order" value="{{ $order }}"> @endif
                     <x-primary-button type="submit">Suchen</x-primary-button>
                     @if ($search || $filterAbteilungId || $filterBaustein || $filterAdminUserId || $filterOhneVerantwortlich || $filterConfidentiality || $filterIntegrity || $filterAvailability)
-                        <a href="{{ route('applikationen.index') }}"
+                        <a href="{{ route('applikationen.index', ['reset' => '1']) }}"
                            class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md text-xs font-semibold text-gray-700 uppercase tracking-widest hover:bg-gray-50">
                             Zurücksetzen
                         </a>
@@ -50,6 +51,7 @@
             {{-- Filterleiste --}}
             <form action="{{ route('applikationen.index') }}" method="GET"
                   class="bg-white border border-gray-200 rounded-lg p-3 mb-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-2">
+                <input type="hidden" name="filter_applied" value="1">
                 @if ($sort !== 'name')  <input type="hidden" name="sort"  value="{{ $sort }}"> @endif
                 @if ($order !== 'ASC')  <input type="hidden" name="order" value="{{ $order }}"> @endif
                 @if ($search !== '')    <input type="hidden" name="search" value="{{ $search }}"> @endif
