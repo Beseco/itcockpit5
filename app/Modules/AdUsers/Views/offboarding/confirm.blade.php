@@ -67,21 +67,38 @@
                     <h2 class="text-base font-semibold text-gray-700 uppercase tracking-wider mb-3 pb-1 border-b border-gray-200">
                         2. Bestätigung
                     </h2>
-                    <p class="text-sm text-gray-700 mb-3">
-                        Hiermit bestätige ich, dass auf folgenden Geräten
-                    </p>
-                    <ul class="list-disc list-inside text-sm text-gray-700 space-y-1 mb-4">
-                        <li>dem lokalen PC</li>
-                        <li>den Serverlaufwerken</li>
-                        <li>dem Terminalserver</li>
-                        <li>Tablets und Smartphones</li>
-                        <li>in Programmen (Outlook, Word, etc.)</li>
-                        <li>Internet-Browsern</li>
-                    </ul>
+                    {{-- Hinweis Deaktivierung + Löschung --}}
+                    <div class="bg-amber-50 border border-amber-300 rounded-lg p-4 mb-5 text-sm">
+                        <p class="font-semibold text-amber-800 mb-2">Wichtige Termine:</p>
+                        <ul class="space-y-1 text-amber-700">
+                            <li>🔒 <strong>Deaktivierung des Benutzerkontos:</strong> {{ $record->datum_ausscheiden->format('d.m.Y') }}</li>
+                            <li>🗑 <strong>Löschung aller Daten:</strong> {{ $record->datum_ausscheiden->addDays(60)->format('d.m.Y') }} (60 Tage nach Ausscheiden)</li>
+                        </ul>
+                    </div>
+
                     <p class="text-sm text-gray-700 mb-4">
-                        keine privaten Daten gespeichert sind.
+                        Ich bestätige hiermit, dass auf folgenden Geräten <strong>keine privaten Daten</strong> gespeichert sind
+                        und diese bedenkenlos gelöscht werden können:
                     </p>
-                    <p class="text-sm text-gray-700">
+
+                    <div x-data="{ all: false }" class="space-y-2 mb-5">
+                        @foreach([
+                            'item_pc'        => 'dem lokalen PC',
+                            'item_server'    => 'den Serverlaufwerken',
+                            'item_terminal'  => 'dem Terminalserver',
+                            'item_mobile'    => 'Tablets und Smartphones',
+                            'item_programme' => 'in Programmen (Outlook, Word, etc.)',
+                            'item_browser'   => 'Internet-Browsern',
+                        ] as $name => $label)
+                            <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" name="{{ $name }}" value="1" required
+                                       class="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500">
+                                <span class="text-sm text-gray-700">Auf <strong>{{ $label }}</strong> sind keine privaten Daten gespeichert.</span>
+                            </label>
+                        @endforeach
+                    </div>
+
+                    <p class="text-sm text-gray-700 border-t border-gray-200 pt-4">
                         Die mir zur Verfügung gestellten Benutzerkonten, Geräte und Datenablagen können
                         bedenkenlos gelöscht werden.
                     </p>
@@ -93,7 +110,12 @@
 
                     @if ($errors->any())
                         <div class="mb-4 bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded text-sm">
-                            {{ $errors->first() }}
+                            <p class="font-semibold mb-1">Bitte alle Punkte abhaken:</p>
+                            <ul class="list-disc list-inside space-y-0.5">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
                         </div>
                     @endif
 
