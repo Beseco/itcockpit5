@@ -54,8 +54,9 @@
 
                 <select name="status" class="border-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
                     <option value="">Alle Status</option>
-                    <option value="aktiv"       @selected(request('status')==='aktiv')>Aktiv</option>
-                    <option value="deaktiviert" @selected(request('status')==='deaktiviert')>Deaktiviert</option>
+                    <option value="aktiv"        @selected(request('status')==='aktiv')>Aktiv</option>
+                    <option value="deaktiviert"  @selected(request('status')==='deaktiviert')>Deaktiviert</option>
+                    <option value="offboarding"  @selected(request('status')==='offboarding')>Im Offboarding</option>
                 </select>
 
                 <select name="vorhanden" class="border-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
@@ -142,9 +143,19 @@
                                 <td class="px-4 py-3 text-gray-600">{{ $user->abteilung }}</td>
                                 <td class="px-4 py-3 text-gray-600">{{ $user->telefon }}</td>
                                 <td class="px-4 py-3">
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $badge['class'] }}">
-                                        {{ $badge['label'] }}
-                                    </span>
+                                    <div class="flex flex-wrap gap-1">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $badge['class'] }}">
+                                            {{ $badge['label'] }}
+                                        </span>
+                                        @if ($offboardingSams->has($user->samaccountname))
+                                            @php $obStatus = $offboardingSams[$user->samaccountname]; @endphp
+                                            <a href="{{ route('adusers.offboarding.index', ['search' => $user->samaccountname]) }}"
+                                               class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-orange-100 text-orange-800 hover:bg-orange-200"
+                                               title="Offboarding-Vorgang anzeigen">
+                                                ⚠ {{ \App\Modules\AdUsers\Models\OffboardingRecord::STATUS_LABELS[$obStatus] ?? 'Offboarding' }}
+                                            </a>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td class="px-4 py-3 text-xs text-gray-400 whitespace-nowrap">
                                     {{ $user->letzter_import_at?->format('d.m.Y H:i') ?? '–' }}

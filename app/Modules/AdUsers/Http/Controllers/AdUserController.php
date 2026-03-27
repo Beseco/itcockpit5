@@ -4,6 +4,7 @@ namespace App\Modules\AdUsers\Http\Controllers;
 
 use App\Modules\AdUsers\Models\AdUser;
 use App\Modules\AdUsers\Models\AdUserSettings;
+use App\Modules\AdUsers\Models\OffboardingRecord;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -32,11 +33,17 @@ class AdUserController extends Controller
             });
         }
 
+        // Aktive Offboarding-SAMAccountNames für Filter + Badge
+        $offboardingSams = OffboardingRecord::whereNotIn('status', ['abgeschlossen'])
+            ->pluck('status', 'samaccountname');  // [sam => status]
+
         // Filter
         if ($request->get('status') === 'aktiv') {
             $query->where('ad_aktiv', true)->where('ad_vorhanden', true);
         } elseif ($request->get('status') === 'deaktiviert') {
             $query->where('ad_aktiv', false);
+        } elseif ($request->get('status') === 'offboarding') {
+            $query->whereIn('samaccountname', $offboardingSams->keys());
         }
 
         if ($request->get('vorhanden') === 'nein') {
@@ -49,10 +56,10 @@ class AdUserController extends Controller
             $query->where('letzter_import_at', '<', now()->subDays((int) $inaktivSeit));
         }
 
-        $users    = $query->paginate(100)->withQueryString();
+        $users     = $query->paginate(100)->withQueryString();
         $canDelete = Auth::user()->can('adusers.delete');
 
-        return view('adusers::index', compact('users', 'settings', 'search', 'canDelete'));
+        return view('adusers::index', compact('users', 'settings', 'search', 'canDelete', 'offboardingSams'));
     }
 
     public function show(AdUser $user)
