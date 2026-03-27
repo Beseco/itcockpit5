@@ -126,32 +126,50 @@
                 <div class="px-6 py-4 bg-gray-50 border-b border-gray-100">
                     <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">Dokumente</h3>
                 </div>
-                <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="divide-y divide-gray-100">
                     @foreach (['personalmeldung' => 'Personalmeldung', 'bestaetigung' => 'Bestätigung (gescannt)'] as $type => $label)
                         @php
                             $hasPdf  = $type === 'personalmeldung' ? $record->personalmeldung_pdf : $record->bestaetigung_pdf;
                             $pdfName = $type === 'personalmeldung' ? $record->personalmeldung_pdf_name : $record->bestaetigung_pdf_name;
                         @endphp
-                        <div>
-                            <p class="text-xs font-medium text-gray-500 uppercase mb-2">{{ $label }}</p>
-                            @if ($hasPdf)
-                                <a href="{{ route('adusers.offboarding.download', [$record, $type]) }}"
-                                   target="_blank"
-                                   class="inline-flex items-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-md text-sm hover:bg-indigo-100">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        <div class="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            {{-- Linke Seite: Label + Download --}}
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-lg {{ $hasPdf ? 'bg-indigo-100' : 'bg-gray-100' }}">
+                                    <svg class="w-5 h-5 {{ $hasPdf ? 'text-indigo-600' : 'text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                     </svg>
-                                    {{ $pdfName ?? $type . '.pdf' }}
-                                </a>
-                            @endif
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">{{ $label }}</p>
+                                    @if ($hasPdf)
+                                        <a href="{{ route('adusers.offboarding.download', [$record, $type]) }}"
+                                           target="_blank"
+                                           class="text-sm text-indigo-600 hover:text-indigo-800 hover:underline truncate block">
+                                            {{ $pdfName ?? $type . '.pdf' }}
+                                        </a>
+                                    @else
+                                        <p class="text-sm text-gray-400 italic">Noch kein Dokument hochgeladen</p>
+                                    @endif
+                                </div>
+                            </div>
+
+                            {{-- Rechte Seite: Upload --}}
                             <form action="{{ route('adusers.offboarding.upload', $record) }}" method="POST"
-                                  enctype="multipart/form-data" class="mt-2 flex items-center gap-2">
+                                  enctype="multipart/form-data"
+                                  class="flex items-center gap-2 flex-shrink-0">
                                 @csrf
                                 <input type="hidden" name="type" value="{{ $type }}">
-                                <input type="file" name="pdf" accept="application/pdf"
-                                       class="text-xs text-gray-600 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200">
+                                <label class="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-medium rounded-md border border-gray-300 transition">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                                    </svg>
+                                    <span id="label-{{ $type }}">PDF wählen</span>
+                                    <input type="file" name="pdf" accept="application/pdf" class="hidden"
+                                           onchange="document.getElementById('label-{{ $type }}').textContent = this.files[0]?.name ?? 'PDF wählen'">
+                                </label>
                                 <button type="submit"
-                                        class="px-3 py-1 bg-gray-700 text-white text-xs rounded hover:bg-gray-800">
+                                        class="px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-md hover:bg-indigo-700 transition">
                                     {{ $hasPdf ? 'Ersetzen' : 'Hochladen' }}
                                 </button>
                             </form>
