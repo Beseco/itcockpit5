@@ -53,6 +53,17 @@ class OffboardingController extends Controller
             $aduser = AdUser::find($request->get('aduser'));
         }
 
+        // Prüfen ob bereits ein aktiver Vorgang existiert
+        if ($aduser) {
+            $existing = OffboardingRecord::where('samaccountname', $aduser->samaccountname)
+                ->whereNotIn('status', ['abgeschlossen'])
+                ->first();
+            if ($existing) {
+                return redirect()->route('adusers.offboarding.show', $existing)
+                    ->with('error', 'Für diesen Benutzer läuft bereits ein Offboarding-Vorgang.');
+            }
+        }
+
         return view('adusers::offboarding.create', compact('aduser'));
     }
 
@@ -69,6 +80,18 @@ class OffboardingController extends Controller
             'datum_ausscheiden'=> ['required', 'date'],
             'bemerkungen'      => ['nullable', 'string'],
         ]);
+
+        // Doppelten Vorgang verhindern
+        $samaccountname = $validated['samaccountname'] ?? '';
+        if ($samaccountname) {
+            $existing = OffboardingRecord::where('samaccountname', $samaccountname)
+                ->whereNotIn('status', ['abgeschlossen'])
+                ->first();
+            if ($existing) {
+                return redirect()->route('adusers.offboarding.show', $existing)
+                    ->with('error', 'Für diesen Benutzer läuft bereits ein Offboarding-Vorgang.');
+            }
+        }
 
         $validated['anleger_user_id'] = Auth::id();
         $validated['anleger_name']    = Auth::user()->name;
