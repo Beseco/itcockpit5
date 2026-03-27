@@ -149,9 +149,16 @@ class ImportLegacyOffboarding extends Command
             return null;
         }
 
-        // dd.mm.yyyy
+        // dd.mm.yyyy oder d.m.yyyy (vierstelliges Jahr)
         if (preg_match('/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/', $value, $m)) {
-            $date = \DateTime::createFromFormat('d.m.Y', $value);
+            $date = \DateTime::createFromFormat('j.n.Y', $value);
+            return $date ? $date->format('Y-m-d') : null;
+        }
+
+        // dd.mm.yy oder d.m.yy (zweistelliges Jahr → 20xx)
+        if (preg_match('/^(\d{1,2})\.(\d{1,2})\.(\d{2})$/', $value, $m)) {
+            $year = (int)$m[3] + 2000;
+            $date = \DateTime::createFromFormat('j.n.Y', "{$m[1]}.{$m[2]}.{$year}");
             return $date ? $date->format('Y-m-d') : null;
         }
 
