@@ -18,13 +18,13 @@
                 </div>
             @endif
 
-            {{-- Filter + Aktionsleiste --}}
+            {{-- Filter --}}
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-4 p-4">
                 <form action="{{ route('server.index') }}" method="GET" class="flex flex-wrap gap-3 items-end">
 
-                    <div class="flex-1 min-w-48">
+                    <div class="flex-1 min-w-44">
                         <label class="block text-xs font-medium text-gray-500 mb-1">Suche</label>
-                        <input type="text" name="search" value="{{ $search }}" placeholder="Name, Hostname, IP, Beschreibung…"
+                        <input type="text" name="search" value="{{ $search }}" placeholder="Name, Hostname, IP…"
                                class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                     </div>
 
@@ -51,13 +51,46 @@
                     </div>
 
                     <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Admin</label>
+                        <select name="filter_admin_id"
+                                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                            <option value="">Alle Admins</option>
+                            @foreach ($adminUsers as $u)
+                                <option value="{{ $u->id }}" @selected($filterAdminId == $u->id)>{{ $u->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
                         <label class="block text-xs font-medium text-gray-500 mb-1">Herkunft</label>
                         <select name="filter_ldap"
                                 class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                             <option value="">Alle</option>
-                            <option value="synced"  @selected($filterLdap === 'synced')>LDAP-synchronisiert</option>
-                            <option value="manual"  @selected($filterLdap === 'manual')>Manuell angelegt</option>
+                            <option value="synced" @selected($filterLdap === 'synced')>LDAP-synchronisiert</option>
+                            <option value="manual" @selected($filterLdap === 'manual')>Manuell angelegt</option>
                         </select>
+                    </div>
+
+                    {{-- Checkboxen --}}
+                    <div class="flex items-center gap-2 pb-0.5">
+                        <input type="checkbox" id="filter_mine" name="filter_mine" value="1"
+                               @checked($filterMine)
+                               class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                        <label for="filter_mine" class="text-sm text-gray-700 cursor-pointer select-none whitespace-nowrap">Nur meine</label>
+                    </div>
+
+                    <div class="flex items-center gap-2 pb-0.5">
+                        <input type="checkbox" id="filter_no_admin" name="filter_no_admin" value="1"
+                               @checked($filterNoAdmin)
+                               class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                        <label for="filter_no_admin" class="text-sm text-gray-700 cursor-pointer select-none whitespace-nowrap">Kein Admin</label>
+                    </div>
+
+                    <div class="flex items-center gap-2 pb-0.5">
+                        <input type="checkbox" id="filter_no_revision" name="filter_no_revision" value="1"
+                               @checked($filterNoRevision)
+                               class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                        <label for="filter_no_revision" class="text-sm text-gray-700 cursor-pointer select-none whitespace-nowrap">Kein Revisionsdatum</label>
                     </div>
 
                     <div class="flex gap-2">
@@ -65,7 +98,7 @@
                                 class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md text-xs font-semibold text-white uppercase tracking-widest hover:bg-indigo-700">
                             Filtern
                         </button>
-                        @if ($search || $filterStatus || $filterAbt || $filterLdap)
+                        @if ($search || $filterStatus || $filterAbt || $filterLdap || $filterAdminId || $filterMine || $filterNoAdmin || $filterNoRevision)
                             <a href="{{ route('server.index') }}"
                                class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md text-xs font-semibold text-gray-700 uppercase tracking-widest hover:bg-gray-50">
                                 Zurücksetzen
@@ -78,14 +111,26 @@
             {{-- Tabelle --}}
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
-                    <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center justify-between mb-4 gap-3 flex-wrap">
                         <h3 class="text-lg font-semibold text-gray-800">
                             Server
                             @if ($servers->total() > $servers->count())
                                 <span class="text-sm font-normal text-gray-400">({{ $servers->total() }} gesamt)</span>
                             @endif
                         </h3>
-                        <div class="flex gap-2">
+                        <div class="flex gap-2 flex-wrap">
+                            @can('server.edit')
+                                @if ($countNoRevision > 0)
+                                    <form action="{{ route('server.set-revision-dates') }}" method="POST"
+                                          onsubmit="return confirm('Für {{ $countNoRevision }} Server ein zufälliges Revisionsdatum (nächste 12 Monate) setzen?')">
+                                        @csrf
+                                        <button type="submit"
+                                                class="inline-flex items-center px-3 py-2 bg-orange-500 border border-transparent rounded-md text-xs font-semibold text-white uppercase tracking-widest hover:bg-orange-600">
+                                            Revisionsdaten setzen ({{ $countNoRevision }})
+                                        </button>
+                                    </form>
+                                @endif
+                            @endcan
                             @can('server.sync')
                                 <form action="{{ route('server.sync') }}" method="POST">
                                     @csrf
@@ -104,10 +149,7 @@
                             @can('server.create')
                                 <a href="{{ route('server.create') }}"
                                    class="inline-flex items-center px-3 py-2 bg-gray-800 border border-transparent rounded-md text-xs font-semibold text-white uppercase tracking-widest hover:bg-gray-700">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                                    </svg>
-                                    Neuer Server
+                                    + Neuer Server
                                 </a>
                             @endcan
                         </div>
@@ -121,15 +163,15 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">OS / Typ</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Abteilung</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Admin</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Herkunft</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Revision</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aktionen</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @forelse ($servers as $server)
-                                    <tr class="hover:bg-gray-50">
+                                    @php $revisionOverdue = $server->revision_date && $server->revision_date->isPast(); @endphp
+                                    <tr class="hover:bg-gray-50 {{ $revisionOverdue ? 'border-l-4 border-l-red-400' : '' }}">
                                         <td class="px-4 py-3">
                                             <a href="{{ route('server.show', $server) }}"
                                                class="text-sm font-medium text-indigo-600 hover:text-indigo-900">
@@ -137,6 +179,9 @@
                                             </a>
                                             @if ($server->dns_hostname)
                                                 <div class="text-xs text-gray-400">{{ $server->dns_hostname }}</div>
+                                            @endif
+                                            @if ($server->ldap_synced)
+                                                <span class="text-xs text-blue-400">LDAP</span>
                                             @endif
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-700">
@@ -151,22 +196,27 @@
                                         <td class="px-4 py-3 text-sm text-gray-700">
                                             {{ $server->osType?->label ?? $server->operating_system ?? '—' }}
                                             @if ($server->type)
-                                                <span class="ml-1 text-xs text-gray-400">
+                                                <span class="text-xs text-gray-400">
                                                     ({{ \App\Modules\Server\Models\Server::TYPE_LABELS[$server->type] }})
                                                 </span>
                                             @endif
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-gray-700">
-                                            {{ $server->abteilung?->anzeigename ?? '—' }}
-                                        </td>
-                                        <td class="px-4 py-3 text-sm text-gray-700">
-                                            {{ $server->adminUser?->name ?? '—' }}
-                                        </td>
-                                        <td class="px-4 py-3">
-                                            @if ($server->ldap_synced)
-                                                <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">LDAP</span>
+                                        <td class="px-4 py-3 text-sm">
+                                            @if ($server->adminUser)
+                                                <span class="{{ $server->admin_user_id === Auth::id() ? 'font-semibold text-indigo-700' : 'text-gray-700' }}">
+                                                    {{ $server->adminUser->name }}
+                                                </span>
                                             @else
-                                                <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">Manuell</span>
+                                                <span class="text-red-400 text-xs">Kein Admin</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-4 py-3 text-sm">
+                                            @if ($server->revision_date)
+                                                <span class="{{ $revisionOverdue ? 'text-red-600 font-semibold' : 'text-gray-700' }}">
+                                                    {{ $server->revision_date->format('d.m.Y') }}
+                                                </span>
+                                            @else
+                                                <span class="text-gray-400 text-xs">—</span>
                                             @endif
                                         </td>
                                         <td class="px-4 py-3 text-right text-sm">
@@ -180,7 +230,7 @@
                                                 <span x-data="{ open: false }">
                                                     <button @click="open = true"
                                                             class="text-red-600 hover:text-red-900">Löschen</button>
-                                                    <div x-show="open" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" x-transition>
+                                                    <div x-show="open" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" x-transition style="display:none">
                                                         <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4">
                                                             <h3 class="text-lg font-semibold text-gray-900 mb-2">Server löschen?</h3>
                                                             <p class="text-sm text-gray-600 mb-4">
@@ -203,7 +253,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="px-4 py-8 text-center text-gray-400">
+                                        <td colspan="7" class="px-4 py-8 text-center text-gray-400">
                                             Keine Server gefunden.
                                         </td>
                                     </tr>

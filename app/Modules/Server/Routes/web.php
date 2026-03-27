@@ -16,6 +16,10 @@ Route::middleware(['auth', 'module.permission:server,sync'])->group(function () 
     Route::post('/sync', [ServerSettingsController::class, 'runSync'])->name('sync');
 });
 
+Route::middleware(['auth', 'module.permission:server,edit'])->group(function () {
+    Route::post('/set-revision-dates', [ServerController::class, 'setRevisionDates'])->name('set-revision-dates');
+});
+
 Route::middleware(['auth', 'module.permission:server,create'])->group(function () {
     Route::get('/create',  [ServerController::class, 'create'])->name('create');
     Route::post('/',       [ServerController::class, 'store'])->name('store');

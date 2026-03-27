@@ -53,6 +53,13 @@
                 <x-input-error :messages="$errors->get('doc_url')" class="mt-1" />
             </div>
 
+            <div>
+                <x-input-label for="revision_date" value="Revisionsdatum" />
+                <x-text-input id="revision_date" name="revision_date" type="date" class="mt-1 block w-full"
+                              value="{{ old('revision_date', $server?->revision_date?->format('Y-m-d')) }}" />
+                <x-input-error :messages="$errors->get('revision_date')" class="mt-1" />
+            </div>
+
             <div class="md:col-span-2">
                 <x-input-label for="description" value="Beschreibung" />
                 <textarea id="description" name="description" rows="2"

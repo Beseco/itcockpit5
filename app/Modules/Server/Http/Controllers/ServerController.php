@@ -11,6 +11,7 @@ use App\Modules\Server\Models\ServerOption;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Auth;
 
 class ServerController extends Controller
 {
@@ -18,10 +19,14 @@ class ServerController extends Controller
 
     public function index(Request $request)
     {
-        $search        = $request->get('search', '');
-        $filterStatus  = $request->get('filter_status', '');
-        $filterAbt     = $request->get('filter_abteilung_id', '');
-        $filterLdap    = $request->get('filter_ldap', '');
+        $search          = $request->get('search', '');
+        $filterStatus    = $request->get('filter_status', '');
+        $filterAbt       = $request->get('filter_abteilung_id', '');
+        $filterLdap      = $request->get('filter_ldap', '');
+        $filterAdminId   = $request->get('filter_admin_id', '');
+        $filterMine      = $request->boolean('filter_mine');
+        $filterNoAdmin   = $request->boolean('filter_no_admin');
+        $filterNoRevision= $request->boolean('filter_no_revision');
 
         $query = Server::with(['abteilung', 'adminUser', 'gruppe', 'osType', 'role', 'backupLevel', 'patchRing'])
             ->orderBy('name');
@@ -39,7 +44,7 @@ class ServerController extends Controller
             $query->where('status', $filterStatus);
         }
 
-        if ($filterAbt !== '') {
+        if (!empty($filterAbt)) {
             $query->where('abteilung_id', (int) $filterAbt);
         }
 
@@ -49,12 +54,29 @@ class ServerController extends Controller
             $query->where('ldap_synced', false);
         }
 
+        if ($filterMine) {
+            $query->where('admin_user_id', Auth::id());
+        } elseif ($filterNoAdmin) {
+            $query->whereNull('admin_user_id');
+        } elseif ($filterAdminId !== '') {
+            $query->where('admin_user_id', (int) $filterAdminId);
+        }
+
+        if ($filterNoRevision) {
+            $query->whereNull('revision_date');
+        }
+
         $servers     = $query->paginate(25)->withQueryString();
         $abteilungen = Abteilung::orderBy('sort_order')->orderBy('name')->get();
+        $adminUsers  = User::where('is_active', true)->orderBy('name')->get();
+
+        // Anzahl Server ohne Revisionsdatum für Aktionsbutton
+        $countNoRevision = Server::whereNull('revision_date')->count();
 
         return view('server::index', compact(
-            'servers', 'abteilungen',
-            'search', 'filterStatus', 'filterAbt', 'filterLdap'
+            'servers', 'abteilungen', 'adminUsers', 'countNoRevision',
+            'search', 'filterStatus', 'filterAbt', 'filterLdap',
+            'filterAdminId', 'filterMine', 'filterNoAdmin', 'filterNoRevision'
         ));
     }
 
@@ -122,6 +144,27 @@ class ServerController extends Controller
             ->with('success', 'Server "' . $name . '" wurde gelöscht.');
     }
 
+    /**
+     * Setzt für alle Server ohne Revisionsdatum ein zufälliges Datum in den nächsten 12 Monaten.
+     */
+    public function setRevisionDates()
+    {
+        $servers = Server::whereNull('revision_date')->get();
+        $count   = 0;
+
+        foreach ($servers as $server) {
+            $server->update([
+                'revision_date' => now()->addDays(rand(1, 365)),
+            ]);
+            $count++;
+        }
+
+        $this->auditLogger->logModuleAction('Server', 'Revisionsdaten gesetzt', ['count' => $count]);
+
+        return redirect()->route('server.index')
+            ->with('success', "Revisionsdatum für {$count} Server gesetzt.");
+    }
+
     // ─── Hilfsmethoden ────────────────────────────────────────────────────────
 
     private function formData(): array
@@ -151,6 +194,7 @@ class ServerController extends Controller
             'description'      => ['nullable', 'string'],
             'bemerkungen'      => ['nullable', 'string'],
             'doc_url'          => ['nullable', 'url', 'max:500'],
+            'revision_date'    => ['nullable', 'date'],
             'status'           => ['required', 'in:produktiv,testsystem,ausgeschaltet,im_aufbau,ausgemustert'],
             'type'             => ['nullable', 'in:vm,bare_metal'],
             'os_type_id'       => ['nullable', 'integer', 'exists:server_options,id'],

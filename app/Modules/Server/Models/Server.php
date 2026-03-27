@@ -17,7 +17,7 @@ class Server extends Model
 
     protected $fillable = [
         'name', 'dns_hostname', 'ip_address', 'operating_system', 'os_version',
-        'description', 'bemerkungen', 'doc_url',
+        'description', 'bemerkungen', 'doc_url', 'revision_date',
         'status', 'type',
         'os_type_id', 'role_id', 'backup_level_id', 'patch_ring_id',
         'abteilung_id', 'admin_user_id', 'gruppe_id',
@@ -27,6 +27,7 @@ class Server extends Model
     protected $casts = [
         'ldap_synced'   => 'boolean',
         'last_sync_at'  => 'datetime',
+        'revision_date' => 'date',
         'raw_ldap_data' => 'array',
     ];
 

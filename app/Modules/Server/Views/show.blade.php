@@ -41,6 +41,19 @@
                     <div><span class="font-medium text-gray-500">IP-Adresse:</span> <span class="ml-2 text-gray-900">{{ $server->ip_address ?? '—' }}</span></div>
                     <div><span class="font-medium text-gray-500">Betriebssystem:</span> <span class="ml-2 text-gray-900">{{ $server->operating_system ?? '—' }}</span></div>
                     <div><span class="font-medium text-gray-500">OS-Version:</span> <span class="ml-2 text-gray-900">{{ $server->os_version ?? '—' }}</span></div>
+                    <div>
+                        <span class="font-medium text-gray-500">Revisionsdatum:</span>
+                        @if ($server->revision_date)
+                            <span class="ml-2 {{ $server->revision_date->isPast() ? 'text-red-600 font-semibold' : 'text-gray-900' }}">
+                                {{ $server->revision_date->format('d.m.Y') }}
+                                @if ($server->revision_date->isPast())
+                                    <span class="text-xs">(überfällig)</span>
+                                @endif
+                            </span>
+                        @else
+                            <span class="ml-2 text-gray-400">—</span>
+                        @endif
+                    </div>
                     @if ($server->doc_url)
                         <div class="md:col-span-2">
                             <span class="font-medium text-gray-500">Dokumentation:</span>
