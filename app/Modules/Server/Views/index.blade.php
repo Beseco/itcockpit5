@@ -229,17 +229,18 @@
                                                 <span class="text-gray-400 text-xs">—</span>
                                             @endif
                                         </td>
-                                        <td class="px-4 py-3 text-right text-sm">
+                                        <td class="px-4 py-3 text-right">
+                                            <div class="flex justify-end gap-1.5 flex-wrap">
                                             <a href="{{ route('server.show', $server) }}"
-                                               class="text-indigo-600 hover:text-indigo-900 mr-3">Detail</a>
+                                               class="inline-flex items-center px-2.5 py-1 bg-indigo-100 text-indigo-700 rounded text-xs font-medium hover:bg-indigo-200">Detail</a>
                                             @can('server.edit')
                                                 <a href="{{ route('server.edit', $server) }}"
-                                                   class="text-yellow-600 hover:text-yellow-900 mr-3">Bearbeiten</a>
+                                                   class="inline-flex items-center px-2.5 py-1 bg-yellow-100 text-yellow-700 rounded text-xs font-medium hover:bg-yellow-200">Bearbeiten</a>
                                             @endcan
                                             @can('server.delete')
                                                 <span x-data="{ open: false }">
                                                     <button @click="open = true"
-                                                            class="text-red-600 hover:text-red-900">Löschen</button>
+                                                            class="inline-flex items-center px-2.5 py-1 bg-red-100 text-red-700 rounded text-xs font-medium hover:bg-red-200">Löschen</button>
                                                     <div x-show="open" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" x-transition style="display:none">
                                                         <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4">
                                                             <h3 class="text-lg font-semibold text-gray-900 mb-2">Server löschen?</h3>
@@ -259,6 +260,7 @@
                                                     </div>
                                                 </span>
                                             @endcan
+                                            </div>
                                         </td>
                                     </tr>
                                 @empty
