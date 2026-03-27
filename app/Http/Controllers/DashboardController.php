@@ -74,6 +74,15 @@ class DashboardController extends Controller
                 'stat'        => Announcement::active()->count() . ' aktive Ankündigungen',
                 'icon'        => 'megaphone',
             ],
+            'server' => [
+                'label'       => 'Server',
+                'description' => 'Serververwaltung und LDAP-Synchronisation',
+                'route'       => 'server.index',
+                'permission'  => 'server.view',
+                'color'       => 'indigo',
+                'stat'        => \App\Modules\Server\Models\Server::produktiv()->count() . ' produktive Server',
+                'icon'        => 'monitor',
+            ],
             'applikationen' => [
                 'label'       => 'Applikationen',
                 'description' => 'IT-Anwendungen und BSI-Schutzbedarf',

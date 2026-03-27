@@ -7,6 +7,7 @@ use App\Models\Applikation;
 use App\Models\Dienstleister;
 use App\Models\User;
 use App\Modules\AdUsers\Models\AdUser;
+use App\Modules\Server\Models\Server;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -109,6 +110,7 @@ class ApplikationController extends Controller
         $users       = User::where('is_active', true)->orderBy('name')->get();
         $adUsers     = AdUser::aktiv()->orderBy('anzeigename')->get();
         $abteilungen = Abteilung::orderBy('sort_order')->orderBy('name')->get();
+        $servers     = class_exists(Server::class) ? Server::orderBy('name')->get() : collect();
         return view('applikationen.create', [
             'app'          => null,
             'bausteine'    => Applikation::BAUSTEINE,
@@ -117,6 +119,7 @@ class ApplikationController extends Controller
             'users'        => $users,
             'adUsers'      => $adUsers,
             'abteilungen'  => $abteilungen,
+            'servers'      => $servers,
         ]);
     }
 
@@ -125,9 +128,11 @@ class ApplikationController extends Controller
         $this->authorize('applikationen.create');
 
         $validated = $this->validateApp($request);
+        $serverIds = $request->input('server_ids', []);
         $validated['updated_by'] = Auth::user()->name;
 
         $app = Applikation::create($validated);
+        $app->servers()->sync($serverIds);
 
         $this->auditLogger->log('Applikation', 'Applikation erstellt', [
             'id'   => $app->id,
@@ -145,6 +150,7 @@ class ApplikationController extends Controller
         $users       = User::where('is_active', true)->orderBy('name')->get();
         $adUsers     = AdUser::aktiv()->orderBy('anzeigename')->get();
         $abteilungen = Abteilung::orderBy('sort_order')->orderBy('name')->get();
+        $servers     = class_exists(Server::class) ? Server::orderBy('name')->get() : collect();
         return view('applikationen.edit', [
             'app'          => $applikation,
             'bausteine'    => Applikation::BAUSTEINE,
@@ -153,6 +159,7 @@ class ApplikationController extends Controller
             'users'        => $users,
             'adUsers'      => $adUsers,
             'abteilungen'  => $abteilungen,
+            'servers'      => $servers,
         ]);
     }
 
@@ -160,10 +167,12 @@ class ApplikationController extends Controller
     {
         $this->authorize('applikationen.edit');
 
-        $validated = $this->validateApp($request);
+        $validated   = $this->validateApp($request);
+        $serverIds   = $request->input('server_ids', []);
         $validated['updated_by'] = Auth::user()->name;
 
         $applikation->update($validated);
+        $applikation->servers()->sync($serverIds);
 
         $this->auditLogger->log('Applikation', 'Applikation aktualisiert', [
             'id'   => $applikation->id,

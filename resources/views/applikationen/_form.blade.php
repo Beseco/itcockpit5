@@ -217,6 +217,37 @@
         </div>
     </div>
 
+    {{-- Verknüpfte Server --}}
+    @if (isset($servers) && $servers->isNotEmpty())
+    <div>
+        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3 pb-1 border-b border-gray-200">
+            Verknüpfte Server
+        </h3>
+        @php
+            $selectedServerIds = old('server_ids', isset($app) ? $app->servers?->pluck('id')->toArray() ?? [] : []);
+        @endphp
+        <div x-data="{ search: '' }">
+            <input type="text" x-model="search" placeholder="Server filtern…"
+                   class="mb-2 block w-72 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+            <div class="max-h-48 overflow-y-auto border border-gray-200 rounded-md divide-y divide-gray-100">
+                @foreach ($servers as $srv)
+                    <label class="flex items-center gap-3 px-3 py-2 hover:bg-gray-50 cursor-pointer"
+                           x-show="!search || '{{ strtolower($srv->name) }}'.includes(search.toLowerCase())">
+                        <input type="checkbox" name="server_ids[]" value="{{ $srv->id }}"
+                               @checked(in_array($srv->id, $selectedServerIds))
+                               class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                        <span class="text-sm text-gray-800">{{ $srv->name }}</span>
+                        @if ($srv->dns_hostname)
+                            <span class="text-xs text-gray-400">{{ $srv->dns_hostname }}</span>
+                        @endif
+                    </label>
+                @endforeach
+            </div>
+        </div>
+        <x-input-error :messages="$errors->get('server_ids')" class="mt-2" />
+    </div>
+    @endif
+
     {{-- Schutzbedarf (BSI) --}}
     <div>
         <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3 pb-1 border-b border-gray-200">

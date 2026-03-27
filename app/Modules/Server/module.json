@@ -1,0 +1,6 @@
+{
+    "name": "Server",
+    "slug": "server",
+    "version": "1.0.0",
+    "description": "Serververwaltung – manuelle Pflege und LDAP-Synchronisation von Computerkonten"
+}

@@ -133,6 +133,36 @@ class LdapConnectionService
         return $users;
     }
 
+    /**
+     * Suche mit benutzerdefinierter Base DN – wiederverwendbar für andere Module (z.B. Server-Sync).
+     *
+     * @param  string   $baseDn  Die Base DN für diese Suche (überschreibt die gespeicherte Einstellung)
+     * @param  string   $filter  LDAP-Suchfilter
+     * @param  string[] $attrs   Zu ladende Attribute
+     * @return \Illuminate\Support\Collection
+     */
+    public function searchWithBaseDn(string $baseDn, string $filter, array $attrs): \Illuminate\Support\Collection
+    {
+        $conn = $this->connect();
+        $this->bind($conn);
+
+        $result = @ldap_search($conn, $baseDn, $filter, $attrs, 0, 0);
+
+        if (!$result) {
+            throw new \RuntimeException('Suchanfrage fehlgeschlagen: ' . ldap_error($conn));
+        }
+
+        $entries = ldap_get_entries($conn, $result);
+        ldap_unbind($conn);
+
+        $items = collect();
+        for ($i = 0; $i < ($entries['count'] ?? 0); $i++) {
+            $items->push($entries[$i]);
+        }
+
+        return $items;
+    }
+
     /** Prüft ob ein Konto deaktiviert ist (Bit 2 von userAccountControl) */
     public static function isDisabled(array $user): bool
     {

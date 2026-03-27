@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Applikation extends Model
 {
@@ -30,6 +31,11 @@ class Applikation extends Model
     public function abteilung(): BelongsTo
     {
         return $this->belongsTo(Abteilung::class, 'abteilung_id');
+    }
+
+    public function servers(): BelongsToMany
+    {
+        return $this->belongsToMany(\App\Modules\Server\Models\Server::class, 'server_applikation');
     }
 
     protected $casts = [
