@@ -55,6 +55,8 @@
                         <select name="filter_admin_id"
                                 class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                             <option value="">Alle Admins</option>
+                            <option value="__mine__"    @selected($filterAdminId === '__mine__')>Nur meine Server</option>
+                            <option value="__none__"    @selected($filterAdminId === '__none__')>Kein Admin hinterlegt</option>
                             @foreach ($adminUsers as $u)
                                 <option value="{{ $u->id }}" @selected($filterAdminId == $u->id)>{{ $u->name }}</option>
                             @endforeach
@@ -71,21 +73,6 @@
                         </select>
                     </div>
 
-                    {{-- Checkboxen --}}
-                    <div class="flex items-center gap-2 pb-0.5">
-                        <input type="checkbox" id="filter_mine" name="filter_mine" value="1"
-                               @checked($filterMine)
-                               class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                        <label for="filter_mine" class="text-sm text-gray-700 cursor-pointer select-none whitespace-nowrap">Nur meine</label>
-                    </div>
-
-                    <div class="flex items-center gap-2 pb-0.5">
-                        <input type="checkbox" id="filter_no_admin" name="filter_no_admin" value="1"
-                               @checked($filterNoAdmin)
-                               class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
-                        <label for="filter_no_admin" class="text-sm text-gray-700 cursor-pointer select-none whitespace-nowrap">Kein Admin</label>
-                    </div>
-
                     <div class="flex items-center gap-2 pb-0.5">
                         <input type="checkbox" id="filter_no_revision" name="filter_no_revision" value="1"
                                @checked($filterNoRevision)
@@ -98,7 +85,7 @@
                                 class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md text-xs font-semibold text-white uppercase tracking-widest hover:bg-indigo-700">
                             Filtern
                         </button>
-                        @if ($search || $filterStatus || $filterAbt || $filterLdap || $filterAdminId || $filterMine || $filterNoAdmin || $filterNoRevision)
+                        @if ($search || $filterStatus || $filterAbt || $filterLdap || $filterAdminId || $filterNoRevision)
                             <a href="{{ route('server.index') }}"
                                class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md text-xs font-semibold text-gray-700 uppercase tracking-widest hover:bg-gray-50">
                                 Zurücksetzen

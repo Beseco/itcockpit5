@@ -24,8 +24,6 @@ class ServerController extends Controller
         $filterAbt       = $request->get('filter_abteilung_id', '');
         $filterLdap      = $request->get('filter_ldap', '');
         $filterAdminId   = $request->get('filter_admin_id', '');
-        $filterMine      = $request->boolean('filter_mine');
-        $filterNoAdmin   = $request->boolean('filter_no_admin');
         $filterNoRevision= $request->boolean('filter_no_revision');
 
         $query = Server::with(['abteilung', 'adminUser', 'gruppe', 'osType', 'role', 'backupLevel', 'patchRing'])
@@ -54,9 +52,9 @@ class ServerController extends Controller
             $query->where('ldap_synced', false);
         }
 
-        if ($filterMine) {
+        if ($filterAdminId === '__mine__') {
             $query->where('admin_user_id', Auth::id());
-        } elseif ($filterNoAdmin) {
+        } elseif ($filterAdminId === '__none__') {
             $query->whereNull('admin_user_id');
         } elseif ($filterAdminId !== '') {
             $query->where('admin_user_id', (int) $filterAdminId);
@@ -76,7 +74,7 @@ class ServerController extends Controller
         return view('server::index', compact(
             'servers', 'abteilungen', 'adminUsers', 'countNoRevision',
             'search', 'filterStatus', 'filterAbt', 'filterLdap',
-            'filterAdminId', 'filterMine', 'filterNoAdmin', 'filterNoRevision'
+            'filterAdminId', 'filterNoRevision'
         ));
     }
 
