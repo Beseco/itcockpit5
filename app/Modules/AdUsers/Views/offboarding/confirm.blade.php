@@ -106,7 +106,6 @@
 
                 {{-- Digitale Unterschrift --}}
                 <form action="{{ route('offboarding.confirm.submit', $record->bestaetigungstoken) }}" method="POST">
-                    @csrf
 
                     @if ($errors->any())
                         <div class="mb-4 bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded text-sm">

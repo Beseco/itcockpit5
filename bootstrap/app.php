@@ -11,6 +11,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Öffentliche Token-Routen vom CSRF-Schutz ausnehmen
+        // (Token im URL ist die eigentliche Sicherheit)
+        $middleware->validateCsrfTokens(except: [
+            'offboarding/bestaetigung/*',
+            'revision/*',
+        ]);
+
         $middleware->appendToGroup('web', [
             \App\Http\Middleware\EnsureUserIsActive::class,
         ]);
