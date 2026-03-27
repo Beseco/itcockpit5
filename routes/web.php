@@ -28,6 +28,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('/revision/{token}',  [RevisionController::class, 'show'])->name('revision.show');
 Route::post('/revision/{token}', [RevisionController::class, 'submit'])->name('revision.submit');
 
+// Offboarding-Bestätigung – kein Login erforderlich (tokenbasiert)
+Route::get('/offboarding/bestaetigung/{token}',  [\App\Modules\AdUsers\Http\Controllers\OffboardingController::class, 'confirmShow'])->name('offboarding.confirm');
+Route::post('/offboarding/bestaetigung/{token}', [\App\Modules\AdUsers\Http\Controllers\OffboardingController::class, 'confirmSubmit'])->name('offboarding.confirm.submit');
+
 Route::get('/', function () {
     return redirect()->route('dashboard');
 })->middleware('auth');
