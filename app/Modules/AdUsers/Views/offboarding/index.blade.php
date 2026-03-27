@@ -71,6 +71,7 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Anleger</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bestätigung</th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Dokumente</th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aktionen</th>
                                 </tr>
                             </thead>
@@ -92,6 +93,7 @@
                                             </span>
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-700">{{ $record->anleger_name }}</td>
+                                        {{-- Digitale Bestätigung --}}
                                         <td class="px-4 py-3 text-sm">
                                             @if ($record->bestaetigung_erhalten_at)
                                                 <span class="text-green-600 text-xs">✓ {{ $record->bestaetigung_erhalten_at->format('d.m.Y') }}</span>
@@ -100,6 +102,39 @@
                                             @else
                                                 <span class="text-gray-400 text-xs">—</span>
                                             @endif
+                                        </td>
+                                        {{-- PDF-Icons --}}
+                                        <td class="px-4 py-3">
+                                            <div class="flex items-center justify-center gap-2">
+                                                @if ($record->personalmeldung_pdf)
+                                                    <a href="{{ route('adusers.offboarding.download', [$record, 'personalmeldung']) }}"
+                                                       target="_blank"
+                                                       title="Personalmeldung herunterladen"
+                                                       class="text-indigo-500 hover:text-indigo-700">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                                        </svg>
+                                                    </a>
+                                                @else
+                                                    <svg class="w-5 h-5 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" title="Keine Personalmeldung">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                                    </svg>
+                                                @endif
+                                                @if ($record->bestaetigung_pdf)
+                                                    <a href="{{ route('adusers.offboarding.download', [$record, 'bestaetigung']) }}"
+                                                       target="_blank"
+                                                       title="Bestätigung herunterladen"
+                                                       class="text-green-500 hover:text-green-700">
+                                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                        </svg>
+                                                    </a>
+                                                @else
+                                                    <svg class="w-5 h-5 text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" title="Keine Bestätigung">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                    </svg>
+                                                @endif
+                                            </div>
                                         </td>
                                         <td class="px-4 py-3 text-right">
                                             <div class="flex justify-end gap-1 items-center">
@@ -116,7 +151,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="px-4 py-8 text-center text-gray-400">Keine Vorgänge vorhanden.</td>
+                                        <td colspan="8" class="px-4 py-8 text-center text-gray-400">Keine Vorgänge vorhanden.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
