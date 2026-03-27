@@ -12,6 +12,7 @@ class ImportLegacyOffboarding extends Command
     protected $signature = 'adusers:import-offboarding
                             {--db= : Name der Quelldatenbank, falls abweichend (z.B. ticketsystem_db1)}
                             {--pdf-path=C:\xampp\htdocs\itcockpit\old\uploads : Pfad zum alten Uploads-Verzeichnis}
+                            {--pdfs-only : Nur PDFs für bereits importierte Datensätze nachladen}
                             {--dry-run : Nur anzeigen, nichts speichern}';
 
     protected $description = 'Importiert Altdaten aus isis12_ausscheiden in offboarding_records';
