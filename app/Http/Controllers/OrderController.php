@@ -51,10 +51,10 @@ class OrderController extends Controller
         if ($filterOwn) {
             $query->where('buyer_user_id', Auth::id());
         }
-        if ($filterDateFrom !== '') {
+        if (!empty($filterDateFrom)) {
             $query->where('order_date', '>=', $filterDateFrom);
         }
-        if ($filterDateTo !== '') {
+        if (!empty($filterDateTo)) {
             $query->where('order_date', '<=', $filterDateTo);
         }
 
