@@ -50,7 +50,14 @@ class ServerSyncService
             ];
 
             if (!$dryRun) {
-                Server::updateOrCreate(['distinguished_name' => $dn], $data);
+                $existing = Server::where('distinguished_name', $dn)->first();
+                if ($existing) {
+                    $existing->update($data);
+                } else {
+                    // Neuer Server: Revisionsdatum in 7 Tagen setzen
+                    $data['revision_date'] = now()->addDays(7);
+                    Server::create(array_merge(['distinguished_name' => $dn], $data));
+                }
             }
 
             $synced++;

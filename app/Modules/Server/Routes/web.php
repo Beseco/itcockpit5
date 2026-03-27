@@ -17,7 +17,8 @@ Route::middleware(['auth', 'module.permission:server,sync'])->group(function () 
 });
 
 Route::middleware(['auth', 'module.permission:server,edit'])->group(function () {
-    Route::post('/set-revision-dates', [ServerController::class, 'setRevisionDates'])->name('set-revision-dates');
+    Route::post('/set-revision-dates',              [ServerController::class, 'setRevisionDates'])->name('set-revision-dates');
+    Route::post('/{server}/revision-done',          [ServerController::class, 'markRevisionDone'])->name('revision-done');
 });
 
 Route::middleware(['auth', 'module.permission:server,create'])->group(function () {

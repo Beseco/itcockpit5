@@ -98,6 +98,7 @@ class ServerController extends Controller
         $applikationIds = $request->input('applikation_ids', []);
         unset($validated['applikation_ids']);
 
+        $validated['revision_date'] = now()->addMonths(12);
         $server = Server::create($validated);
         $server->applikationen()->sync($applikationIds);
 
@@ -142,6 +143,23 @@ class ServerController extends Controller
 
         return redirect()->route('server.index')
             ->with('success', 'Server "' . $name . '" wurde gelöscht.');
+    }
+
+    /**
+     * Revision als durchgeführt markieren – setzt neues Datum in 12 Monaten.
+     */
+    public function markRevisionDone(Server $server)
+    {
+        $server->update(['revision_date' => now()->addMonths(12)]);
+
+        $this->auditLogger->logModuleAction('Server', 'Revision durchgeführt', [
+            'id'           => $server->id,
+            'name'         => $server->name,
+            'next_revision'=> $server->revision_date->format('d.m.Y'),
+        ]);
+
+        return redirect()->route('server.show', $server)
+            ->with('success', 'Revision durchgeführt. Nächste Revision: ' . now()->addMonths(12)->format('d.m.Y'));
     }
 
     /**
@@ -194,7 +212,6 @@ class ServerController extends Controller
             'description'      => ['nullable', 'string'],
             'bemerkungen'      => ['nullable', 'string'],
             'doc_url'          => ['nullable', 'url', 'max:500'],
-            'revision_date'    => ['nullable', 'date'],
             'status'           => ['required', 'in:produktiv,testsystem,ausgeschaltet,im_aufbau,ausgemustert'],
             'type'             => ['nullable', 'in:vm,bare_metal'],
             'os_type_id'       => ['nullable', 'integer', 'exists:server_options,id'],
