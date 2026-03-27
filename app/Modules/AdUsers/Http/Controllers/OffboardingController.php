@@ -213,19 +213,7 @@ class OffboardingController extends Controller
 
         $request->validate([
             'bestaetigung_name' => ['required', 'string', 'max:200'],
-            'item_pc'           => ['accepted'],
-            'item_server'       => ['accepted'],
-            'item_terminal'     => ['accepted'],
-            'item_mobile'       => ['accepted'],
-            'item_programme'    => ['accepted'],
-            'item_browser'      => ['accepted'],
-        ], [
-            'item_pc.accepted'        => 'Bitte bestätigen Sie: lokaler PC',
-            'item_server.accepted'    => 'Bitte bestätigen Sie: Serverlaufwerke',
-            'item_terminal.accepted'  => 'Bitte bestätigen Sie: Terminalserver',
-            'item_mobile.accepted'    => 'Bitte bestätigen Sie: Tablets und Smartphones',
-            'item_programme.accepted' => 'Bitte bestätigen Sie: Programme',
-            'item_browser.accepted'   => 'Bitte bestätigen Sie: Internet-Browser',
+            'alle_bestaetigt'   => ['required', 'in:1'],
         ]);
 
         $record->update([

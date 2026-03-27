@@ -90,8 +90,8 @@
                             'item_programme' => 'in Programmen (Outlook, Word, etc.)',
                             'item_browser'   => 'Internet-Browsern',
                         ] as $name => $label)
-                            <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
-                                <input type="checkbox" name="{{ $name }}" value="1" required
+                            <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer check-item">
+                                <input type="checkbox" name="{{ $name }}" value="1"
                                        class="w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500">
                                 <span class="text-sm text-gray-700">Auf <strong>{{ $label }}</strong> sind keine privaten Daten gespeichert.</span>
                             </label>
@@ -107,16 +107,9 @@
                 {{-- Digitale Unterschrift --}}
                 <form action="{{ route('offboarding.confirm.submit', $record->bestaetigungstoken) }}" method="POST">
 
-                    @if ($errors->any())
-                        <div class="mb-4 bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded text-sm">
-                            <p class="font-semibold mb-1">Bitte alle Punkte abhaken:</p>
-                            <ul class="list-disc list-inside space-y-0.5">
-                                @foreach ($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
+                    <div id="checkbox-error" class="hidden mb-4 bg-red-50 border border-red-300 text-red-700 px-4 py-3 rounded text-sm">
+                        <p class="font-semibold">Bitte alle Punkte abhaken und Namen eingeben.</p>
+                    </div>
 
                     <div class="border-t border-gray-200 pt-6 mt-6">
                         <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -131,16 +124,36 @@
                         </p>
                     </div>
 
+                    <input type="hidden" name="alle_bestaetigt" value="1">
+
                     <div class="mt-6 flex items-center justify-between">
                         <p class="text-xs text-gray-400">
                             Ort: Freising, Datum: {{ now()->format('d.m.Y') }}
                         </p>
-                        <button type="submit"
+                        <button type="button" id="submit-btn"
+                                onclick="submitForm()"
                                 class="inline-flex items-center px-6 py-3 bg-red-700 text-white font-semibold rounded-md hover:bg-red-800">
                             Hiermit bestätige ich ✓
                         </button>
                     </div>
                 </form>
+
+                <script>
+                function submitForm() {
+                    const boxes = document.querySelectorAll('input[type=checkbox]');
+                    const name  = document.querySelector('input[name=bestaetigung_name]').value.trim();
+                    const allChecked = Array.from(boxes).every(b => b.checked);
+                    const err = document.getElementById('checkbox-error');
+
+                    if (!allChecked || !name) {
+                        err.classList.remove('hidden');
+                        err.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        return;
+                    }
+                    err.classList.add('hidden');
+                    document.querySelector('form').submit();
+                }
+                </script>
             @endif
 
         </div>
