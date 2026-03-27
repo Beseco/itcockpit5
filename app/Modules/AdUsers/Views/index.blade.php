@@ -3,6 +3,10 @@
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800">AD-Benutzer</h2>
             <div class="flex items-center gap-3">
+                <a href="{{ route('adusers.offboarding.index') }}"
+                   class="inline-flex items-center px-3 py-1.5 bg-orange-100 text-orange-800 border border-orange-200 rounded-md text-xs font-semibold hover:bg-orange-200 transition">
+                    Ausgeschiedene Mitarbeiter
+                </a>
                 @can('adusers.config')
                 <a href="{{ route('adusers.settings') }}"
                    class="text-sm text-gray-500 hover:text-gray-700">Einstellungen</a>
