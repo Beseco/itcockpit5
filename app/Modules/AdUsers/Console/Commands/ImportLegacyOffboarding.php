@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 class ImportLegacyOffboarding extends Command
 {
     protected $signature = 'adusers:import-offboarding
+                            {--db= : Name der Quelldatenbank, falls abweichend (z.B. ticketsystem_db1)}
                             {--pdf-path=C:\xampp\htdocs\itcockpit\old\uploads : Pfad zum alten Uploads-Verzeichnis}
                             {--dry-run : Nur anzeigen, nichts speichern}';
 
@@ -17,16 +18,28 @@ class ImportLegacyOffboarding extends Command
 
     public function handle(): int
     {
-        $pdfPath = rtrim($this->option('pdf-path'), '/\\');
-        $dryRun  = $this->option('dry-run');
+        $pdfPath  = rtrim($this->option('pdf-path'), '/\\');
+        $dryRun   = $this->option('dry-run');
+        $dbOption = $this->option('db');
+
+        // Tabellenname mit optionalem DB-Prefix: database.table
+        $tableName = $dbOption
+            ? "`{$dbOption}`.`isis12_ausscheiden`"
+            : 'isis12_ausscheiden';
 
         // Prüfen ob Quelltabelle existiert
-        if (!$this->tableExists('isis12_ausscheiden')) {
-            $this->error('Tabelle isis12_ausscheiden nicht gefunden.');
+        if (!$this->tableExists($tableName)) {
+            $this->error("Tabelle {$tableName} nicht gefunden.");
+            if (!$dbOption) {
+                $this->line('');
+                $this->line('Falls die Altdaten in einer anderen Datenbank liegen, Option --db angeben:');
+                $this->line('  php artisan adusers:import-offboarding --db=ticketsystem_db1');
+            }
             return Command::FAILURE;
         }
 
-        $rows = DB::table('isis12_ausscheiden')->orderBy('id')->get();
+        $rows = DB::statement("SET FOREIGN_KEY_CHECKS=0") || true;
+        $rows = DB::table(DB::raw($tableName))->orderBy('id')->get();
 
         if ($rows->isEmpty()) {
             $this->info('Keine Datensätze in isis12_ausscheiden gefunden.');
@@ -153,7 +166,7 @@ class ImportLegacyOffboarding extends Command
     private function tableExists(string $table): bool
     {
         try {
-            DB::table($table)->limit(1)->get();
+            DB::table(DB::raw($table))->limit(1)->get();
             return true;
         } catch (\Exception) {
             return false;
