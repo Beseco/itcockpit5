@@ -21,13 +21,14 @@ class ServerSyncService
     ) {}
 
     /**
-     * @return array{synced: int, marked_unsynced: int}
+     * @return array{synced: int, marked_unsynced: int, ips_resolved: int}
      */
     public function sync(bool $dryRun = false): array
     {
-        $entries   = $this->ldap->searchWithBaseDn(self::BASE_DN, self::FILTER, self::ATTRS);
-        $synced    = 0;
-        $foundDns  = [];
+        $entries      = $this->ldap->searchWithBaseDn(self::BASE_DN, self::FILTER, self::ATTRS);
+        $synced       = 0;
+        $ipsResolved  = 0;
+        $foundDns     = [];
 
         foreach ($entries as $entry) {
             $dn = LdapConnectionService::getAttr($entry, 'distinguishedname');
@@ -35,11 +36,12 @@ class ServerSyncService
                 continue;
             }
 
-            $foundDns[] = $dn;
+            $foundDns[]   = $dn;
+            $dnsHostname  = LdapConnectionService::getAttr($entry, 'dnshostname');
 
             $data = [
                 'name'             => LdapConnectionService::getAttr($entry, 'cn'),
-                'dns_hostname'     => LdapConnectionService::getAttr($entry, 'dnshostname'),
+                'dns_hostname'     => $dnsHostname,
                 'operating_system' => LdapConnectionService::getAttr($entry, 'operatingsystem'),
                 'os_version'       => LdapConnectionService::getAttr($entry, 'operatingsystemversion'),
                 'description'      => LdapConnectionService::getAttr($entry, 'description'),
@@ -49,12 +51,20 @@ class ServerSyncService
                 'raw_ldap_data'    => $entry,
             ];
 
+            // DNS-Auflösung: Hostname → IP
+            if ($dnsHostname) {
+                $resolved = self::resolveDns($dnsHostname);
+                if ($resolved) {
+                    $data['ip_address'] = $resolved;
+                    $ipsResolved++;
+                }
+            }
+
             if (!$dryRun) {
                 $existing = Server::where('distinguished_name', $dn)->first();
                 if ($existing) {
                     $existing->update($data);
                 } else {
-                    // Neuer Server: Revisionsdatum in 7 Tagen setzen
                     $data['revision_date'] = now()->addDays(7);
                     Server::create(array_merge(['distinguished_name' => $dn], $data));
                 }
@@ -63,7 +73,6 @@ class ServerSyncService
             $synced++;
         }
 
-        // Zuvor synchronisierte Server die nicht mehr in LDAP gefunden wurden als nicht synchronisiert markieren
         $markedUnsynced = 0;
         if (!$dryRun && count($foundDns) > 0) {
             $markedUnsynced = Server::where('ldap_synced', true)
@@ -74,10 +83,44 @@ class ServerSyncService
         if (!$dryRun) {
             $this->auditLogger->logModuleAction('Server', 'sync', [
                 'synced'          => $synced,
+                'ips_resolved'    => $ipsResolved,
                 'marked_unsynced' => $markedUnsynced,
             ]);
         }
 
-        return ['synced' => $synced, 'marked_unsynced' => $markedUnsynced];
+        return ['synced' => $synced, 'marked_unsynced' => $markedUnsynced, 'ips_resolved' => $ipsResolved];
+    }
+
+    /**
+     * Löst für alle Server mit Hostname aber ohne IP die IP per DNS auf.
+     *
+     * @return int Anzahl aufgelöster IPs
+     */
+    public function resolveIpAddresses(): int
+    {
+        $resolved = 0;
+
+        Server::whereNotNull('dns_hostname')
+            ->chunk(100, function ($servers) use (&$resolved) {
+                foreach ($servers as $server) {
+                    $ip = self::resolveDns($server->dns_hostname);
+                    if ($ip && $ip !== $server->ip_address) {
+                        $server->update(['ip_address' => $ip]);
+                        $resolved++;
+                    }
+                }
+            });
+
+        return $resolved;
+    }
+
+    /**
+     * DNS-Auflösung: gibt die IP zurück oder null wenn nicht auflösbar.
+     */
+    public static function resolveDns(string $hostname): ?string
+    {
+        $result = @gethostbyname($hostname);
+        // gethostbyname() gibt den Hostnamen zurück wenn er nicht auflösbar ist
+        return ($result !== $hostname) ? $result : null;
     }
 }

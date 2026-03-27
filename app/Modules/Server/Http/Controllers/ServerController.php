@@ -8,6 +8,7 @@ use App\Models\Gruppe;
 use App\Models\User;
 use App\Modules\Server\Models\Server;
 use App\Modules\Server\Models\ServerOption;
+use App\Modules\Server\Services\ServerSyncService;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -71,8 +72,11 @@ class ServerController extends Controller
         // Anzahl Server ohne Revisionsdatum für Aktionsbutton
         $countNoRevision = Server::whereNull('revision_date')->count();
 
+        // Network-Modul: VLAN + Online-Status per IP-Abgleich (optional)
+        $networkData = $this->loadNetworkData($servers->pluck('ip_address')->filter()->toArray());
+
         return view('server::index', compact(
-            'servers', 'abteilungen', 'adminUsers', 'countNoRevision',
+            'servers', 'abteilungen', 'adminUsers', 'countNoRevision', 'networkData',
             'search', 'filterStatus', 'filterAbt', 'filterLdap',
             'filterAdminId', 'filterNoRevision'
         ));
@@ -81,7 +85,10 @@ class ServerController extends Controller
     public function show(Server $server)
     {
         $server->load(['abteilung', 'adminUser', 'gruppe', 'osType', 'role', 'backupLevel', 'patchRing', 'applikationen']);
-        return view('server::show', compact('server'));
+        $networkEntry = $server->ip_address
+            ? $this->loadNetworkData([$server->ip_address])[$server->ip_address] ?? null
+            : null;
+        return view('server::show', compact('server', 'networkEntry'));
     }
 
     public function create()
@@ -179,6 +186,42 @@ class ServerController extends Controller
 
         return redirect()->route('server.index')
             ->with('success', "Revisionsdatum für {$count} Server gesetzt.");
+    }
+
+    /**
+     * Löst per DNS die IP-Adressen für alle Server mit Hostname auf.
+     */
+    public function resolveIps()
+    {
+        $count = app(ServerSyncService::class)->resolveIpAddresses();
+
+        $this->auditLogger->logModuleAction('Server', 'IPs per DNS aufgelöst', ['count' => $count]);
+
+        return redirect()->route('server.index')
+            ->with('success', "{$count} IP-Adresse(n) per DNS aufgelöst.");
+    }
+
+    /**
+     * Lädt Network-Modul-Daten (VLAN + Online-Status) für eine Liste von IPs.
+     * Gibt eine leere Collection zurück wenn das Network-Modul nicht verfügbar ist.
+     *
+     * @param  string[]  $ips
+     * @return \Illuminate\Support\Collection  Keyed by ip_address
+     */
+    private function loadNetworkData(array $ips): \Illuminate\Support\Collection
+    {
+        if (empty($ips) || !class_exists(\App\Modules\Network\Models\IpAddress::class)) {
+            return collect();
+        }
+
+        try {
+            return \App\Modules\Network\Models\IpAddress::with('vlan')
+                ->whereIn('ip_address', $ips)
+                ->get()
+                ->keyBy('ip_address');
+        } catch (\Exception) {
+            return collect();
+        }
     }
 
     // ─── Hilfsmethoden ────────────────────────────────────────────────────────

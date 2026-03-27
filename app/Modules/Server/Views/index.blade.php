@@ -118,6 +118,15 @@
                                     </form>
                                 @endif
                             @endcan
+                            @can('server.edit')
+                                <form action="{{ route('server.resolve-ips') }}" method="POST">
+                                    @csrf
+                                    <button type="submit"
+                                            class="inline-flex items-center px-3 py-2 bg-teal-600 border border-transparent rounded-md text-xs font-semibold text-white uppercase tracking-widest hover:bg-teal-700">
+                                        IPs per DNS auflösen
+                                    </button>
+                                </form>
+                            @endcan
                             @can('server.sync')
                                 <form action="{{ route('server.sync') }}" method="POST">
                                     @csrf
@@ -147,7 +156,7 @@
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name / Hostname</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP / Netzwerk</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">OS / Typ</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Admin</th>
@@ -171,8 +180,22 @@
                                                 <span class="text-xs text-blue-400">LDAP</span>
                                             @endif
                                         </td>
-                                        <td class="px-4 py-3 text-sm text-gray-700">
-                                            {{ $server->ip_address ?? '—' }}
+                                        <td class="px-4 py-3 text-sm">
+                                            @php $net = $server->ip_address ? ($networkData[$server->ip_address] ?? null) : null; @endphp
+                                            @if ($server->ip_address)
+                                                <div class="flex items-center gap-1.5">
+                                                    @if ($net)
+                                                        <span class="w-2 h-2 rounded-full flex-shrink-0 {{ $net->is_online ? 'bg-green-500' : 'bg-gray-300' }}"
+                                                              title="{{ $net->is_online ? 'Online' : 'Offline' }}"></span>
+                                                    @endif
+                                                    <span class="text-gray-700 font-mono text-xs">{{ $server->ip_address }}</span>
+                                                </div>
+                                                @if ($net?->vlan)
+                                                    <div class="text-xs text-blue-500 mt-0.5">{{ $net->vlan->vlan_name }}</div>
+                                                @endif
+                                            @else
+                                                <span class="text-gray-300 text-xs">—</span>
+                                            @endif
                                         </td>
                                         <td class="px-4 py-3">
                                             <span class="px-2 py-0.5 text-xs font-semibold rounded-full

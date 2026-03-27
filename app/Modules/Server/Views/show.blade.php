@@ -120,6 +120,56 @@
                 </div>
             </div>
 
+            {{-- Netzwerk-Info (aus Network-Modul) --}}
+            @if ($networkEntry)
+                <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">Netzwerk</h3>
+                        <span class="flex items-center gap-1.5 text-sm font-medium {{ $networkEntry->is_online ? 'text-green-600' : 'text-gray-400' }}">
+                            <span class="w-2.5 h-2.5 rounded-full {{ $networkEntry->is_online ? 'bg-green-500' : 'bg-gray-300' }}"></span>
+                            {{ $networkEntry->is_online ? 'Online' : 'Offline' }}
+                        </span>
+                    </div>
+                    <div class="p-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                            <span class="font-medium text-gray-500">IP-Adresse:</span>
+                            <span class="ml-2 font-mono text-gray-900">{{ $networkEntry->ip_address }}</span>
+                        </div>
+                        <div>
+                            <span class="font-medium text-gray-500">VLAN:</span>
+                            <span class="ml-2 text-gray-900">
+                                {{ $networkEntry->vlan?->vlan_name ?? '—' }}
+                                @if ($networkEntry->vlan)
+                                    <span class="text-gray-400 text-xs">({{ $networkEntry->vlan->network_address }})</span>
+                                @endif
+                            </span>
+                        </div>
+                        @if ($networkEntry->ping_ms)
+                            <div>
+                                <span class="font-medium text-gray-500">Ping:</span>
+                                <span class="ml-2 text-gray-900">{{ number_format($networkEntry->ping_ms, 1) }} ms</span>
+                            </div>
+                        @endif
+                        @if ($networkEntry->last_scanned_at)
+                            <div>
+                                <span class="font-medium text-gray-500">Letzter Scan:</span>
+                                <span class="ml-2 text-gray-900">{{ $networkEntry->last_scanned_at->diffForHumans() }}</span>
+                            </div>
+                        @endif
+                        @if ($networkEntry->mac_address)
+                            <div>
+                                <span class="font-medium text-gray-500">MAC:</span>
+                                <span class="ml-2 font-mono text-gray-700 text-xs">{{ $networkEntry->mac_address }}</span>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @elseif ($server->ip_address)
+                <div class="bg-gray-50 border border-gray-200 rounded-lg px-5 py-3 text-sm text-gray-500">
+                    IP {{ $server->ip_address }} ist nicht im Network-Modul erfasst – noch kein Scan durchgeführt.
+                </div>
+            @endif
+
             {{-- LDAP-Info --}}
             @if ($server->ldap_synced || $server->distinguished_name)
                 <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">

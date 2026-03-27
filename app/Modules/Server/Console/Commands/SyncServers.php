@@ -18,6 +18,7 @@ class SyncServers extends Command
             $result = $syncService->sync($this->option('dry-run'));
 
             $this->info("✓ Synchronisiert: {$result['synced']}");
+            $this->info("✓ IPs per DNS aufgelöst: {$result['ips_resolved']}");
             $this->info("✓ Als nicht synchronisiert markiert: {$result['marked_unsynced']}");
 
             if ($this->option('dry-run')) {
