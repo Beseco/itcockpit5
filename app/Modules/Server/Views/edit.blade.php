@@ -18,6 +18,28 @@
                 </div>
             @endif
 
+            {{-- Revision durchgeführt --}}
+            <div class="mb-4 flex items-center justify-between bg-white shadow-sm sm:rounded-lg px-5 py-3">
+                <div class="text-sm text-gray-600">
+                    Revisionsdatum:
+                    @if ($server->revision_date)
+                        <span class="{{ $server->revision_date->isPast() ? 'text-red-600 font-semibold' : 'text-gray-900 font-medium' }} ml-1">
+                            {{ $server->revision_date->format('d.m.Y') }}
+                            @if ($server->revision_date->isPast()) <span class="font-normal">(überfällig)</span> @endif
+                        </span>
+                    @else
+                        <span class="text-gray-400 ml-1">—</span>
+                    @endif
+                </div>
+                <form action="{{ route('server.revision-done', $server) }}" method="POST">
+                    @csrf
+                    <button type="submit"
+                            class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">
+                        ✓ Revision durchgeführt
+                    </button>
+                </form>
+            </div>
+
             {{-- Alpine-Wrapper für Delete-Modal (außerhalb des Update-Forms!) --}}
             <div x-data="{ deleteOpen: false }">
 
