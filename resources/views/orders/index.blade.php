@@ -93,6 +93,7 @@
                         <select name="filter_status"
                                 class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                             <option value="">Alle Status</option>
+                            <option value="nicht_angeordnet" {{ $filterStatus === 'nicht_angeordnet' ? 'selected' : '' }}>Nicht angeordnet</option>
                             @foreach (\App\Models\Order::STATUS_LABELS as $val => $label)
                                 <option value="{{ $val }}" {{ $filterStatus == $val ? 'selected' : '' }}>{{ $label }}</option>
                             @endforeach
@@ -111,12 +112,19 @@
                                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                     </div>
 
+                    <div class="flex items-center gap-2 pb-0.5">
+                        <input type="checkbox" id="filter_own" name="filter_own" value="1"
+                               {{ $filterOwn ? 'checked' : '' }}
+                               class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                        <label for="filter_own" class="text-sm text-gray-700 cursor-pointer select-none">Nur eigene</label>
+                    </div>
+
                     <div class="flex gap-2">
                         <button type="submit"
                                 class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md text-xs font-semibold text-white uppercase tracking-widest hover:bg-indigo-700">
                             Filtern
                         </button>
-                        @if ($filterStatus !== '' || $filterDateFrom !== '' || $filterDateTo !== '')
+                        @if ($filterStatus !== 'nicht_angeordnet' || $filterOwn || $filterDateFrom !== '' || $filterDateTo !== '')
                             <a href="{{ route('orders.index', request()->only('cost_center_id')) }}"
                                class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md text-xs font-semibold text-gray-700 uppercase tracking-widest hover:bg-gray-50">
                                 Zurücksetzen

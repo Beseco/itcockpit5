@@ -35,15 +35,21 @@ class OrderController extends Controller
             ->groupBy('it_cost_centers.id', 'it_cost_centers.number', 'it_cost_centers.description')
             ->get();
 
-        $filterStatus   = $request->get('filter_status', '');
+        $filterStatus   = $request->get('filter_status', 'nicht_angeordnet');
         $filterDateFrom = $request->get('date_from', '');
         $filterDateTo   = $request->get('date_to', '');
+        $filterOwn      = $request->boolean('filter_own');
 
         $query = Order::with(['vendor', 'costCenter', 'accountCode'])
             ->orderBy('order_date', 'desc');
 
-        if ($filterStatus !== '') {
+        if ($filterStatus === 'nicht_angeordnet') {
+            $query->where('status', '!=', 6);
+        } elseif ($filterStatus !== '') {
             $query->where('status', (int) $filterStatus);
+        }
+        if ($filterOwn) {
+            $query->where('buyer_user_id', Auth::id());
         }
         if ($filterDateFrom !== '') {
             $query->where('order_date', '>=', $filterDateFrom);
@@ -73,7 +79,7 @@ class OrderController extends Controller
 
         return view('orders.index', compact(
             'obligo', 'kstSummen', 'orders', 'kstDetails', 'kstAccounts',
-            'filterStatus', 'filterDateFrom', 'filterDateTo'
+            'filterStatus', 'filterDateFrom', 'filterDateTo', 'filterOwn'
         ));
     }
 
