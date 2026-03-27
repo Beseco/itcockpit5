@@ -21,7 +21,13 @@ class ImportLegacyOffboarding extends Command
     {
         $pdfPath  = rtrim($this->option('pdf-path'), '/\\');
         $dryRun   = $this->option('dry-run');
+        $pdfsOnly = $this->option('pdfs-only');
         $dbOption = $this->option('db');
+
+        // Nur PDFs nachladen für bereits importierte Datensätze
+        if ($pdfsOnly) {
+            return $this->loadMissingPdfs($pdfPath, $dryRun);
+        }
 
         // Tabellenname mit optionalem DB-Prefix: database.table
         $tableName = $dbOption
@@ -169,6 +175,69 @@ class ImportLegacyOffboarding extends Command
         }
 
         return null;
+    }
+
+    private function loadMissingPdfs(string $pdfPath, bool $dryRun): int
+    {
+        if (!$this->tableExists('isis12_ausscheiden')) {
+            $this->error('Tabelle isis12_ausscheiden nicht gefunden.');
+            return Command::FAILURE;
+        }
+
+        $rows = DB::table('isis12_ausscheiden')
+            ->whereNotNull('personalmeldung')->orWhereNotNull('bestaetigung')
+            ->get(['id', 'personalmeldung', 'bestaetigung']);
+
+        $updated   = 0;
+        $pdfLoaded = 0;
+
+        foreach ($rows as $row) {
+            $record = OffboardingRecord::where('legacy_id', $row->id)->first();
+            if (!$record) {
+                continue;
+            }
+
+            $data = [];
+
+            if (!empty($row->personalmeldung) && !$record->personalmeldung_pdf) {
+                $file = $pdfPath . DIRECTORY_SEPARATOR . $row->personalmeldung;
+                if (file_exists($file)) {
+                    $data['personalmeldung_pdf']      = file_get_contents($file);
+                    $data['personalmeldung_pdf_name'] = basename($file);
+                    $pdfLoaded++;
+                } else {
+                    $this->warn("Nicht gefunden: {$file}");
+                }
+            }
+
+            if (!empty($row->bestaetigung) && !$record->bestaetigung_pdf) {
+                $file = $pdfPath . DIRECTORY_SEPARATOR . $row->bestaetigung;
+                if (file_exists($file)) {
+                    $data['bestaetigung_pdf']      = file_get_contents($file);
+                    $data['bestaetigung_pdf_name'] = basename($file);
+                    $pdfLoaded++;
+                } else {
+                    $this->warn("Nicht gefunden: {$file}");
+                }
+            }
+
+            if (!empty($data)) {
+                if ($dryRun) {
+                    $this->line("  DRY: Legacy-ID {$row->id} – " . count($data) / 2 . " PDF(s) würden geladen");
+                } else {
+                    $record->update($data);
+                }
+                $updated++;
+            }
+        }
+
+        $this->info("✓ Datensätze mit PDFs: {$updated}");
+        $this->info("✓ PDF-Dateien geladen: {$pdfLoaded}");
+        if ($dryRun) {
+            $this->warn('Dry-Run: Keine Änderungen gespeichert.');
+        }
+
+        return Command::SUCCESS;
     }
 
     private function tableExists(string $table): bool
