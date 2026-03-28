@@ -38,6 +38,7 @@ class OffboardingRecord extends Model
         'bestaetigung_angefragt'  => 'Bestätigung angefragt',
         'bestaetigt'              => 'Bestätigt',
         'abgeschlossen'           => 'Abgeschlossen',
+        'importiert'              => 'Importiert (Altdaten)',
     ];
 
     const STATUS_COLORS = [
@@ -45,6 +46,7 @@ class OffboardingRecord extends Model
         'bestaetigung_angefragt'  => 'bg-blue-100 text-blue-800',
         'bestaetigt'              => 'bg-green-100 text-green-800',
         'abgeschlossen'           => 'bg-gray-100 text-gray-600',
+        'importiert'              => 'bg-purple-100 text-purple-800',
     ];
 
     // ─── Relationships ────────────────────────────────────────────────────────
