@@ -36,7 +36,7 @@
 
             {{-- Formular --}}
             <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <form action="{{ route('adusers.offboarding.store') }}" method="POST">
+                <form action="{{ route('adusers.offboarding.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
 
                     @if ($aduser)
@@ -95,6 +95,24 @@
                             @if ($aduser?->email)
                                 <input type="hidden" name="email_bestaetigung" value="{{ $aduser->email }}">
                             @endif
+                        </div>
+
+                        {{-- Personalmeldung PDF --}}
+                        <div class="md:col-span-2">
+                            <x-input-label for="personalmeldung_pdf" value="Personalmeldung (PDF)" />
+                            <div class="mt-1 flex items-center gap-3">
+                                <label class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-md border border-gray-300 transition">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                                    </svg>
+                                    <span id="pm-label">PDF auswählen</span>
+                                    <input type="file" name="personalmeldung_pdf" id="personalmeldung_pdf"
+                                           accept="application/pdf" class="hidden"
+                                           onchange="document.getElementById('pm-label').textContent = this.files[0]?.name ?? 'PDF auswählen'">
+                                </label>
+                                <span class="text-xs text-gray-400">Optional – kann auch später hochgeladen werden</span>
+                            </div>
+                            <x-input-error :messages="$errors->get('personalmeldung_pdf')" class="mt-1" />
                         </div>
 
                         <div class="md:col-span-2">

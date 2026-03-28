@@ -70,15 +70,16 @@ class OffboardingController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'aduser_id'        => ['nullable', 'integer', 'exists:adusers,id'],
-            'vorname'          => ['required', 'string', 'max:100'],
-            'nachname'         => ['required', 'string', 'max:100'],
-            'samaccountname'   => ['required', 'string', 'max:100'],
-            'personalnummer'   => ['nullable', 'string', 'max:50'],
-            'abteilung'        => ['nullable', 'string', 'max:100'],
+            'aduser_id'          => ['nullable', 'integer', 'exists:adusers,id'],
+            'vorname'            => ['required', 'string', 'max:100'],
+            'nachname'           => ['required', 'string', 'max:100'],
+            'samaccountname'     => ['required', 'string', 'max:100'],
+            'personalnummer'     => ['nullable', 'string', 'max:50'],
+            'abteilung'          => ['nullable', 'string', 'max:100'],
             'email_bestaetigung' => ['nullable', 'email', 'max:255'],
-            'datum_ausscheiden'=> ['required', 'date'],
-            'bemerkungen'      => ['nullable', 'string'],
+            'datum_ausscheiden'  => ['required', 'date'],
+            'bemerkungen'        => ['nullable', 'string'],
+            'personalmeldung_pdf'=> ['nullable', 'file', 'mimes:pdf', 'max:10240'],
         ]);
 
         // Doppelten Vorgang verhindern
@@ -93,9 +94,18 @@ class OffboardingController extends Controller
             }
         }
 
+        // PDF separat aus Request holen (nicht im validated-Array)
+        $pdfFile = $request->file('personalmeldung_pdf');
+        unset($validated['personalmeldung_pdf']);
+
         $validated['anleger_user_id'] = Auth::id();
         $validated['anleger_name']    = Auth::user()->name;
         $validated['status']          = 'ausstehend';
+
+        if ($pdfFile) {
+            $validated['personalmeldung_pdf']      = file_get_contents($pdfFile->getRealPath());
+            $validated['personalmeldung_pdf_name'] = $pdfFile->getClientOriginalName();
+        }
 
         $record = OffboardingRecord::create($validated);
 
