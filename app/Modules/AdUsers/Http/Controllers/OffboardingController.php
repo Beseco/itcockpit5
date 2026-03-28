@@ -4,7 +4,6 @@ namespace App\Modules\AdUsers\Http\Controllers;
 
 use App\Mail\OffboardingConfirmationMail;
 use App\Mail\OffboardingConfirmedAdminMail;
-use Barryvdh\DomPDF\Facade\Pdf;
 use App\Modules\AdUsers\Models\AdUser;
 use App\Modules\AdUsers\Models\OffboardingRecord;
 use App\Services\AuditLogger;
@@ -249,7 +248,8 @@ class OffboardingController extends Controller
 
         // PDF der digitalen Bestätigung generieren und in DB speichern
         try {
-            $pdf = Pdf::loadView('adusers::offboarding.bestaetigung_pdf', ['record' => $record->fresh()])
+            $pdf = app('dompdf.wrapper')
+                ->loadView('adusers::offboarding.bestaetigung_pdf', ['record' => $record->fresh()])
                 ->setPaper('a4', 'portrait');
             $record->update([
                 'bestaetigung_pdf'      => $pdf->output(),
