@@ -28,9 +28,13 @@ use Illuminate\Support\Facades\Route;
 Route::get('/revision/{token}',  [RevisionController::class, 'show'])->name('revision.show');
 Route::post('/revision/{token}', [RevisionController::class, 'submit'])->name('revision.submit');
 
-// Offboarding-Bestätigung – kein Login erforderlich (tokenbasiert)
-Route::get('/offboarding/bestaetigung/{token}',  [\App\Modules\AdUsers\Http\Controllers\OffboardingController::class, 'confirmShow'])->name('offboarding.confirm');
-Route::post('/offboarding/bestaetigung/{token}', [\App\Modules\AdUsers\Http\Controllers\OffboardingController::class, 'confirmSubmit'])->name('offboarding.confirm.submit');
+// Offboarding – öffentliche Token-Routen (kein Login)
+Route::get('/offboarding/bestaetigung/{token}',           [\App\Modules\AdUsers\Http\Controllers\OffboardingController::class, 'confirmShow'])->name('offboarding.confirm');
+Route::post('/offboarding/bestaetigung/{token}',          [\App\Modules\AdUsers\Http\Controllers\OffboardingController::class, 'confirmSubmit'])->name('offboarding.confirm.submit');
+Route::get('/offboarding/admin/deaktivierung/{token}',    [\App\Modules\AdUsers\Http\Controllers\OffboardingController::class, 'adminDeaktivierungShow'])->name('offboarding.admin.deaktivierung');
+Route::post('/offboarding/admin/deaktivierung/{token}',   [\App\Modules\AdUsers\Http\Controllers\OffboardingController::class, 'adminDeaktivierungSubmit'])->name('offboarding.admin.deaktivierung.submit');
+Route::get('/offboarding/admin/loeschung/{token}',        [\App\Modules\AdUsers\Http\Controllers\OffboardingController::class, 'adminLoeschungShow'])->name('offboarding.admin.loeschung');
+Route::post('/offboarding/admin/loeschung/{token}',       [\App\Modules\AdUsers\Http\Controllers\OffboardingController::class, 'adminLoeschungSubmit'])->name('offboarding.admin.loeschung.submit');
 
 Route::get('/', function () {
     return redirect()->route('dashboard');

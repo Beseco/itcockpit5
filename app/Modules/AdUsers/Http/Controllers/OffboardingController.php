@@ -222,6 +222,83 @@ class OffboardingController extends Controller
             ->with('success', 'Vorgang "' . $name . '" wurde gelöscht.');
     }
 
+    // ─── Admin-Bestätigungen: Deaktivierung + Löschung (kein Auth) ──────────
+
+    public function adminDeaktivierungShow(string $token)
+    {
+        $record = OffboardingRecord::where('deaktivierung_token', $token)->firstOrFail();
+        return view('adusers::offboarding.admin_confirm', [
+            'record' => $record,
+            'type'   => 'deaktivierung',
+            'done'   => $record->deaktivierung_bestaetigt_at !== null,
+        ]);
+    }
+
+    public function adminDeaktivierungSubmit(Request $request, string $token)
+    {
+        $record = OffboardingRecord::where('deaktivierung_token', $token)->firstOrFail();
+
+        if ($record->deaktivierung_bestaetigt_at) {
+            return view('adusers::offboarding.admin_confirm', [
+                'record' => $record, 'type' => 'deaktivierung', 'done' => true,
+            ]);
+        }
+
+        $request->validate(['bestaetigt_von' => ['required', 'string', 'max:200']]);
+
+        $record->update([
+            'deaktivierung_bestaetigt_at'  => now(),
+            'deaktivierung_bestaetigt_von' => $request->bestaetigt_von,
+        ]);
+
+        $this->auditLogger->logModuleAction('Offboarding', 'Deaktivierung bestätigt', [
+            'id' => $record->id, 'name' => $record->voller_name,
+        ]);
+
+        return view('adusers::offboarding.admin_confirm', [
+            'record' => $record, 'type' => 'deaktivierung', 'done' => false, 'justDone' => true,
+        ]);
+    }
+
+    public function adminLoeschungShow(string $token)
+    {
+        $record = OffboardingRecord::where('loeschung_token', $token)->firstOrFail();
+        return view('adusers::offboarding.admin_confirm', [
+            'record' => $record,
+            'type'   => 'loeschung',
+            'done'   => $record->loeschung_bestaetigt_at !== null,
+        ]);
+    }
+
+    public function adminLoeschungSubmit(Request $request, string $token)
+    {
+        $record = OffboardingRecord::where('loeschung_token', $token)->firstOrFail();
+
+        if ($record->loeschung_bestaetigt_at) {
+            return view('adusers::offboarding.admin_confirm', [
+                'record' => $record, 'type' => 'loeschung', 'done' => true,
+            ]);
+        }
+
+        $request->validate(['bestaetigt_von' => ['required', 'string', 'max:200']]);
+
+        $record->update([
+            'loeschung_bestaetigt_at'  => now(),
+            'loeschung_bestaetigt_von' => $request->bestaetigt_von,
+            'datum_geloescht'          => today(),
+            'geloescht_von'            => $request->bestaetigt_von,
+            'status'                   => 'abgeschlossen',
+        ]);
+
+        $this->auditLogger->logModuleAction('Offboarding', 'Löschung bestätigt', [
+            'id' => $record->id, 'name' => $record->voller_name,
+        ]);
+
+        return view('adusers::offboarding.admin_confirm', [
+            'record' => $record, 'type' => 'loeschung', 'done' => false, 'justDone' => true,
+        ]);
+    }
+
     // ─── Öffentliche Bestätigungsseite (kein Auth) ───────────────────────────
 
     public function confirmShow(string $token)

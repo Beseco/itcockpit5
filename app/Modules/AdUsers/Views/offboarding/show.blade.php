@@ -121,6 +121,53 @@
                 </div>
             </div>
 
+            {{-- Workflow: Deaktivierung + Löschung --}}
+            <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
+                <div class="px-6 py-4 bg-gray-50 border-b border-gray-100">
+                    <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">IT-Workflow</h3>
+                </div>
+                <div class="divide-y divide-gray-100">
+                    {{-- Deaktivierung --}}
+                    <div class="p-5 flex items-center justify-between gap-4">
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                                Deaktivierung am {{ $record->datum_ausscheiden->format('d.m.Y') }}
+                            </p>
+                            @if ($record->deaktivierung_bestaetigt_at)
+                                <span class="inline-flex items-center gap-1 text-sm text-green-700 font-medium">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    Bestätigt am {{ $record->deaktivierung_bestaetigt_at->format('d.m.Y H:i') }}
+                                    von {{ $record->deaktivierung_bestaetigt_von }}
+                                </span>
+                            @elseif ($record->deaktivierung_benachrichtigt_at)
+                                <span class="text-sm text-amber-600">Mail gesendet am {{ $record->deaktivierung_benachrichtigt_at->format('d.m.Y') }} – Bestätigung ausstehend</span>
+                            @else
+                                <span class="text-sm text-gray-400">Noch keine Benachrichtigung gesendet</span>
+                            @endif
+                        </div>
+                    </div>
+                    {{-- Löschung --}}
+                    <div class="p-5 flex items-center justify-between gap-4">
+                        <div>
+                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
+                                Löschung am {{ $record->datum_ausscheiden->addDays(60)->format('d.m.Y') }} (60 Tage)
+                            </p>
+                            @if ($record->loeschung_bestaetigt_at)
+                                <span class="inline-flex items-center gap-1 text-sm text-green-700 font-medium">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    Bestätigt am {{ $record->loeschung_bestaetigt_at->format('d.m.Y H:i') }}
+                                    von {{ $record->loeschung_bestaetigt_von }}
+                                </span>
+                            @elseif ($record->loeschung_benachrichtigt_at)
+                                <span class="text-sm text-red-600">Mail gesendet am {{ $record->loeschung_benachrichtigt_at->format('d.m.Y') }} – Bestätigung ausstehend</span>
+                            @else
+                                <span class="text-sm text-gray-400">Noch keine Benachrichtigung gesendet</span>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {{-- PDFs --}}
             <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
                 <div class="px-6 py-4 bg-gray-50 border-b border-gray-100">

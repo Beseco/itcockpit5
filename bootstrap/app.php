@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // (Token im URL ist die eigentliche Sicherheit)
         $middleware->validateCsrfTokens(except: [
             'offboarding/bestaetigung/*',
+            'offboarding/admin/*',
             'revision/*',
         ]);
 

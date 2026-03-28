@@ -3,6 +3,7 @@
 namespace App\Modules\AdUsers\Providers;
 
 use App\Modules\AdUsers\Console\Commands\ImportLegacyOffboarding;
+use App\Modules\AdUsers\Console\Commands\OffboardingReminders;
 use App\Modules\AdUsers\Console\Commands\SyncAdUsers;
 use App\Services\HookManager;
 use Illuminate\Console\Scheduling\Schedule;
@@ -12,7 +13,7 @@ class AdUsersServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        $this->commands([SyncAdUsers::class, ImportLegacyOffboarding::class]);
+        $this->commands([SyncAdUsers::class, ImportLegacyOffboarding::class, OffboardingReminders::class]);
     }
 
     public function boot(): void
@@ -37,6 +38,7 @@ class AdUsersServiceProvider extends ServiceProvider
         $this->app->booted(function () {
             $schedule = $this->app->make(Schedule::class);
             $schedule->command('adusers:sync')->hourly();
+            $schedule->command('adusers:offboarding-reminders')->dailyAt('07:00');
         });
     }
 }

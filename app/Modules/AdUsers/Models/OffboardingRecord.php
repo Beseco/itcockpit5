@@ -20,6 +20,10 @@ class OffboardingRecord extends Model
         'status', 'bestaetigungstoken',
         'bestaetigung_angefragt_at', 'bestaetigung_erhalten_at',
         'bestaetigung_name', 'bestaetigung_ip',
+        'deaktivierung_token', 'deaktivierung_benachrichtigt_at',
+        'deaktivierung_bestaetigt_at', 'deaktivierung_bestaetigt_von',
+        'loeschung_token', 'loeschung_benachrichtigt_at',
+        'loeschung_bestaetigt_at', 'loeschung_bestaetigt_von',
         'personalmeldung_pdf', 'personalmeldung_pdf_name',
         'bestaetigung_pdf', 'bestaetigung_pdf_name',
         'bemerkungen', 'legacy_id', 'imported_at',
@@ -28,9 +32,13 @@ class OffboardingRecord extends Model
     protected $casts = [
         'datum_ausscheiden'        => 'date',
         'datum_geloescht'          => 'date',
-        'bestaetigung_angefragt_at'=> 'datetime',
-        'bestaetigung_erhalten_at' => 'datetime',
-        'imported_at'              => 'datetime',
+        'bestaetigung_angefragt_at'        => 'datetime',
+        'bestaetigung_erhalten_at'         => 'datetime',
+        'deaktivierung_benachrichtigt_at'  => 'datetime',
+        'deaktivierung_bestaetigt_at'      => 'datetime',
+        'loeschung_benachrichtigt_at'      => 'datetime',
+        'loeschung_bestaetigt_at'          => 'datetime',
+        'imported_at'                      => 'datetime',
     ];
 
     const STATUS_LABELS = [
@@ -88,6 +96,27 @@ class OffboardingRecord extends Model
     public function generateToken(): void
     {
         $this->bestaetigungstoken = Str::random(64);
+    }
+
+    public function getDatumLoeschungAttribute(): \Carbon\Carbon
+    {
+        return $this->datum_ausscheiden->addDays(60);
+    }
+
+    /** Soll heute Deaktivierungs-Mail gesendet werden? */
+    public function brauchDeaktivierungsMail(): bool
+    {
+        return $this->datum_ausscheiden->isToday()
+            && $this->deaktivierung_benachrichtigt_at === null
+            && !in_array($this->status, ['abgeschlossen']);
+    }
+
+    /** Soll heute Löschungs-Mail gesendet werden? */
+    public function brauchLoeschungsMail(): bool
+    {
+        return $this->datum_ausscheiden->addDays(60)->isToday()
+            && $this->loeschung_benachrichtigt_at === null
+            && !in_array($this->status, ['abgeschlossen']);
     }
 
     public function getPdfResponse(string $type): Response
