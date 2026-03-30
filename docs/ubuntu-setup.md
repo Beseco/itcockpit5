@@ -318,6 +318,73 @@ sudo -u www-data php artisan up
 
 ---
 
+---
+
+## 15. Datenmigration vom alten Server
+
+### Schritt 1: Dump auf dem alten Server erstellen
+
+```bash
+# SSH auf alten Server
+cd /home/users/ticketsystem/www
+
+# Datenbank-Zugangsdaten aus .env auslesen
+grep DB_ .env
+
+# Datenbank-Dump erstellen
+mysqldump -u DB_USERNAME -p DB_DATABASE > /tmp/itcockpit_dump.sql
+
+# Uploads packen
+tar -czf /tmp/itcockpit_storage.tar.gz -C /home/users/ticketsystem/www storage/app/public
+```
+
+### Schritt 2: Dateien auf den neuen Server übertragen
+
+```bash
+# Von lokalem PC aus (beide Dateien herunterladen, dann hochladen)
+scp USER@ALTER-SERVER:/tmp/itcockpit_dump.sql ./
+scp USER@ALTER-SERVER:/tmp/itcockpit_storage.tar.gz ./
+
+scp itcockpit_dump.sql USER@NEUER-SERVER:/tmp/
+scp itcockpit_storage.tar.gz USER@NEUER-SERVER:/tmp/
+```
+
+### Schritt 3: Datenbank einspielen (auf dem neuen Server)
+
+```bash
+# Leere Datenbank sicherstellen
+sudo mysql -u root -p -e "DROP DATABASE itcockpit; CREATE DATABASE itcockpit CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+# Dump einspielen
+sudo mysql -u root -p itcockpit < /tmp/itcockpit_dump.sql
+```
+
+### Schritt 4: Uploads wiederherstellen
+
+```bash
+cd /var/www/itcockpit
+sudo tar -xzf /tmp/itcockpit_storage.tar.gz -C .
+sudo chown -R www-data:www-data storage/
+```
+
+### Schritt 5: APP_KEY vom alten Server übernehmen
+
+Den `APP_KEY` aus der `.env` des alten Servers in die neue `.env` kopieren – sonst können bestehende Sessions und verschlüsselte Daten nicht gelesen werden:
+
+```bash
+# Auf altem Server anzeigen
+grep APP_KEY /home/users/ticketsystem/www/.env
+
+# Auf neuem Server setzen
+nano /var/www/itcockpit/.env
+# → APP_KEY=... eintragen
+
+sudo -u www-data php artisan optimize:clear
+sudo -u www-data php artisan config:cache
+```
+
+---
+
 ## Troubleshooting
 
 | Problem | Lösung |
