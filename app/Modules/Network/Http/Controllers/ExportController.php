@@ -14,9 +14,9 @@ class ExportController
 {
     public function export(Request $request)
     {
-        $vlans = Vlan::with(['ipAddresses' => function ($q) {
-            $q->orderByRaw('INET_ATON(ip_address)');
-        }])->orderBy('vlan_id')->get();
+        ini_set('memory_limit', '256M');
+
+        $vlans = Vlan::orderBy('vlan_id')->get();
 
         $spreadsheet = new Spreadsheet();
         $spreadsheet->getProperties()
@@ -42,8 +42,8 @@ class ExportController
 
         foreach ($vlans as $row => $vlan) {
             $r = $row + 2;
-            $ips = $vlan->ipAddresses;
-            $online = $ips->where('is_online', true)->count();
+            $online = $vlan->ipAddresses()->where('is_online', true)->count();
+            $total  = $vlan->ipAddresses()->count();
 
             $overview->getCell([1, $r])->setValue($vlan->vlan_id);
             $overview->getCell([2, $r])->setValue($vlan->vlan_name);
@@ -52,7 +52,7 @@ class ExportController
             $overview->getCell([5, $r])->setValue($vlan->dhcp_from ?? '');
             $overview->getCell([6, $r])->setValue($vlan->dhcp_to ?? '');
             $overview->getCell([7, $r])->setValue($online);
-            $overview->getCell([8, $r])->setValue($ips->count());
+            $overview->getCell([8, $r])->setValue($total);
             $overview->getCell([9, $r])->setValue($vlan->internes_netz ? 'Ja' : 'Nein');
             $overview->getCell([10, $r])->setValue($vlan->ipscan ? 'Ja' : 'Nein');
             $overview->getCell([11, $r])->setValue($vlan->description ?? '');
@@ -108,33 +108,35 @@ class ExportController
             $lastCol = 'H';
             $this->applyHeaderStyle($sheet, "A8:{$lastCol}8");
 
-            foreach ($vlan->ipAddresses as $row => $ip) {
-                $r = $row + 9;
-                $sheet->getCell([1, $r])->setValue($ip->ip_address);
-                $sheet->getCell([2, $r])->setValue($ip->dns_name ?? '');
-                $sheet->getCell([3, $r])->setValue($ip->mac_address ?? '');
-                $sheet->getCell([4, $r])->setValue($ip->is_online ? 'Online' : 'Offline');
-                $sheet->getCell([5, $r])->setValue($ip->ping_ms ?? '');
-                $sheet->getCell([6, $r])->setValue(
-                    $ip->last_online_at ? $ip->last_online_at->format('d.m.Y H:i') : ''
-                );
-                $sheet->getCell([7, $r])->setValue($ip->isInDhcpRange() ? 'Ja' : 'Nein');
-                $sheet->getCell([8, $r])->setValue($ip->comment ?? '');
+            $rowIndex = 9;
+            $vlan->ipAddresses()->orderByRaw('INET_ATON(ip_address)')->chunk(200, function ($ips) use ($sheet, $lastCol, &$rowIndex) {
+                foreach ($ips as $ip) {
+                    $r = $rowIndex++;
+                    $sheet->getCell([1, $r])->setValue($ip->ip_address);
+                    $sheet->getCell([2, $r])->setValue($ip->dns_name ?? '');
+                    $sheet->getCell([3, $r])->setValue($ip->mac_address ?? '');
+                    $sheet->getCell([4, $r])->setValue($ip->is_online ? 'Online' : 'Offline');
+                    $sheet->getCell([5, $r])->setValue($ip->ping_ms ?? '');
+                    $sheet->getCell([6, $r])->setValue(
+                        $ip->last_online_at ? $ip->last_online_at->format('d.m.Y H:i') : ''
+                    );
+                    $sheet->getCell([7, $r])->setValue($ip->isInDhcpRange() ? 'Ja' : 'Nein');
+                    $sheet->getCell([8, $r])->setValue($ip->comment ?? '');
 
-                // Online grün, Offline grau
-                $fill = $ip->is_online ? 'C6EFCE' : 'F2F2F2';
-                $font = $ip->is_online ? '276221' : '666666';
-                $sheet->getStyle([4, $r])->applyFromArray([
-                    'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $fill]],
-                    'font' => ['color' => ['rgb' => $font]],
-                ]);
+                    $fill = $ip->is_online ? 'C6EFCE' : 'F2F2F2';
+                    $font = $ip->is_online ? '276221' : '666666';
+                    $sheet->getStyle([4, $r])->applyFromArray([
+                        'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $fill]],
+                        'font' => ['color' => ['rgb' => $font]],
+                    ]);
 
-                if ($r % 2 === 0) {
-                    $this->applyAlternatingRow($sheet, "A{$r}:{$lastCol}{$r}");
+                    if ($r % 2 === 0) {
+                        $this->applyAlternatingRow($sheet, "A{$r}:{$lastCol}{$r}");
+                    }
                 }
-            }
+            });
 
-            $lastRow = $vlan->ipAddresses->count() + 8;
+            $lastRow = $rowIndex - 1;
             if ($lastRow >= 8) {
                 $this->applyTableBorder($sheet, "A8:{$lastCol}{$lastRow}");
             }
