@@ -118,12 +118,14 @@ MAIL_FROM_ADDRESS="itcockpit@deinefirma.de"
 
 ## 6. Datenbank migrieren & Admin-User anlegen
 
+> **Wichtig:** Alle `php artisan`-Befehle immer als `www-data` ausführen, damit Logs und Cache-Dateien die richtigen Berechtigungen erhalten.
+
 ```bash
-php artisan migrate --force
-php artisan db:seed --force
+sudo -u www-data php artisan migrate --force
+sudo -u www-data php artisan db:seed --force
 
 # Admin-User erstellen
-php artisan user:create-admin
+sudo -u www-data php artisan user:create-admin
 ```
 
 ---
@@ -131,7 +133,7 @@ php artisan user:create-admin
 ## 7. Storage & Berechtigungen
 
 ```bash
-php artisan storage:link
+sudo -u www-data php artisan storage:link
 
 sudo chown -R www-data:www-data /var/www/itcockpit
 sudo chmod -R 755 /var/www/itcockpit/storage
@@ -249,12 +251,14 @@ sudo -u www-data ping -c 1 127.0.0.1
 
 ## 12. Produktions-Caching aktivieren
 
+Alle Artisan-Befehle **müssen als www-data** ausgeführt werden, sonst entstehen Permission-Fehler auf storage/logs:
+
 ```bash
 cd /var/www/itcockpit
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
-php artisan event:cache
+sudo -u www-data php artisan config:cache
+sudo -u www-data php artisan route:cache
+sudo -u www-data php artisan view:cache
+sudo -u www-data php artisan event:cache
 ```
 
 ---
@@ -270,10 +274,10 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost/
 # Erwartetes Ergebnis: 200 oder 302
 
 # Scheduler läuft?
-php artisan schedule:run
+sudo -u www-data php artisan schedule:run
 
 # Netzwerk-Scan funktioniert?
-php artisan network:scan --force
+sudo -u www-data php artisan network:scan --force
 ```
 
 Öffne im Browser: `http://DEINE-SERVER-IP`
@@ -288,7 +292,7 @@ Workflow für spätere Deployments:
 cd /var/www/itcockpit
 
 # Wartungsmodus aktivieren
-php artisan down
+sudo -u www-data php artisan down
 
 # Code aktualisieren
 git pull
@@ -300,16 +304,16 @@ composer install --optimize-autoloader --no-dev
 npm ci && npm run build
 
 # Migrationen ausführen
-php artisan migrate --force
+sudo -u www-data php artisan migrate --force
 
 # Cache leeren und neu aufbauen
-php artisan optimize:clear
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+sudo -u www-data php artisan optimize:clear
+sudo -u www-data php artisan config:cache
+sudo -u www-data php artisan route:cache
+sudo -u www-data php artisan view:cache
 
 # Wartungsmodus beenden
-php artisan up
+sudo -u www-data php artisan up
 ```
 
 ---
