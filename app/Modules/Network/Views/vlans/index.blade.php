@@ -1,11 +1,11 @@
-<x-app-layout x-data="exportModal()">
+<x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('Network / VLAN Management') }}
         </h2>
     </x-slot>
 
-    <div class="py-12">
+    <div x-data="exportModal()" class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <!-- Toolbar -->
             <div class="mb-4 flex items-center gap-3">
@@ -236,47 +236,39 @@
                 </div>
             </div>
         </div>
-    </div>
-    <!-- Export Progress Modal -->
-    <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center">
-        <!-- Backdrop -->
-        <div class="absolute inset-0 bg-gray-900 bg-opacity-60"></div>
 
-        <!-- Modal -->
-        <div class="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Excel Export</h3>
-
-            <!-- Status-Meldung -->
-            <p class="text-sm text-gray-600 mb-3" x-text="message"></p>
-
-            <!-- Fortschrittsbalken -->
-            <div class="w-full bg-gray-200 rounded-full h-4 mb-4 overflow-hidden">
-                <div class="h-4 rounded-full transition-all duration-300 ease-out"
-                     :class="error ? 'bg-red-500' : (done ? 'bg-green-500' : 'bg-blue-600')"
-                     :style="'width: ' + percent + '%'"></div>
-            </div>
-            <p class="text-xs text-gray-400 text-right mb-4" x-text="percent + '%'"></p>
-
-            <!-- Fehlermeldung -->
-            <div x-show="error" class="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700" x-text="errorMessage"></div>
-
-            <!-- Buttons -->
-            <div class="flex justify-end gap-3">
-                <button x-show="done || error" @click="open = false"
-                        class="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md transition">
-                    Schließen
-                </button>
-                <a x-show="done" :href="downloadUrl" @click="open = false"
-                   class="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded-md transition inline-flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
-                    </svg>
-                    Herunterladen
-                </a>
+        <!-- Export Progress Modal (fixed, innerhalb des Alpine-Scopes) -->
+        <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center">
+            <div class="absolute inset-0 bg-gray-900 bg-opacity-60"></div>
+            <div class="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">Excel Export</h3>
+                <p class="text-sm text-gray-600 mb-3" x-text="message"></p>
+                <div class="w-full bg-gray-200 rounded-full h-4 mb-4 overflow-hidden">
+                    <div class="h-4 rounded-full transition-all duration-300 ease-out"
+                         :class="error ? 'bg-red-500' : (done ? 'bg-green-500' : 'bg-blue-600')"
+                         :style="'width: ' + percent + '%'"></div>
+                </div>
+                <p class="text-xs text-gray-400 text-right mb-4" x-text="percent + '%'"></p>
+                <div x-show="error" class="mb-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700" x-text="errorMessage"></div>
+                <div class="flex justify-end gap-3">
+                    <button x-show="done || error" @click="open = false"
+                            class="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-md transition">
+                        Schließen
+                    </button>
+                    <a x-show="done" :href="downloadUrl" @click="open = false"
+                       class="px-4 py-2 text-sm bg-green-600 hover:bg-green-700 text-white rounded-md transition inline-flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        </svg>
+                        Herunterladen
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 </x-app-layout>
+
+
 
 <script>
 function exportModal() {
