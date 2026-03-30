@@ -5,7 +5,7 @@ namespace App\Modules\Network\Http\Controllers;
 use App\Modules\Network\Models\Vlan;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Writer\Xls;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
@@ -152,14 +152,14 @@ class ExportController
 
         $spreadsheet->setActiveSheetIndex(0);
 
-        $filename = 'netzwerk_export_' . now()->format('Y-m-d_His') . '.xlsx';
+        $filename = 'netzwerk_export_' . now()->format('Y-m-d_His') . '.xls';
 
-        $writer = new Xlsx($spreadsheet);
+        $writer = new Xls($spreadsheet);
 
         return response()->stream(function () use ($writer) {
             $writer->save('php://output');
         }, 200, [
-            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Type'        => 'application/vnd.ms-excel',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
             'Cache-Control'       => 'max-age=0',
         ]);
