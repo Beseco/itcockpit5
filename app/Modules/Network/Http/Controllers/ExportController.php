@@ -17,6 +17,8 @@ class ExportController
     {
         return response()->stream(function () {
             ini_set('memory_limit', '256M');
+            set_time_limit(0);
+            ignore_user_abort(true);
 
             while (ob_get_level() > 0) {
                 ob_end_clean();
@@ -25,6 +27,12 @@ class ExportController
             $send = function (string $event, array $data) {
                 echo "event: {$event}\n";
                 echo 'data: ' . json_encode($data) . "\n\n";
+                flush();
+            };
+
+            // Keepalive: verhindert Timeout bei Nginx/Apache
+            $keepalive = function () {
+                echo ": keepalive\n\n";
                 flush();
             };
 
@@ -92,6 +100,7 @@ class ExportController
                         'percent' => $percent,
                         'message' => "VLAN {$vlan->vlan_id}: {$vlan->vlan_name}",
                     ]);
+                    $keepalive();
 
                     $sheetTitle = $this->sanitizeSheetTitle(
                         'VLAN ' . str_pad($vlan->vlan_id, 3, '0', STR_PAD_LEFT) . ' ' . $vlan->vlan_name
@@ -127,7 +136,8 @@ class ExportController
                     $this->applyHeaderStyle($sheet, "A8:{$lastCol}8");
 
                     $rowIndex = 9;
-                    $vlan->ipAddresses()->orderByRaw('INET_ATON(ip_address)')->chunk(200, function ($ips) use ($sheet, $lastCol, &$rowIndex) {
+                    $vlan->ipAddresses()->orderByRaw('INET_ATON(ip_address)')->chunk(200, function ($ips) use ($sheet, $lastCol, &$rowIndex, $keepalive) {
+                        $keepalive();
                         foreach ($ips as $ip) {
                             $r = $rowIndex++;
                             $sheet->getCell([1, $r])->setValue($ip->ip_address);
