@@ -4,6 +4,7 @@ use App\Modules\Network\Http\Controllers\VlanController;
 use App\Modules\Network\Http\Controllers\IpAddressController;
 use App\Modules\Network\Http\Controllers\VlanCommentController;
 use App\Modules\Network\Http\Controllers\SearchController;
+use App\Modules\Network\Http\Controllers\ExportController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,7 +22,8 @@ use Illuminate\Support\Facades\Route;
 // VLAN routes - protected with module.network.view permission
 Route::middleware(['auth', 'module.permission:network,view'])->group(function () {
     Route::get('/', [VlanController::class, 'index'])->name('index');
-    
+    Route::get('/export', [ExportController::class, 'export'])->name('export');
+
     // Global search routes
     Route::get('/search', [SearchController::class, 'index'])->name('search');
     Route::get('/search/ajax', [SearchController::class, 'search'])->name('search.ajax');
