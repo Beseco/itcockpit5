@@ -9,7 +9,6 @@ use PhpOffice\PhpSpreadsheet\Writer\Xls;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
-use PhpOffice\PhpSpreadsheet\Style\Font;
 
 class ExportController
 {
@@ -36,8 +35,7 @@ class ExportController
         ];
 
         foreach ($headers as $col => $label) {
-            $cell = $overview->getCellByColumnAndRow($col + 1, 1);
-            $cell->setValue($label);
+            $overview->getCell([$col + 1, 1])->setValue($label);
         }
 
         $this->applyHeaderStyle($overview, 'A1:K1');
@@ -47,17 +45,17 @@ class ExportController
             $ips = $vlan->ipAddresses;
             $online = $ips->where('is_online', true)->count();
 
-            $overview->getCellByColumnAndRow(1, $r)->setValue($vlan->vlan_id);
-            $overview->getCellByColumnAndRow(2, $r)->setValue($vlan->vlan_name);
-            $overview->getCellByColumnAndRow(3, $r)->setValue($vlan->network_address . '/' . $vlan->cidr_suffix);
-            $overview->getCellByColumnAndRow(4, $r)->setValue($vlan->gateway ?? '');
-            $overview->getCellByColumnAndRow(5, $r)->setValue($vlan->dhcp_from ?? '');
-            $overview->getCellByColumnAndRow(6, $r)->setValue($vlan->dhcp_to ?? '');
-            $overview->getCellByColumnAndRow(7, $r)->setValue($online);
-            $overview->getCellByColumnAndRow(8, $r)->setValue($ips->count());
-            $overview->getCellByColumnAndRow(9, $r)->setValue($vlan->internes_netz ? 'Ja' : 'Nein');
-            $overview->getCellByColumnAndRow(10, $r)->setValue($vlan->ipscan ? 'Ja' : 'Nein');
-            $overview->getCellByColumnAndRow(11, $r)->setValue($vlan->description ?? '');
+            $overview->getCell([1, $r])->setValue($vlan->vlan_id);
+            $overview->getCell([2, $r])->setValue($vlan->vlan_name);
+            $overview->getCell([3, $r])->setValue($vlan->network_address . '/' . $vlan->cidr_suffix);
+            $overview->getCell([4, $r])->setValue($vlan->gateway ?? '');
+            $overview->getCell([5, $r])->setValue($vlan->dhcp_from ?? '');
+            $overview->getCell([6, $r])->setValue($vlan->dhcp_to ?? '');
+            $overview->getCell([7, $r])->setValue($online);
+            $overview->getCell([8, $r])->setValue($ips->count());
+            $overview->getCell([9, $r])->setValue($vlan->internes_netz ? 'Ja' : 'Nein');
+            $overview->getCell([10, $r])->setValue($vlan->ipscan ? 'Ja' : 'Nein');
+            $overview->getCell([11, $r])->setValue($vlan->description ?? '');
 
             if ($r % 2 === 0) {
                 $this->applyAlternatingRow($overview, "A{$r}:K{$r}");
@@ -92,7 +90,7 @@ class ExportController
             $sheet->setCellValue('B4', $vlan->gateway ?? '-');
             $sheet->setCellValue('A5', 'DHCP-Bereich:');
             $sheet->setCellValue('B5', $vlan->dhcp_from
-                ? ($vlan->dhcp_from . ' – ' . $vlan->dhcp_to)
+                ? ($vlan->dhcp_from . ' - ' . $vlan->dhcp_to)
                 : 'Nicht konfiguriert');
             $sheet->setCellValue('A6', 'Beschreibung:');
             $sheet->setCellValue('B6', $vlan->description ?? '');
@@ -104,7 +102,7 @@ class ExportController
             // IP-Tabelle ab Zeile 8
             $ipHeaders = ['IP-Adresse', 'DNS-Name', 'MAC-Adresse', 'Status', 'Ping (ms)', 'Zuletzt Online', 'DHCP', 'Kommentar'];
             foreach ($ipHeaders as $col => $label) {
-                $sheet->getCellByColumnAndRow($col + 1, 8)->setValue($label);
+                $sheet->getCell([$col + 1, 8])->setValue($label);
             }
 
             $lastCol = 'H';
@@ -112,22 +110,21 @@ class ExportController
 
             foreach ($vlan->ipAddresses as $row => $ip) {
                 $r = $row + 9;
-                $sheet->getCellByColumnAndRow(1, $r)->setValue($ip->ip_address);
-                $sheet->getCellByColumnAndRow(2, $r)->setValue($ip->dns_name ?? '');
-                $sheet->getCellByColumnAndRow(3, $r)->setValue($ip->mac_address ?? '');
-                $sheet->getCellByColumnAndRow(4, $r)->setValue($ip->is_online ? 'Online' : 'Offline');
-                $sheet->getCellByColumnAndRow(5, $r)->setValue($ip->ping_ms ?? '');
-                $sheet->getCellByColumnAndRow(6, $r)->setValue(
+                $sheet->getCell([1, $r])->setValue($ip->ip_address);
+                $sheet->getCell([2, $r])->setValue($ip->dns_name ?? '');
+                $sheet->getCell([3, $r])->setValue($ip->mac_address ?? '');
+                $sheet->getCell([4, $r])->setValue($ip->is_online ? 'Online' : 'Offline');
+                $sheet->getCell([5, $r])->setValue($ip->ping_ms ?? '');
+                $sheet->getCell([6, $r])->setValue(
                     $ip->last_online_at ? $ip->last_online_at->format('d.m.Y H:i') : ''
                 );
-                $sheet->getCellByColumnAndRow(7, $r)->setValue($ip->isInDhcpRange() ? 'Ja' : 'Nein');
-                $sheet->getCellByColumnAndRow(8, $r)->setValue($ip->comment ?? '');
+                $sheet->getCell([7, $r])->setValue($ip->isInDhcpRange() ? 'Ja' : 'Nein');
+                $sheet->getCell([8, $r])->setValue($ip->comment ?? '');
 
                 // Online grün, Offline grau
-                $statusCell = $sheet->getCellByColumnAndRow(4, $r);
                 $fill = $ip->is_online ? 'C6EFCE' : 'F2F2F2';
                 $font = $ip->is_online ? '276221' : '666666';
-                $sheet->getStyleByColumnAndRow(4, $r)->applyFromArray([
+                $sheet->getStyle([4, $r])->applyFromArray([
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => $fill]],
                     'font' => ['color' => ['rgb' => $font]],
                 ]);
@@ -214,7 +211,6 @@ class ExportController
 
     private function sanitizeSheetTitle(string $title): string
     {
-        // Excel sheet names: max 31 chars, keine Sonderzeichen
         $title = preg_replace('/[\/\\\?\*\[\]:]/', ' ', $title);
         return mb_substr($title, 0, 31);
     }
