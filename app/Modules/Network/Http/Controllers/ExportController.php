@@ -18,7 +18,7 @@ class ExportController
         return response()->stream(function () {
             ini_set('memory_limit', '256M');
 
-            if (ob_get_level()) {
+            while (ob_get_level() > 0) {
                 ob_end_clean();
             }
 
@@ -187,9 +187,10 @@ class ExportController
                 $send('error', ['message' => $e->getMessage()]);
             }
         }, 200, [
-            'Content-Type'      => 'text/event-stream',
-            'Cache-Control'     => 'no-cache',
+            'Content-Type'      => 'text/event-stream; charset=utf-8',
+            'Cache-Control'     => 'no-cache, no-store',
             'X-Accel-Buffering' => 'no',
+            'X-Content-Type-Options' => 'nosniff',
             'Connection'        => 'keep-alive',
         ]);
     }

@@ -315,7 +315,9 @@ function exportModal() {
                 window.location.href = this.downloadUrl;
             });
 
+            // Benanntes 'error'-Event vom Server (PHP-Exception)
             this.eventSource.addEventListener('error', (e) => {
+                if (this.done) return;
                 if (e.data) {
                     const data = JSON.parse(e.data);
                     this.errorMessage = data.message;
@@ -326,6 +328,18 @@ function exportModal() {
                 this.message = 'Fehler beim Export.';
                 this.eventSource.close();
             });
+
+            // Generischer Verbindungsabbruch (z.B. nach Server-Close)
+            this.eventSource.onerror = () => {
+                if (this.done) return;
+                // Noch kein done empfangen – echter Fehler
+                if (!this.error) {
+                    this.errorMessage = 'Verbindung zum Server unterbrochen.';
+                    this.error = true;
+                    this.message = 'Fehler beim Export.';
+                }
+                this.eventSource.close();
+            };
         }
     }
 }
