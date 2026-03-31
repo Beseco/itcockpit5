@@ -4,7 +4,6 @@ namespace App\Modules\Backup\Providers;
 
 use App\Modules\Backup\Console\Commands\BackupCreateCommand;
 use App\Modules\Backup\Models\BackupSettings;
-use App\Services\HookManager;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\ServiceProvider;
 
@@ -19,15 +18,6 @@ class BackupServiceProvider extends ServiceProvider
     {
         $this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
         $this->loadViewsFrom(__DIR__ . '/../Views', 'backup');
-
-        $hookManager = app(HookManager::class);
-        $hookManager->registerSidebarItem('backup', [
-            'label'      => 'Backup',
-            'route'      => 'backup.index',
-            'icon'       => 'heroicon-o-archive-box',
-            'permission' => 'backup.view',
-            'module'     => 'backup',
-        ]);
 
         $this->scheduleCommands();
     }

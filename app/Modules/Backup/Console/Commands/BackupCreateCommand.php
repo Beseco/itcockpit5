@@ -71,25 +71,36 @@ class BackupCreateCommand extends Command
             "[client]\nuser={$username}\npassword={$password}\nhost={$host}\nport={$port}\n");
         chmod($mycnf, 0600);
 
-        $outFile = escapeshellarg("{$dir}/database.sql.gz");
+        $outFile = "{$dir}/database.sql.gz";
         $db      = escapeshellarg($database);
         $errFile = tempnam(sys_get_temp_dir(), 'bk_err_');
 
+        // Dump zuerst als .sql, dann gzippen – so kann der Exit-Code von mysqldump
+        // korrekt geprüft werden (bei Pipe-Verkettung würde nur gzip's Code ankommen)
+        $sqlFile = "{$dir}/database.sql";
         exec(
-            "mysqldump --defaults-extra-file={$mycnf} --single-transaction --no-tablespaces {$db} | gzip > {$outFile} 2>{$errFile}",
+            "mysqldump --defaults-extra-file={$mycnf} --single-transaction --no-tablespaces {$db} > " . escapeshellarg($sqlFile) . " 2>{$errFile}",
             $output,
             $ret
         );
 
         unlink($mycnf);
 
-        if ($ret !== 0) {
+        if ($ret !== 0 || !file_exists($sqlFile) || filesize($sqlFile) < 100) {
             $err = file_exists($errFile) ? trim(file_get_contents($errFile)) : 'unbekannt';
             @unlink($errFile);
+            @unlink($sqlFile);
             throw new \RuntimeException("mysqldump fehlgeschlagen: {$err}");
         }
 
         @unlink($errFile);
+
+        // Komprimieren
+        exec("gzip -f " . escapeshellarg($sqlFile), $gzOut, $gzRet);
+        // gzip benennt die Datei zu database.sql.gz um
+        if ($gzRet !== 0 || !file_exists($outFile)) {
+            throw new \RuntimeException("gzip fehlgeschlagen (Exit-Code {$gzRet}).");
+        }
     }
 
     private function backupFiles(string $dir): void
