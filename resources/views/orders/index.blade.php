@@ -199,8 +199,8 @@
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm font-medium" x-data="{ showDelete: false }">
                                             @php
-                                                $canEdit   = auth()->user()->can('orders.edit')   || (auth()->user()->can('orders.create') && $order->isOwnedBy(auth()->id()));
-                                                $canDelete = auth()->user()->can('orders.delete') || (auth()->user()->can('orders.create') && $order->isOwnedBy(auth()->id()));
+                                                $canEdit   = auth()->user()->hasModulePermission('orders', 'edit')   || (auth()->user()->hasModulePermission('orders', 'create') && $order->isOwnedBy(auth()->id()));
+                                                $canDelete = auth()->user()->hasModulePermission('orders', 'delete') || (auth()->user()->hasModulePermission('orders', 'create') && $order->isOwnedBy(auth()->id()));
                                             @endphp
                                             @if($canEdit)
                                             <a href="{{ route('orders.edit', $order) }}"

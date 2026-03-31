@@ -14,7 +14,7 @@ class ImpersonationController extends Controller
         $actor = auth()->user();
 
         // Nur Superadmin oder User mit base.users.edit dürfen impersonieren
-        if (!$actor->isSuperAdmin() && !$actor->can('base.users.edit')) {
+        if (!$actor->isSuperAdmin() && !$actor->hasModulePermission('base', 'users.edit')) {
             abort(403);
         }
 

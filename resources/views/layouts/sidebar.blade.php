@@ -158,7 +158,7 @@
         </a>
 
         {{-- Admin-Bereich --}}
-        @if($isSuperAdmin || $user->can('base.users.view') || $user->can('base.roles.view') || $user->can('audit.view') || $user->can('base.modules.manage') || $user->can('base.gruppen.view') || $user->can('base.stellen.view') || $user->can('base.stellenbeschreibungen.view'))
+        @if($isSuperAdmin || $user->hasModulePermission('base', 'users.view') || $user->hasModulePermission('base', 'roles.view') || $user->hasModulePermission('audit', 'view') || $user->hasModulePermission('base', 'modules.manage') || $user->hasModulePermission('base', 'gruppen.view') || $user->hasModulePermission('base', 'stellen.view') || $user->hasModulePermission('base', 'stellenbeschreibungen.view'))
         <div class="pt-3 mt-3 border-t border-gray-700">
             <p class="px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Administration</p>
 
@@ -176,7 +176,7 @@
             @endif
 
             {{-- Benutzerverwaltung (aufklappbar) --}}
-            @if($isSuperAdmin || $user->can('base.users.view') || $user->can('base.roles.view') || $user->can('base.gruppen.view'))
+            @if($isSuperAdmin || $user->hasModulePermission('base', 'users.view') || $user->hasModulePermission('base', 'roles.view') || $user->hasModulePermission('base', 'gruppen.view'))
             <div x-data="{ open: {{ $inUsersSection ? 'true' : 'false' }} }">
                 <button @click="open = !open"
                         class="w-full group flex items-center px-2 py-1.5 text-sm font-medium rounded-md {{ $inUsersSection ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">

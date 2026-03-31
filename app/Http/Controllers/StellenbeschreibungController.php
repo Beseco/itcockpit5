@@ -18,7 +18,7 @@ class StellenbeschreibungController extends Controller
         $user = auth()->user();
 
         // Nur Edit-Berechtigte sehen die volle Liste
-        if ($user->can('base.stellenbeschreibungen.edit')) {
+        if ($user->hasModulePermission('base', 'stellenbeschreibungen.edit')) {
             $stellenbeschreibungen = Stellenbeschreibung::withCount('stellen')
                 ->with('arbeitsvorgaenge')
                 ->orderBy('bezeichnung')
@@ -43,7 +43,7 @@ class StellenbeschreibungController extends Controller
         $user = auth()->user();
 
         // Ohne Edit-Recht: nur die eigene Stellenbeschreibung darf eingesehen werden
-        if (!$user->can('base.stellenbeschreibungen.edit') && !$user->isSuperAdmin()) {
+        if (!$user->hasModulePermission('base', 'stellenbeschreibungen.edit') && !$user->isSuperAdmin()) {
             $ownSbId = $user->stellen()->with('stellenbeschreibung')
                 ->get()
                 ->pluck('stellenbeschreibung_id')

@@ -48,7 +48,7 @@
             <tbody>
                 @foreach($node->zuweisungen as $z)
                 @php
-                    $canEditZ = auth()->user()->can('base.aufgaben.edit')
+                    $canEditZ = auth()->user()->hasModulePermission('base', 'aufgaben.edit')
                         || ($z->gruppe_id && $z->gruppe?->vorgesetzter_user_id === auth()->id());
                 @endphp
                 <tr>

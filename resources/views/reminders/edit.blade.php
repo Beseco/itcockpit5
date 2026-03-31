@@ -42,7 +42,7 @@
                     </form>
 
                     <div class="flex items-center justify-between mt-6">
-                        @if(auth()->user()->can('reminders.delete') || (auth()->user()->can('reminders.create') && $reminder->user_id === auth()->id()))
+                        @if(auth()->user()->hasModulePermission('reminders', 'delete') || (auth()->user()->hasModulePermission('reminders', 'create') && $reminder->user_id === auth()->id()))
                         <form action="{{ route('reminders.destroy', $reminder) }}" method="POST"
                               onsubmit="return confirm('Erinnerung wirklich löschen?')">
                             @csrf

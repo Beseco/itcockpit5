@@ -200,11 +200,11 @@ class OrderController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->can('orders.edit')) {
+        if ($user->hasModulePermission('orders', 'edit')) {
             return;
         }
 
-        if ($user->can('orders.create') && $order->isOwnedBy($user->id)) {
+        if ($user->hasModulePermission('orders', 'create') && $order->isOwnedBy($user->id)) {
             return;
         }
 
@@ -220,11 +220,11 @@ class OrderController extends Controller
     {
         $user = Auth::user();
 
-        if ($user->can('orders.delete')) {
+        if ($user->hasModulePermission('orders', 'delete')) {
             return;
         }
 
-        if ($user->can('orders.create') && $order->isOwnedBy($user->id)) {
+        if ($user->hasModulePermission('orders', 'create') && $order->isOwnedBy($user->id)) {
             return;
         }
 

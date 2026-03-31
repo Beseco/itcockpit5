@@ -90,8 +90,8 @@
                                     <td class="px-4 py-3 text-sm text-gray-500">{{ $reminder->mailto_label }}</td>
                                     <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium" x-data="{ showDelete: false }">
                                         @php
-                                            $canEdit   = auth()->user()->can('reminders.edit')   || (auth()->user()->can('reminders.create') && $reminder->user_id === auth()->id());
-                                            $canDelete = auth()->user()->can('reminders.delete') || (auth()->user()->can('reminders.create') && $reminder->user_id === auth()->id());
+                                            $canEdit   = auth()->user()->hasModulePermission('reminders', 'edit')   || (auth()->user()->hasModulePermission('reminders', 'create') && $reminder->user_id === auth()->id());
+                                            $canDelete = auth()->user()->hasModulePermission('reminders', 'delete') || (auth()->user()->hasModulePermission('reminders', 'create') && $reminder->user_id === auth()->id());
                                         @endphp
                                         @if($canEdit)
                                         <a href="{{ route('reminders.edit', $reminder) }}"

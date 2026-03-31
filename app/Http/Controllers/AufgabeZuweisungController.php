@@ -13,7 +13,7 @@ class AufgabeZuweisungController extends Controller
     {
         $user = Auth::user();
 
-        $canEdit = $user->can('base.aufgaben.edit');
+        $canEdit = $user->hasModulePermission('base', 'aufgaben.edit');
 
         $isVorgesetzter = $zuweisung->gruppe_id !== null
             && Gruppe::where('id', $zuweisung->gruppe_id)

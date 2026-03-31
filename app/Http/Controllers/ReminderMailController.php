@@ -207,16 +207,16 @@ class ReminderMailController extends Controller
     private function authorizeReminderAccess(ReminderMail $reminder): void
     {
         $user = Auth::user();
-        if ($user->can('reminders.edit')) return;
-        if ($user->can('reminders.create') && $reminder->user_id === $user->id) return;
+        if ($user->hasModulePermission('reminders', 'edit')) return;
+        if ($user->hasModulePermission('reminders', 'create') && $reminder->user_id === $user->id) return;
         abort(403);
     }
 
     private function authorizeReminderDelete(ReminderMail $reminder): void
     {
         $user = Auth::user();
-        if ($user->can('reminders.delete')) return;
-        if ($user->can('reminders.create') && $reminder->user_id === $user->id) return;
+        if ($user->hasModulePermission('reminders', 'delete')) return;
+        if ($user->hasModulePermission('reminders', 'create') && $reminder->user_id === $user->id) return;
         abort(403);
     }
 }
