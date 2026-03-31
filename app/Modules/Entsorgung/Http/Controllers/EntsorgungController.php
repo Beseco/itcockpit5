@@ -3,7 +3,7 @@
 namespace App\Modules\Entsorgung\Http\Controllers;
 
 use App\Models\Dienstleister;
-use App\Models\User;
+use App\Modules\AdUsers\Models\AdUser;
 use App\Modules\Entsorgung\Models\Entsorgung;
 use App\Modules\Entsorgung\Models\EntsorgungGrund;
 use App\Modules\Entsorgung\Models\EntsorgungTyp;
@@ -48,11 +48,9 @@ class EntsorgungController extends Controller
         $dienstleister = Dienstleister::where('status', 'aktiv')
             ->orderBy('firmenname')
             ->get(['id', 'firmenname']);
-        $users = User::where('is_active', true)
-            ->orderBy('name')
-            ->get(['id', 'name']);
+        $adUsers = AdUser::aktiv()->orderBy('anzeigename')->get(['id', 'anzeigename', 'vorname', 'nachname', 'samaccountname']);
 
-        return view('entsorgung::create', compact('typen', 'gruende', 'dienstleister', 'users'));
+        return view('entsorgung::create', compact('typen', 'gruende', 'dienstleister', 'adUsers'));
     }
 
     public function store(Request $request)
@@ -65,7 +63,7 @@ class EntsorgungController extends Controller
             'typ_select'              => ['nullable', 'string'],
             'typ_custom'              => ['required_if:typ_select,__other__', 'nullable', 'string', 'max:100'],
             'inventar'                => ['required', 'digits_between:1,10'],
-            'user_id'                 => ['nullable', 'exists:users,id'],
+            'ad_user_id'              => ['nullable', 'exists:adusers,id'],
             'grundschutz'             => ['required', 'in:1,0'],
             'grundschutzgrund'        => ['required_if:grundschutz,0', 'nullable', 'string'],
             'entsorgungsgrund_select'  => ['required', 'string'],
@@ -101,9 +99,10 @@ class EntsorgungController extends Controller
             $entsorgungsgrund = $request->entsorgungsgrund_select;
         }
 
-        // Bisheriger Nutzer
-        $userId   = $request->user_id ?: null;
-        $userName = $userId ? User::find($userId)?->name : null;
+        // Bisheriger Nutzer (AD)
+        $adUserId  = $request->ad_user_id ?: null;
+        $adUser    = $adUserId ? AdUser::find($adUserId) : null;
+        $userName  = $adUser?->anzeigenameOrName;
 
         Entsorgung::create([
             'name'             => $request->name,
@@ -114,7 +113,7 @@ class EntsorgungController extends Controller
             'inventar'         => str_pad($request->inventar, 10, '0', STR_PAD_LEFT),
             'entsorger'        => Auth::user()->name,
             'user'             => $userName,
-            'user_id'          => $userId,
+            'ad_user_id'       => $adUserId,
             'grundschutz'      => (bool) $request->grundschutz,
             'grundschutzgrund' => $request->grundschutzgrund,
             'entsorgungsgrund' => $entsorgungsgrund,

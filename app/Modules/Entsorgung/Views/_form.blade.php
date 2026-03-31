@@ -112,19 +112,45 @@
                           placeholder="z. B. 12345 → wird zu 0000012345" />
             <x-input-error :messages="$errors->get('inventar')" class="mt-1" />
         </div>
-        <div>
-            <x-input-label for="user_id" value="Bisheriger Nutzer des Geräts" />
-            <select id="user_id" name="user_id"
-                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
-                <option value="">— kein Nutzer —</option>
-                @foreach($users as $u)
-                    <option value="{{ $u->id }}"
-                        {{ old('user_id') == $u->id ? 'selected' : '' }}>
-                        {{ $u->name }}
-                    </option>
-                @endforeach
-            </select>
-            <x-input-error :messages="$errors->get('user_id')" class="mt-1" />
+        {{-- AD-Benutzer Suche --}}
+        <div x-data="{
+                open: false,
+                search: '{{ old('ad_user_id') ? ($adUsers->firstWhere('id', old('ad_user_id'))?->anzeigenameOrName ?? '') : '' }}',
+                selectedId: '{{ old('ad_user_id', '') }}',
+                users: {{ Js::from($adUsers->map(fn($u) => ['id' => $u->id, 'name' => $u->anzeigenameOrName])) }},
+                get filtered() {
+                    if (!this.search) return this.users.slice(0, 10);
+                    const q = this.search.toLowerCase();
+                    return this.users.filter(u => u.name.toLowerCase().includes(q)).slice(0, 20);
+                },
+                select(u) { this.search = u.name; this.selectedId = u.id; this.open = false; },
+                clear() { this.search = ''; this.selectedId = ''; }
+            }" @click.outside="open = false">
+            <x-input-label for="ad_user_search" value="Bisheriger Nutzer des Geräts" />
+            <input type="hidden" name="ad_user_id" :value="selectedId">
+            <div class="relative mt-1">
+                <input type="text" id="ad_user_search"
+                       x-model="search" @focus="open = true" @input="open = true" @keydown.escape="open = false"
+                       placeholder="AD-Benutzer suchen…" autocomplete="off"
+                       class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                <button x-show="selectedId" type="button" @click="clear()"
+                        class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+                <ul x-show="open && filtered.length > 0" x-cloak
+                    class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-auto">
+                    <template x-for="u in filtered" :key="u.id">
+                        <li>
+                            <button type="button" @click="select(u)"
+                                    class="w-full text-left px-4 py-2 text-sm text-gray-900 hover:bg-gray-50"
+                                    x-text="u.name"></button>
+                        </li>
+                    </template>
+                </ul>
+            </div>
+            <x-input-error :messages="$errors->get('ad_user_id')" class="mt-1" />
         </div>
     </div>
 

@@ -4,6 +4,7 @@ namespace App\Modules\Entsorgung\Models;
 
 use App\Models\Dienstleister;
 use App\Models\User;
+use App\Modules\AdUsers\Models\AdUser;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -20,7 +21,7 @@ class Entsorgung extends Model
         'inventar',
         'entsorger',
         'user',
-        'user_id',
+        'ad_user_id',
         'grundschutz',
         'grundschutzgrund',
         'entsorgungsgrund',
@@ -40,7 +41,7 @@ class Entsorgung extends Model
 
     public function nutzer(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(AdUser::class, 'ad_user_id');
     }
 
     public function dienstleister(): BelongsTo
@@ -54,11 +55,11 @@ class Entsorgung extends Model
     }
 
     /**
-     * Anzeigename des bisherigen Nutzers (aus FK oder Freitextfeld).
+     * Anzeigename des bisherigen Nutzers (aus AD-FK oder Freitextfeld).
      */
     public function getNutzerNameAttribute(): string
     {
-        return $this->nutzer?->name ?? $this->user ?? '—';
+        return $this->nutzer?->anzeigenameOrName ?? $this->user ?? '—';
     }
 
     /**

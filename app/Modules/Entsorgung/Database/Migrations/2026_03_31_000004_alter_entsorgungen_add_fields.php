@@ -15,10 +15,10 @@ return new class extends Migration
                 ->constrained('dienstleister')
                 ->nullOnDelete();
 
-            $table->foreignId('user_id')
+            $table->foreignId('ad_user_id')
                 ->nullable()
                 ->after('user')
-                ->constrained('users')
+                ->constrained('adusers')
                 ->nullOnDelete();
 
             $table->string('entsorgungsgrund')->nullable()->after('grundschutzgrund');
@@ -28,10 +28,10 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('entsorgungen', function (Blueprint $table) {
-            $table->dropForeignIdFor(\App\Models\Dienstleister::class);
+            $table->dropForeign(['dienstleister_id']);
             $table->dropColumn('dienstleister_id');
-            $table->dropForeignIdFor(\App\Models\User::class, 'user_id');
-            $table->dropColumn('user_id');
+            $table->dropForeign(['ad_user_id']);
+            $table->dropColumn('ad_user_id');
             $table->dropColumn('entsorgungsgrund');
         });
     }
