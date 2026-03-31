@@ -1,0 +1,6 @@
+{
+    "name": "Backup",
+    "slug": "backup",
+    "version": "1.0.0",
+    "description": "Lokales Backup-Modul: Datenbank und Dateien, konfigurierbarer Zeitplan und Aufbewahrung"
+}

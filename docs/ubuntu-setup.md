@@ -159,9 +159,11 @@ server {
     index index.php;
 
     # SSE-Streams nicht puffern (für Export-Fortschritt)
+    # WICHTIG: SCRIPT_FILENAME muss auf index.php zeigen, nicht auf den virtuellen Pfad
     location /network/export/stream {
         fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
-        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        fastcgi_param SCRIPT_FILENAME $realpath_root/index.php;
+        fastcgi_param SCRIPT_NAME     /index.php;
         include fastcgi_params;
         fastcgi_buffering off;
         fastcgi_read_timeout 600;
