@@ -1,5 +1,6 @@
 <?php
 namespace App\Modules\HH\Http\Controllers;
+
 use App\Http\Controllers\Controller;
 use App\Modules\HH\Models\Account;
 use App\Modules\HH\Models\BudgetPosition;
@@ -10,25 +11,60 @@ use App\Modules\HH\Services\BudgetCalculationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
+
 class DashboardController extends Controller
 {
+    const COOKIE_YEAR = 'hh_year_id';
+    const COOKIE_CC   = 'hh_cost_center_id';
+    const COOKIE_DAYS = 30;
+    const DEFAULT_CC_NUMBER = '143011';
+
     public function __construct(
         private BudgetCalculationService $calculationService,
         private AuthorizationService $authService,
     ) {}
+
     private function isApi(Request $request): bool
     {
         return str_starts_with($request->route()?->getName() ?? '', 'api.');
     }
-    public function index(): RedirectResponse
+
+    public function index(Request $request): RedirectResponse
     {
-        $latest = BudgetYear::orderByDesc('year')->first();
-        if (!$latest) {
-            return redirect()->route('hh.budget-years.index')->with('error', 'Noch kein Haushaltsjahr vorhanden.');
+        // Haushaltsjahr: Cookie → aktuelles Jahr → neuestes Jahr
+        $budgetYear = null;
+
+        if ($yearId = $request->cookie(self::COOKIE_YEAR)) {
+            $budgetYear = BudgetYear::find($yearId);
         }
-        return redirect()->route('hh.dashboard.show', $latest);
+
+        if (!$budgetYear) {
+            $budgetYear = BudgetYear::where('year', now()->year)->first()
+                ?? BudgetYear::orderByDesc('year')->first();
+        }
+
+        if (!$budgetYear) {
+            return redirect()->route('hh.budget-years.index')
+                ->with('error', 'Noch kein Haushaltsjahr vorhanden.');
+        }
+
+        // Kostenstelle: Cookie → Standard 143011
+        $ccId = $request->cookie(self::COOKIE_CC);
+        if (!$ccId) {
+            $defaultCc = CostCenter::where('number', self::DEFAULT_CC_NUMBER)->first();
+            $ccId = $defaultCc?->id;
+        }
+
+        $url = route('hh.dashboard.show', $budgetYear);
+        if ($ccId) {
+            $url .= '?cost_center_id=' . $ccId;
+        }
+
+        return redirect($url);
     }
+
     public function show(Request $request, BudgetYear $budgetYear): JsonResponse|View
     {
         $budgetYear->load('versions');
@@ -38,8 +74,16 @@ class DashboardController extends Controller
         $activeVersion  = $budgetYear->versions->firstWhere('is_active', true);
         $totals = $this->calculationService->getTotals($budgetYear);
         $totals['investive_share'] = $this->calculationService->getInvestiveShare($budgetYear);
-        $selectedCostCenterId = $request->query('cost_center_id');
-        $selectedCostCenter   = $selectedCostCenterId ? CostCenter::find($selectedCostCenterId) : null;
+
+        // Kostenstelle: Query-Parameter → Cookie → Standard 143011
+        $selectedCostCenterId = $request->query('cost_center_id')
+            ?? $request->cookie(self::COOKIE_CC)
+            ?? CostCenter::where('number', self::DEFAULT_CC_NUMBER)->value('id');
+
+        $selectedCostCenter = $selectedCostCenterId
+            ? CostCenter::find($selectedCostCenterId)
+            : null;
+
         $accountsWithTotals = collect();
         if ($activeVersion && $selectedCostCenter) {
             $accountsWithTotals = $allAccounts->map(function (Account $acc) use ($activeVersion, $selectedCostCenter) {
@@ -51,12 +95,33 @@ class DashboardController extends Controller
                 return ['account' => $acc, 'total' => (float) $positions->sum('amount'), 'count' => $positions->count(), 'positions' => $positions];
             });
         }
+
         if ($this->isApi($request)) {
-            return response()->json(['budget_year_id' => $budgetYear->id, 'year' => $budgetYear->year, 'status' => $budgetYear->status, 'totals' => $totals]);
+            return response()->json([
+                'budget_year_id' => $budgetYear->id,
+                'year'           => $budgetYear->year,
+                'status'         => $budgetYear->status,
+                'totals'         => $totals,
+            ]);
         }
+
         $canWrite = $this->authService->isLeiter($request->user());
-        return view('hh::dashboard', compact('budgetYear', 'allBudgetYears', 'allCostCenters', 'allAccounts', 'selectedCostCenter', 'activeVersion', 'totals', 'accountsWithTotals', 'canWrite'));
+
+        $response = response()->view('hh::dashboard', compact(
+            'budgetYear', 'allBudgetYears', 'allCostCenters', 'allAccounts',
+            'selectedCostCenter', 'activeVersion', 'totals', 'accountsWithTotals', 'canWrite'
+        ));
+
+        // Cookies setzen (30 Tage)
+        $minutes = self::COOKIE_DAYS * 24 * 60;
+        $response->cookie(self::COOKIE_YEAR, $budgetYear->id, $minutes, '/', null, false, false);
+        if ($selectedCostCenter) {
+            $response->cookie(self::COOKIE_CC, $selectedCostCenter->id, $minutes, '/', null, false, false);
+        }
+
+        return $response;
     }
+
     public function accountPositions(Request $request, BudgetYear $budgetYear, CostCenter $costCenter, Account $account): View
     {
         $budgetYear->load('versions');
@@ -77,5 +142,4 @@ class DashboardController extends Controller
             'positions', 'allAccounts', 'canWrite'
         ));
     }
-
 }
