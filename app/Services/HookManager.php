@@ -95,7 +95,7 @@ class HookManager
 
             // If item has a permission requirement, check it
             if (isset($item['permission'])) {
-                return $user->hasPermissionTo($item['permission']);
+                return $user->hasModulePermission(...explode('.', $item['permission'], 2));
             }
 
             // If no permission specified, check default module.{slug}.view permission

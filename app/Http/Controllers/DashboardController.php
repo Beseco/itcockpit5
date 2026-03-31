@@ -131,7 +131,7 @@ class DashboardController extends Controller
             if ($user->isSuperAdmin()) {
                 return true;
             }
-            return $user->hasPermissionTo($tile['permission']);
+            return $user->hasModulePermission(...explode('.', $tile['permission'], 2));
         });
 
         $widgets = $this->hookManager->getDashboardWidgets($user);
