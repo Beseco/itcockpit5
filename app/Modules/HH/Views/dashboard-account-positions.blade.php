@@ -275,7 +275,8 @@
             document.getElementById('ep-end').value       = data.end_year ?? '';
             document.getElementById('ep-recurring').checked = !!data.is_recurring;
             document.getElementById('ep-desc').value      = data.description ?? '';
-            document.getElementById('form-edit-pos').action = '/fscockpitV3/public/hh/positions/' + data.id;
+            var posBase = '{{ rtrim(route("hh.positions.update", ["position" => "__ID__"]), "/") }}'.replace('__ID__', data.id);
+            document.getElementById('form-edit-pos').action = posBase;
             document.getElementById('modal-edit-pos').classList.remove('hidden');
         }
     </script>

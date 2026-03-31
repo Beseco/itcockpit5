@@ -120,7 +120,8 @@
         function submitYearForm(yearId) {
             var ccEl = document.querySelector('[name="cost_center_id"]');
             var ccId = ccEl ? ccEl.value : '';
-            window.location.href = '/fscockpitV3/public/hh/dashboard/' + yearId + (ccId ? '?cost_center_id=' + ccId : '');
+            var base = '{{ rtrim(route("hh.dashboard.show", ["budgetYear" => "__ID__"]), "/") }}'.replace('__ID__', yearId);
+            window.location.href = base + (ccId ? '?cost_center_id=' + ccId : '');
         }
     </script>
 </x-app-layout>
