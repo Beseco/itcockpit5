@@ -2,6 +2,7 @@
 
 namespace App\Modules\Entsorgung\Models;
 
+use App\Models\Dienstleister;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,12 +15,15 @@ class Entsorgung extends Model
         'name',
         'modell',
         'hersteller',
+        'dienstleister_id',
         'typ',
         'inventar',
         'entsorger',
         'user',
+        'user_id',
         'grundschutz',
         'grundschutzgrund',
+        'entsorgungsgrund',
         'datum',
         'created_by',
     ];
@@ -34,8 +38,34 @@ class Entsorgung extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function nutzer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function dienstleister(): BelongsTo
+    {
+        return $this->belongsTo(Dienstleister::class, 'dienstleister_id');
+    }
+
     public function kannGeloeschtWerden(): bool
     {
         return $this->created_at->diffInMinutes(now()) <= 60;
+    }
+
+    /**
+     * Anzeigename des bisherigen Nutzers (aus FK oder Freitextfeld).
+     */
+    public function getNutzerNameAttribute(): string
+    {
+        return $this->nutzer?->name ?? $this->user ?? '—';
+    }
+
+    /**
+     * Anzeigename des Herstellers (aus FK oder Freitextfeld).
+     */
+    public function getHerstellerNameAttribute(): string
+    {
+        return $this->dienstleister?->firmenname ?? $this->hersteller ?? '—';
     }
 }

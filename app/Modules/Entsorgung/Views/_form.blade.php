@@ -1,5 +1,19 @@
+@php
+    // Gerätetyp: war beim letzten Submit ein freier Wert gewählt?
+    $initCustomTyp = old('typ_select') === '__other__' ? 'true' : 'false';
+
+    // Hersteller: war es ein freier Wert?
+    $initCustomHersteller = old('hersteller_select') === '__other__' ? 'true' : 'false';
+
+    // Entsorgungsgrund: war es ein freier Wert?
+    $initCustomGrund = old('entsorgungsgrund_select') === '__other__' ? 'true' : 'false';
+@endphp
+
 <div x-data="{
-    grundschutz: '{{ old('grundschutz', '1') }}',
+    grundschutz:      '{{ old('grundschutz', '1') }}',
+    customTyp:         {{ $initCustomTyp }},
+    customHersteller:  {{ $initCustomHersteller }},
+    customGrund:       {{ $initCustomGrund }},
     get keineEinhaltung() { return this.grundschutz === '0'; }
 }" class="space-y-5">
 
@@ -27,35 +41,118 @@
         </div>
     </div>
 
-    {{-- Hersteller + Typ --}}
+    {{-- Hersteller (aus Dienstleister-Liste) + Gerätetyp --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+        {{-- Hersteller --}}
         <div>
-            <x-input-label for="hersteller" value="Hersteller *" />
-            <x-text-input id="hersteller" name="hersteller" type="text" class="mt-1 block w-full"
-                          value="{{ old('hersteller') }}" required placeholder="z. B. Lenovo" />
-            <x-input-error :messages="$errors->get('hersteller')" class="mt-1" />
+            <x-input-label for="hersteller_select" value="Hersteller *" />
+            <select id="hersteller_select" name="hersteller_select"
+                    @change="customHersteller = ($event.target.value === '__other__')"
+                    required
+                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                <option value="">— bitte wählen —</option>
+                @foreach($dienstleister as $dl)
+                    <option value="{{ $dl->id }}"
+                        {{ old('hersteller_select') == $dl->id ? 'selected' : '' }}>
+                        {{ $dl->firmenname }}
+                    </option>
+                @endforeach
+                <option value="__other__"
+                    {{ old('hersteller_select') === '__other__' ? 'selected' : '' }}>
+                    Anderer (manuell eingeben)
+                </option>
+            </select>
+            <x-input-error :messages="$errors->get('hersteller_select')" class="mt-1" />
+            <div x-show="customHersteller" x-cloak class="mt-2">
+                <x-text-input name="hersteller_custom" type="text" class="block w-full"
+                              value="{{ old('hersteller_custom') }}"
+                              placeholder="Herstellername eingeben" />
+                <x-input-error :messages="$errors->get('hersteller_custom')" class="mt-1" />
+            </div>
         </div>
+
+        {{-- Gerätetyp --}}
         <div>
-            <x-input-label for="typ" value="Gerätetyp" />
-            <x-text-input id="typ" name="typ" type="text" class="mt-1 block w-full"
-                          value="{{ old('typ') }}" placeholder="z. B. Notebook, Drucker, Monitor" />
-            <x-input-error :messages="$errors->get('typ')" class="mt-1" />
+            <x-input-label for="typ_select" value="Gerätetyp" />
+            <select id="typ_select" name="typ_select"
+                    @change="customTyp = ($event.target.value === '__other__')"
+                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                <option value="">— kein Typ —</option>
+                @foreach($typen as $t)
+                    <option value="{{ $t }}"
+                        {{ old('typ_select') === $t ? 'selected' : '' }}>
+                        {{ $t }}
+                    </option>
+                @endforeach
+                <option value="__other__"
+                    {{ old('typ_select') === '__other__' ? 'selected' : '' }}>
+                    Anderer (manuell eingeben)
+                </option>
+            </select>
+            <x-input-error :messages="$errors->get('typ_select')" class="mt-1" />
+            <div x-show="customTyp" x-cloak class="mt-2">
+                <x-text-input name="typ_custom" type="text" class="block w-full"
+                              value="{{ old('typ_custom') }}"
+                              placeholder="Gerätetyp eingeben" />
+                <x-input-error :messages="$errors->get('typ_custom')" class="mt-1" />
+            </div>
         </div>
+
     </div>
 
     {{-- Inventarnummer + Bisheriger Nutzer --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-            <x-input-label for="inventar" value="Inventarnummer *" />
-            <x-text-input id="inventar" name="inventar" type="text" class="mt-1 block w-full"
-                          value="{{ old('inventar') }}" required />
+            <x-input-label for="inventar" value="Inventarnummer * (max. 10 Stellen)" />
+            <x-text-input id="inventar" name="inventar" type="text" inputmode="numeric"
+                          pattern="\d{1,10}"
+                          class="mt-1 block w-full"
+                          value="{{ old('inventar') }}" required
+                          placeholder="z. B. 12345 → wird zu 0000012345" />
             <x-input-error :messages="$errors->get('inventar')" class="mt-1" />
         </div>
         <div>
-            <x-input-label for="user" value="Bisheriger Nutzer des Geräts" />
-            <x-text-input id="user" name="user" type="text" class="mt-1 block w-full"
-                          value="{{ old('user') }}" placeholder="Vorname Nachname" />
-            <x-input-error :messages="$errors->get('user')" class="mt-1" />
+            <x-input-label for="user_id" value="Bisheriger Nutzer des Geräts" />
+            <select id="user_id" name="user_id"
+                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                <option value="">— kein Nutzer —</option>
+                @foreach($users as $u)
+                    <option value="{{ $u->id }}"
+                        {{ old('user_id') == $u->id ? 'selected' : '' }}>
+                        {{ $u->name }}
+                    </option>
+                @endforeach
+            </select>
+            <x-input-error :messages="$errors->get('user_id')" class="mt-1" />
+        </div>
+    </div>
+
+    {{-- Entsorgungsgrund --}}
+    <div>
+        <x-input-label for="entsorgungsgrund_select" value="Grund der Entsorgung *" />
+        <select id="entsorgungsgrund_select" name="entsorgungsgrund_select"
+                @change="customGrund = ($event.target.value === '__other__')"
+                required
+                class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+            <option value="">— bitte wählen —</option>
+            @foreach($gruende as $g)
+                <option value="{{ $g }}"
+                    {{ old('entsorgungsgrund_select') === $g ? 'selected' : '' }}>
+                    {{ $g }}
+                </option>
+            @endforeach
+            <option value="__other__"
+                {{ old('entsorgungsgrund_select') === '__other__' ? 'selected' : '' }}>
+                Anderer Grund (manuell eingeben)
+            </option>
+        </select>
+        <x-input-error :messages="$errors->get('entsorgungsgrund_select')" class="mt-1" />
+        <div x-show="customGrund" x-cloak class="mt-2">
+            <x-text-input name="entsorgungsgrund_custom" type="text" class="block w-full"
+                          value="{{ old('entsorgungsgrund_custom') }}"
+                          placeholder="Entsorgungsgrund eingeben" />
+            <x-input-error :messages="$errors->get('entsorgungsgrund_custom')" class="mt-1" />
         </div>
     </div>
 
