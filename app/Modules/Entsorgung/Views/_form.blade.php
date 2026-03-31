@@ -190,6 +190,81 @@
         </div>
     </div>
 
+    {{-- Grundschutz-Checkliste --}}
+    <div x-data="{ open: false }" class="rounded-md border border-blue-200 bg-blue-50">
+        <button type="button" @click="open = !open"
+                class="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-blue-800 hover:bg-blue-100 transition rounded-md">
+            <span class="flex items-center gap-2">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                Tätigkeiten zum Grundschutz – Checkliste
+            </span>
+            <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </button>
+        <div x-show="open" x-cloak class="px-4 pb-4 text-sm text-blue-900 space-y-3">
+            <p class="text-xs text-blue-700 border-t border-blue-200 pt-3">
+                Diese Checkliste muss bei der Ausmusterung eines IT-Systems komplett bearbeitet werden.
+            </p>
+
+            <div>
+                <p class="font-semibold mb-1">PCs und Server</p>
+                <ul class="list-none space-y-0.5 ml-2">
+                    <li class="flex gap-2"><span class="text-blue-500 mt-0.5">•</span> Festplatten / CDs / SD-Karten / usw. entfernt</li>
+                    <li class="flex gap-2"><span class="text-blue-500 mt-0.5">•</span> Benötigte lokale Daten archiviert</li>
+                    <li class="flex gap-2"><span class="text-blue-500 mt-0.5">•</span> Ggf. Übergangsphase Alt- auf Neusystem berücksichtigt</li>
+                </ul>
+                <p class="mt-1 ml-2 text-xs text-blue-600 italic">💡 2 Monate Übergangsphase abwarten, ob Altdaten noch benötigt werden</p>
+            </div>
+
+            <div>
+                <p class="font-semibold mb-1">Virtuelle Clients und Server</p>
+                <p class="ml-2 text-xs mb-1">Das sichere Löschen der Daten von virtuellen Clients und Servern ist nicht notwendig. Es genügt, wenn die jeweiligen Systeme vom Hypervisor gelöscht werden. Wird der komplette Hypervisor ausgemustert, gilt der Punkt „PCs und Server".</p>
+                <ul class="list-none space-y-0.5 ml-2">
+                    <li class="flex gap-2"><span class="text-blue-500 mt-0.5">•</span> Benötigte lokale Daten archiviert</li>
+                </ul>
+            </div>
+
+            <div>
+                <p class="font-semibold mb-1">Speichersysteme (SAN / NAS) und sonstige Datenträger</p>
+                <ul class="list-none space-y-0.5 ml-2">
+                    <li class="flex gap-2"><span class="text-blue-500 mt-0.5">•</span> Benötigte lokale Daten migriert</li>
+                    <li class="flex gap-2"><span class="text-blue-500 mt-0.5">•</span> Ggf. Übergangsphase Alt- auf Neusystem berücksichtigt</li>
+                    <li class="flex gap-2"><span class="text-blue-500 mt-0.5">•</span> System sicher gelöscht</li>
+                </ul>
+                <p class="mt-1 ml-2 text-xs text-blue-600 italic">💡 2 Monate Übergangsphase abwarten, ob Altdaten noch benötigt werden</p>
+                <p class="mt-0.5 ml-2 text-xs text-blue-600 italic">💡 Speichersystem verschlüsseln, komplett zurücksetzen, ggf. erneut verschlüsseln</p>
+                <ul class="list-none space-y-0.5 ml-2 mt-1">
+                    <li class="flex gap-2"><span class="text-blue-500 mt-0.5">•</span> System durch den Hersteller abgeholt und sicher entsorgt</li>
+                </ul>
+                <p class="mt-0.5 ml-2 text-xs text-blue-600 italic">💡 Datenschutzerklärung / Bestätigung einholen</p>
+            </div>
+
+            <div>
+                <p class="font-semibold mb-1">Smartphones und Tablets</p>
+                <ul class="list-none space-y-0.5 ml-2">
+                    <li class="flex gap-2"><span class="text-blue-500 mt-0.5">•</span> SIM-Karte entfernt</li>
+                    <li class="flex gap-2"><span class="text-blue-500 mt-0.5">•</span> Ggf. SD-Karte entfernt</li>
+                    <li class="flex gap-2"><span class="text-blue-500 mt-0.5">•</span> Werks-Reset durchgeführt</li>
+                </ul>
+            </div>
+
+            <div>
+                <p class="font-semibold mb-1">Sonstige IT-Systeme</p>
+                <ul class="list-none space-y-0.5 ml-2">
+                    <li class="flex gap-2"><span class="text-blue-500 mt-0.5">•</span> Ggf. benötigte lokale Daten migriert</li>
+                    <li class="flex gap-2"><span class="text-blue-500 mt-0.5">•</span> Ggf. Konfigurationen des Systems gesichert</li>
+                    <li class="flex gap-2"><span class="text-blue-500 mt-0.5">•</span> Ggf. Übergangsphase Alt- auf Neusystem berücksichtigt</li>
+                    <li class="flex gap-2"><span class="text-blue-500 mt-0.5">•</span> System sicher gelöscht</li>
+                </ul>
+                <p class="mt-1 ml-2 text-xs text-blue-600 italic">💡 2 Monate Übergangsphase abwarten, ob Altdaten noch benötigt werden</p>
+            </div>
+        </div>
+    </div>
+
     {{-- BSI Grundschutz --}}
     <div>
         <x-input-label value="BSI-Grundschutz eingehalten? *" />
