@@ -20,6 +20,7 @@ yarn-error.log
 
 # Interne Infrastruktur-Daten (VLANs, IPs, DB-Dumps)
 /docs/olddb
+/docs/migrate.sh
 
 # Entwicklungs-Artefakte (temporäre Skripte, Snippets)
 /_patch.py
