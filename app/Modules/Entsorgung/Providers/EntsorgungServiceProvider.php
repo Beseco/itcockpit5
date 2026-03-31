@@ -2,11 +2,17 @@
 
 namespace App\Modules\Entsorgung\Providers;
 
+use App\Modules\Entsorgung\Console\Commands\ImportLegacyEntsorgung;
 use App\Services\HookManager;
 use Illuminate\Support\ServiceProvider;
 
 class EntsorgungServiceProvider extends ServiceProvider
 {
+    public function register(): void
+    {
+        $this->commands([ImportLegacyEntsorgung::class]);
+    }
+
     public function boot(): void
     {
         $this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
