@@ -1,34 +1,35 @@
 @php
     // Im Edit-Modus: gespeicherte Werte als Fallback, sonst old()
-    $val = fn(string $field, $default = '') => old($field, isset($eintrag) ? $eintrag->$field : $default);
+    $e   = $eintrag ?? null;
+    $val = fn(string $field, $default = '') => old($field, $e?->$field ?? $default);
 
     // Hersteller
-    $currentHersteller    = old('hersteller_select', $eintrag->hersteller ?? '');
+    $currentHersteller    = old('hersteller_select', $e?->hersteller ?? '');
     $herstellerInList     = $hersteller->contains($currentHersteller);
     $initCustomHersteller = (old('hersteller_select') === '__other__' || ($currentHersteller && !$herstellerInList)) ? 'true' : 'false';
     $herstellerSelected   = $herstellerInList ? $currentHersteller : ($currentHersteller ? '__other__' : '');
 
     // Gerätetyp
-    $currentTyp    = old('typ_select', $eintrag->typ ?? '');
+    $currentTyp    = old('typ_select', $e?->typ ?? '');
     $typInList     = $typen->contains($currentTyp);
     $initCustomTyp = (old('typ_select') === '__other__' || ($currentTyp && !$typInList)) ? 'true' : 'false';
     $typSelected   = $typInList ? $currentTyp : ($currentTyp ? '__other__' : '');
 
     // Entsorgungsgrund
-    $currentGrund    = old('entsorgungsgrund_select', $eintrag->entsorgungsgrund ?? '');
+    $currentGrund    = old('entsorgungsgrund_select', $e?->entsorgungsgrund ?? '');
     $grundInList     = $gruende->contains($currentGrund);
     $initCustomGrund = (old('entsorgungsgrund_select') === '__other__' || ($currentGrund && !$grundInList)) ? 'true' : 'false';
     $grundSelected   = $grundInList ? $currentGrund : ($currentGrund ? '__other__' : '');
 
     // AD-Nutzer
-    $currentAdUserId   = old('ad_user_id', $eintrag->ad_user_id ?? '');
+    $currentAdUserId   = old('ad_user_id', $e?->ad_user_id ?? '');
     $currentAdUserName = old('ad_user_id')
         ? ($adUsers->firstWhere('id', old('ad_user_id'))?->anzeigenameOrName ?? '')
-        : ($eintrag->nutzer?->anzeigenameOrName ?? '');
+        : ($e?->nutzer?->anzeigenameOrName ?? '');
 @endphp
 
 <div x-data="{
-    grundschutz:      '{{ old('grundschutz', isset($eintrag) ? ($eintrag->grundschutz ? '1' : '0') : '1') }}',
+    grundschutz:      '{{ old('grundschutz', $e ? ($e->grundschutz ? '1' : '0') : '1') }}',
     customHersteller:  {{ $initCustomHersteller }},
     customTyp:         {{ $initCustomTyp }},
     customGrund:       {{ $initCustomGrund }},
@@ -118,7 +119,7 @@
             <x-text-input id="inventar" name="inventar" type="text" inputmode="numeric"
                           pattern="\d{1,10}"
                           class="mt-1 block w-full"
-                          value="{{ old('inventar', isset($eintrag) ? ltrim($eintrag->inventar, '0') ?: '0' : '') }}"
+                          value="{{ old('inventar', $e ? (ltrim($e->inventar, '0') ?: '0') : '') }}"
                           required placeholder="z. B. 12345 → wird zu 0000012345" />
             <x-input-error :messages="$errors->get('inventar')" class="mt-1" />
         </div>
