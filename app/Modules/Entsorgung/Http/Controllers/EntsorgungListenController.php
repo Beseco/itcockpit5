@@ -3,6 +3,7 @@
 namespace App\Modules\Entsorgung\Http\Controllers;
 
 use App\Modules\Entsorgung\Models\EntsorgungGrund;
+use App\Modules\Entsorgung\Models\EntsorgungHersteller;
 use App\Modules\Entsorgung\Models\EntsorgungTyp;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -15,6 +16,38 @@ class EntsorgungListenController extends Controller
         if (!Auth::user()->hasModulePermission('entsorgung', 'edit')) {
             abort(403);
         }
+    }
+
+    // ─── Hersteller ─────────────────────────────────────────────────
+
+    public function herstellerIndex()
+    {
+        $this->authorizeManage();
+        $herstellerListe = EntsorgungHersteller::orderBy('name')->get();
+
+        return view('entsorgung::listen.hersteller', compact('herstellerListe'));
+    }
+
+    public function herstellerStore(Request $request)
+    {
+        $this->authorizeManage();
+        $request->validate([
+            'name' => ['required', 'string', 'max:255', 'unique:entsorgung_hersteller,name'],
+        ]);
+
+        EntsorgungHersteller::create(['name' => trim($request->name)]);
+
+        return redirect()->route('entsorgung.listen.hersteller')
+            ->with('success', 'Hersteller wurde hinzugefügt.');
+    }
+
+    public function herstellerDestroy(EntsorgungHersteller $h)
+    {
+        $this->authorizeManage();
+        $h->delete();
+
+        return redirect()->route('entsorgung.listen.hersteller')
+            ->with('success', 'Hersteller wurde entfernt.');
     }
 
     // ─── Gerätetypen ────────────────────────────────────────────────

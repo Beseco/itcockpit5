@@ -2,7 +2,6 @@
 
 namespace App\Modules\Entsorgung\Models;
 
-use App\Models\Dienstleister;
 use App\Models\User;
 use App\Modules\AdUsers\Models\AdUser;
 use Illuminate\Database\Eloquent\Model;
@@ -16,7 +15,6 @@ class Entsorgung extends Model
         'name',
         'modell',
         'hersteller',
-        'dienstleister_id',
         'typ',
         'inventar',
         'entsorger',
@@ -44,29 +42,13 @@ class Entsorgung extends Model
         return $this->belongsTo(AdUser::class, 'ad_user_id');
     }
 
-    public function dienstleister(): BelongsTo
-    {
-        return $this->belongsTo(Dienstleister::class, 'dienstleister_id');
-    }
-
     public function kannGeloeschtWerden(): bool
     {
         return $this->created_at->diffInMinutes(now()) <= 60;
     }
 
-    /**
-     * Anzeigename des bisherigen Nutzers (aus AD-FK oder Freitextfeld).
-     */
     public function getNutzerNameAttribute(): string
     {
         return $this->nutzer?->anzeigenameOrName ?? $this->user ?? '—';
-    }
-
-    /**
-     * Anzeigename des Herstellers (aus FK oder Freitextfeld).
-     */
-    public function getHerstellerNameAttribute(): string
-    {
-        return $this->dienstleister?->firmenname ?? $this->hersteller ?? '—';
     }
 }

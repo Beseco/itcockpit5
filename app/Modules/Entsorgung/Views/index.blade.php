@@ -4,6 +4,10 @@
             <h2 class="font-semibold text-xl text-gray-800">Entsorgung</h2>
             @can('entsorgung.edit')
             <div class="flex items-center gap-2">
+                <a href="{{ route('entsorgung.listen.hersteller') }}"
+                   class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-gray-600 text-xs font-medium rounded-md hover:bg-gray-50 transition">
+                    Hersteller
+                </a>
                 <a href="{{ route('entsorgung.listen.typen') }}"
                    class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-gray-600 text-xs font-medium rounded-md hover:bg-gray-50 transition">
                     Gerätetypen
@@ -88,20 +92,32 @@
                                     @endif
                                 </td>
                                 <td class="px-4 py-3 whitespace-nowrap text-right">
-                                    @if($eintrag->kannGeloeschtWerden() || $canDelete)
-                                    <form method="POST" action="{{ route('entsorgung.destroy', $eintrag) }}"
-                                          onsubmit="return confirm('Eintrag wirklich löschen?')" class="inline">
-                                        @csrf @method('DELETE')
-                                        <button type="submit"
-                                                class="inline-flex items-center justify-center w-7 h-7 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                                                title="Löschen">
+                                    <div class="flex items-center justify-end gap-1">
+                                        @if($canEdit)
+                                        <a href="{{ route('entsorgung.edit', $eintrag) }}"
+                                           class="inline-flex items-center justify-center w-7 h-7 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                                           title="Bearbeiten">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                             </svg>
-                                        </button>
-                                    </form>
-                                    @endif
+                                        </a>
+                                        @endif
+                                        @if($eintrag->kannGeloeschtWerden() || $canDelete)
+                                        <form method="POST" action="{{ route('entsorgung.destroy', $eintrag) }}"
+                                              onsubmit="return confirm('Eintrag wirklich löschen?')" class="inline">
+                                            @csrf @method('DELETE')
+                                            <button type="submit"
+                                                    class="inline-flex items-center justify-center w-7 h-7 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                                    title="Löschen">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                </svg>
+                                            </button>
+                                        </form>
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                             @empty
