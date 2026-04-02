@@ -12,6 +12,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\AccountCodeController;
 use App\Http\Controllers\CostCenterController;
+use App\Http\Controllers\AnsprechpartnerFunktionController;
 use App\Http\Controllers\DienstleisterController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
@@ -95,6 +96,8 @@ Route::middleware('auth')->group(function () {
 
     // Dienstleister / Lieferanten
     Route::resource('dienstleister', DienstleisterController::class);
+    Route::post('/dienstleister-funktionen', [AnsprechpartnerFunktionController::class, 'store'])->name('dienstleister-funktionen.store');
+    Route::delete('/dienstleister-funktionen/{funktion}', [AnsprechpartnerFunktionController::class, 'destroy'])->name('dienstleister-funktionen.destroy');
 
     // Abteilungen / Sachgebiete
     Route::resource('abteilungen', AbteilungController::class, [

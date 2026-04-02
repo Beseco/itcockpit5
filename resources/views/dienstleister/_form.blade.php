@@ -1,5 +1,51 @@
 {{-- Gemeinsames Formular-Partial für create und edit --}}
 
+<div x-data="{
+    ansprechpartner: {{ Js::from(
+        old('ansprechpartner') ?? (
+            isset($dienstleister) && $dienstleister
+                ? $dienstleister->ansprechpartner->map(fn($a) => [
+                    'anrede'   => $a->anrede   ?? '',
+                    'vorname'  => $a->vorname  ?? '',
+                    'nachname' => $a->nachname ?? '',
+                    'funktion' => $a->funktion ?? '',
+                    'telefon'  => $a->telefon  ?? '',
+                    'handy'    => $a->handy    ?? '',
+                    'email'    => $a->email    ?? '',
+                    'notiz'    => $a->notiz    ?? '',
+                ])->values()->toArray()
+                : []
+        )
+    ) }},
+    funktionen: {{ Js::from($funktionen->pluck('name')->values()) }},
+    neuerFunktionName: '',
+    showNeuerFunktion: false,
+    addAP() {
+        this.ansprechpartner.push({ anrede: '', vorname: '', nachname: '', funktion: '', telefon: '', handy: '', email: '', notiz: '' });
+    },
+    removeAP(i) {
+        this.ansprechpartner.splice(i, 1);
+    },
+    async saveFunktion() {
+        const name = this.neuerFunktionName.trim();
+        if (!name) return;
+        const resp = await fetch('{{ route('dienstleister-funktionen.store') }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({ name })
+        });
+        if (resp.ok) {
+            this.funktionen.push(name);
+            this.neuerFunktionName = '';
+            this.showNeuerFunktion = false;
+        }
+    }
+}">
+
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
     {{-- LINKE SPALTE --}}
@@ -209,3 +255,115 @@
         </div>
     </div>
 </div>
+
+{{-- Ansprechpartner --}}
+<div class="mt-8" id="ansprechpartner">
+    <div class="bg-gray-50 rounded-lg p-5">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">Ansprechpartner</h3>
+            <div class="flex items-center gap-2">
+                {{-- Neue Funktion hinzufügen --}}
+                <div x-show="showNeuerFunktion" class="flex items-center gap-1" x-cloak>
+                    <input type="text" x-model="neuerFunktionName"
+                           @keydown.enter.prevent="saveFunktion()"
+                           placeholder="Funktionsbezeichnung..."
+                           class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-xs px-2 py-1 w-44">
+                    <button type="button" @click="saveFunktion()"
+                            class="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-green-50 text-green-700 hover:bg-green-100 border border-green-200">
+                        Speichern
+                    </button>
+                    <button type="button" @click="showNeuerFunktion = false; neuerFunktionName = ''"
+                            class="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-gray-100 text-gray-500 hover:bg-gray-200 border border-gray-200">
+                        ✕
+                    </button>
+                </div>
+                <button type="button" x-show="!showNeuerFunktion" @click="showNeuerFunktion = true"
+                        class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded bg-gray-100 text-gray-500 hover:bg-gray-200 border border-gray-200">
+                    + Funktion anlegen
+                </button>
+                <button type="button" @click="addAP()"
+                        class="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200">
+                    + Ansprechpartner
+                </button>
+            </div>
+        </div>
+
+        <div class="space-y-4">
+            <template x-for="(ap, i) in ansprechpartner" :key="i">
+                <div class="bg-white border border-gray-200 rounded-lg p-4 relative">
+                    <button type="button" @click="removeAP(i)"
+                            class="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-gray-300 hover:text-red-500 text-lg leading-none font-bold">×</button>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Anrede</label>
+                            <select :name="'ansprechpartner[' + i + '][anrede]'" x-model="ap.anrede"
+                                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                <option value="">–</option>
+                                <option value="Herr">Herr</option>
+                                <option value="Frau">Frau</option>
+                                <option value="Divers">Divers</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Vorname</label>
+                            <input type="text" :name="'ansprechpartner[' + i + '][vorname]'" x-model="ap.vorname"
+                                   placeholder="Vorname"
+                                   class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Nachname *</label>
+                            <input type="text" :name="'ansprechpartner[' + i + '][nachname]'" x-model="ap.nachname"
+                                   placeholder="Nachname"
+                                   class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Funktion</label>
+                            <select :name="'ansprechpartner[' + i + '][funktion]'" x-model="ap.funktion"
+                                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                <option value="">– Funktion –</option>
+                                <template x-for="f in funktionen" :key="f">
+                                    <option :value="f" x-text="f"></option>
+                                </template>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Telefon</label>
+                            <input type="text" :name="'ansprechpartner[' + i + '][telefon]'" x-model="ap.telefon"
+                                   placeholder="Telefon"
+                                   class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">Handy</label>
+                            <input type="text" :name="'ansprechpartner[' + i + '][handy]'" x-model="ap.handy"
+                                   placeholder="Handy"
+                                   class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-gray-400 mb-1">E-Mail</label>
+                            <input type="email" :name="'ansprechpartner[' + i + '][email]'" x-model="ap.email"
+                                   placeholder="E-Mail"
+                                   class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Notiz</label>
+                        <textarea :name="'ansprechpartner[' + i + '][notiz]'" x-model="ap.notiz"
+                                  rows="2" placeholder="Notiz..."
+                                  class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"></textarea>
+                    </div>
+                </div>
+            </template>
+
+            <div x-show="ansprechpartner.length === 0" class="text-center py-6 text-sm text-gray-400 border border-dashed border-gray-200 rounded-lg">
+                Noch keine Ansprechpartner. Klicke auf „+ Ansprechpartner" um einen hinzuzufügen.
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>{{-- close x-data wrapper --}}

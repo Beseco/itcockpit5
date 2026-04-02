@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AnsprechpartnerFunktion;
 use App\Models\Dienstleister;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
@@ -59,8 +60,9 @@ class DienstleisterController extends Controller
         $this->authorize('dienstleister.create');
 
         return view('dienstleister.create', [
-            'typen'  => Dienstleister::TYPEN,
-            'status' => Dienstleister::STATUS,
+            'typen'      => Dienstleister::TYPEN,
+            'status'     => Dienstleister::STATUS,
+            'funktionen' => AnsprechpartnerFunktion::orderBy('sort_order')->orderBy('name')->get(),
         ]);
     }
 
@@ -77,12 +79,14 @@ class DienstleisterController extends Controller
 
         $d = Dienstleister::create($validated);
 
+        $this->syncAnsprechpartner($d, $request->input('ansprechpartner', []));
+
         $this->auditLogger->log('Dienstleister', 'Dienstleister erstellt', [
             'id'         => $d->id,
             'firmenname' => $d->firmenname,
         ]);
 
-        return redirect()->route('dienstleister.index')->with('success', 'Dienstleister erfolgreich gespeichert.');
+        return redirect()->route('dienstleister.show', $d)->with('success', 'Dienstleister erfolgreich gespeichert.');
     }
 
     /**
@@ -91,7 +95,10 @@ class DienstleisterController extends Controller
     public function show(Dienstleister $dienstleister)
     {
         $this->authorize('dienstleister.view');
-        return redirect()->route('dienstleister.edit', $dienstleister);
+
+        return view('dienstleister.show', [
+            'dienstleister' => $dienstleister->load('ansprechpartner'),
+        ]);
     }
 
     /**
@@ -102,9 +109,10 @@ class DienstleisterController extends Controller
         $this->authorize('dienstleister.edit');
 
         return view('dienstleister.edit', [
-            'dienstleister' => $dienstleister,
+            'dienstleister' => $dienstleister->load('ansprechpartner'),
             'typen'         => Dienstleister::TYPEN,
             'status'        => Dienstleister::STATUS,
+            'funktionen'    => AnsprechpartnerFunktion::orderBy('sort_order')->orderBy('name')->get(),
         ]);
     }
 
@@ -120,12 +128,14 @@ class DienstleisterController extends Controller
 
         $dienstleister->update($validated);
 
+        $this->syncAnsprechpartner($dienstleister, $request->input('ansprechpartner', []));
+
         $this->auditLogger->log('Dienstleister', 'Dienstleister aktualisiert', [
             'id'         => $dienstleister->id,
             'firmenname' => $dienstleister->firmenname,
         ]);
 
-        return redirect()->route('dienstleister.index')->with('success', 'Dienstleister erfolgreich aktualisiert.');
+        return redirect()->route('dienstleister.show', $dienstleister)->with('success', 'Dienstleister erfolgreich aktualisiert.');
     }
 
     /**
@@ -142,6 +152,30 @@ class DienstleisterController extends Controller
         $this->auditLogger->log('Dienstleister', 'Dienstleister gelöscht', $data);
 
         return redirect()->route('dienstleister.index')->with('success', 'Dienstleister erfolgreich gelöscht.');
+    }
+
+    private function syncAnsprechpartner(Dienstleister $dienstleister, array $items): void
+    {
+        $dienstleister->ansprechpartner()->delete();
+
+        foreach ($items as $i => $ap) {
+            $nachname = trim($ap['nachname'] ?? '');
+            if ($nachname === '') {
+                continue;
+            }
+
+            $dienstleister->ansprechpartner()->create([
+                'anrede'     => $ap['anrede']   ?? '',
+                'vorname'    => $ap['vorname']  ?? '',
+                'nachname'   => $nachname,
+                'funktion'   => $ap['funktion'] ?? '',
+                'telefon'    => $ap['telefon']  ?? '',
+                'handy'      => $ap['handy']    ?? '',
+                'email'      => $ap['email']    ?? '',
+                'notiz'      => $ap['notiz']    ?? '',
+                'sort_order' => $i,
+            ]);
+        }
     }
 
     private function validateDienstleister(Request $request): array
