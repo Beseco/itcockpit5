@@ -26,14 +26,7 @@
             {{-- Einheitliches Such- & Filterformular --}}
             <form action="{{ route('applikationen.index') }}" method="GET"
                   id="filter-form"
-                  x-data="{
-                      filtersOpen: {{ $anyFilterActive ? 'true' : 'false' }},
-                      searchTimer: null,
-                      debouncedSearch() {
-                          clearTimeout(this.searchTimer);
-                          this.searchTimer = setTimeout(() => document.getElementById('filter-form').submit(), 400);
-                      }
-                  }">
+                  x-data="{ filtersOpen: {{ $anyFilterActive ? 'true' : 'false' }} }">
 
                 <input type="hidden" name="filter_applied" value="1">
                 @if ($sort !== 'name')  <input type="hidden" name="sort"  value="{{ $sort }}"> @endif
@@ -46,7 +39,7 @@
                         <div class="relative">
                             <input type="text" name="search" value="{{ $search }}"
                                    placeholder="Name, Zweck, SG, Hersteller..."
-                                   @input="debouncedSearch()"
+                                   id="app-search-input"
                                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm w-72 pl-8" />
                             <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
@@ -371,4 +364,20 @@
 
         </div>
     </div>
+@push('scripts')
+<script>
+(function () {
+    var timer;
+    var input = document.getElementById('app-search-input');
+    if (input) {
+        input.addEventListener('input', function () {
+            clearTimeout(timer);
+            timer = setTimeout(function () {
+                document.getElementById('filter-form').submit();
+            }, 400);
+        });
+    }
+}());
+</script>
+@endpush
 </x-app-layout>
