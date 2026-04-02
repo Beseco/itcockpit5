@@ -30,8 +30,9 @@ class ApplikationController extends Controller
 
         // Frischer Aufruf ohne explizit gesetzten Filter: Session laden und weiterleiten
         if (!$request->has('filter_applied') && session()->has($sessionKey)) {
+            $saved = array_filter(session($sessionKey), fn($v) => $v !== '' && $v !== null && $v !== false);
             return redirect()->route('applikationen.index',
-                array_merge(session($sessionKey), ['filter_applied' => '1'])
+                array_merge($saved, ['filter_applied' => '1'])
             );
         }
 
