@@ -2,9 +2,9 @@
 
 <div x-data="{
     ansprechpartner: {{ Js::from(
-        old('ansprechpartner') ?? (
+        old('kontakte') ?? (
             isset($dienstleister) && $dienstleister
-                ? $dienstleister->ansprechpartner->map(fn($a) => [
+                ? $dienstleister->kontakte->map(fn($a) => [
                     'anrede'   => $a->anrede   ?? '',
                     'vorname'  => $a->vorname  ?? '',
                     'nachname' => $a->nachname ?? '',
@@ -297,7 +297,7 @@
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                         <div>
                             <label class="block text-xs text-gray-400 mb-1">Anrede</label>
-                            <select :name="'ansprechpartner[' + i + '][anrede]'" x-model="ap.anrede"
+                            <select :name="'kontakte[' + i + '][anrede]'" x-model="ap.anrede"
                                     class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                                 <option value="">–</option>
                                 <option value="Herr">Herr</option>
@@ -307,19 +307,19 @@
                         </div>
                         <div>
                             <label class="block text-xs text-gray-400 mb-1">Vorname</label>
-                            <input type="text" :name="'ansprechpartner[' + i + '][vorname]'" x-model="ap.vorname"
+                            <input type="text" :name="'kontakte[' + i + '][vorname]'" x-model="ap.vorname"
                                    placeholder="Vorname"
                                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                         </div>
                         <div>
                             <label class="block text-xs text-gray-400 mb-1">Nachname *</label>
-                            <input type="text" :name="'ansprechpartner[' + i + '][nachname]'" x-model="ap.nachname"
+                            <input type="text" :name="'kontakte[' + i + '][nachname]'" x-model="ap.nachname"
                                    placeholder="Nachname"
                                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                         </div>
                         <div>
                             <label class="block text-xs text-gray-400 mb-1">Funktion</label>
-                            <select :name="'ansprechpartner[' + i + '][funktion]'" x-model="ap.funktion"
+                            <select :name="'kontakte[' + i + '][funktion]'" x-model="ap.funktion"
                                     class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                                 <option value="">– Funktion –</option>
                                 <template x-for="f in funktionen" :key="f">
@@ -332,19 +332,19 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                         <div>
                             <label class="block text-xs text-gray-400 mb-1">Telefon</label>
-                            <input type="text" :name="'ansprechpartner[' + i + '][telefon]'" x-model="ap.telefon"
+                            <input type="text" :name="'kontakte[' + i + '][telefon]'" x-model="ap.telefon"
                                    placeholder="Telefon"
                                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                         </div>
                         <div>
                             <label class="block text-xs text-gray-400 mb-1">Handy</label>
-                            <input type="text" :name="'ansprechpartner[' + i + '][handy]'" x-model="ap.handy"
+                            <input type="text" :name="'kontakte[' + i + '][handy]'" x-model="ap.handy"
                                    placeholder="Handy"
                                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                         </div>
                         <div>
                             <label class="block text-xs text-gray-400 mb-1">E-Mail</label>
-                            <input type="email" :name="'ansprechpartner[' + i + '][email]'" x-model="ap.email"
+                            <input type="email" :name="'kontakte[' + i + '][email]'" x-model="ap.email"
                                    placeholder="E-Mail"
                                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                         </div>
@@ -352,7 +352,7 @@
 
                     <div>
                         <label class="block text-xs text-gray-400 mb-1">Notiz</label>
-                        <textarea :name="'ansprechpartner[' + i + '][notiz]'" x-model="ap.notiz"
+                        <textarea :name="'kontakte[' + i + '][notiz]'" x-model="ap.notiz"
                                   rows="2" placeholder="Notiz..."
                                   class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"></textarea>
                     </div>

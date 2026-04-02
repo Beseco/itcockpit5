@@ -71,7 +71,7 @@ class Dienstleister extends Model
         return $this->hasMany(Order::class, 'vendor_id');
     }
 
-    public function ansprechpartner()
+    public function kontakte()
     {
         return $this->hasMany(DienstleisterAnsprechpartner::class)->orderBy('sort_order')->orderBy('nachname');
     }

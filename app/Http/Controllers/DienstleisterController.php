@@ -79,7 +79,7 @@ class DienstleisterController extends Controller
 
         $d = Dienstleister::create($validated);
 
-        $this->syncAnsprechpartner($d, $request->input('ansprechpartner', []));
+        $this->syncAnsprechpartner($d, $request->input('kontakte', []));
 
         $this->auditLogger->log('Dienstleister', 'Dienstleister erstellt', [
             'id'         => $d->id,
@@ -97,7 +97,7 @@ class DienstleisterController extends Controller
         $this->authorize('dienstleister.view');
 
         return view('dienstleister.show', [
-            'dienstleister' => $dienstleister->load('ansprechpartner'),
+            'dienstleister' => $dienstleister->load('kontakte'),
         ]);
     }
 
@@ -109,7 +109,7 @@ class DienstleisterController extends Controller
         $this->authorize('dienstleister.edit');
 
         return view('dienstleister.edit', [
-            'dienstleister' => $dienstleister->load('ansprechpartner'),
+            'dienstleister' => $dienstleister->load('kontakte'),
             'typen'         => Dienstleister::TYPEN,
             'status'        => Dienstleister::STATUS,
             'funktionen'    => AnsprechpartnerFunktion::orderBy('sort_order')->orderBy('name')->get(),
@@ -128,7 +128,7 @@ class DienstleisterController extends Controller
 
         $dienstleister->update($validated);
 
-        $this->syncAnsprechpartner($dienstleister, $request->input('ansprechpartner', []));
+        $this->syncAnsprechpartner($dienstleister, $request->input('kontakte', []));
 
         $this->auditLogger->log('Dienstleister', 'Dienstleister aktualisiert', [
             'id'         => $dienstleister->id,
@@ -156,7 +156,7 @@ class DienstleisterController extends Controller
 
     private function syncAnsprechpartner(Dienstleister $dienstleister, array $items): void
     {
-        $dienstleister->ansprechpartner()->delete();
+        $dienstleister->kontakte()->delete();
 
         foreach ($items as $i => $ap) {
             $nachname = trim($ap['nachname'] ?? '');

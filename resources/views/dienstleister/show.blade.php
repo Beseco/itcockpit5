@@ -252,8 +252,8 @@
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">
                             Ansprechpartner
-                            @if ($dienstleister->ansprechpartner->isNotEmpty())
-                                <span class="ml-1 text-gray-400 font-normal normal-case">({{ $dienstleister->ansprechpartner->count() }})</span>
+                            @if ($dienstleister->kontakte->isNotEmpty())
+                                <span class="ml-1 text-gray-400 font-normal normal-case">({{ $dienstleister->kontakte->count() }})</span>
                             @endif
                         </h3>
                         @can('dienstleister.edit')
@@ -267,11 +267,11 @@
                         @endcan
                     </div>
 
-                    @if ($dienstleister->ansprechpartner->isEmpty())
+                    @if ($dienstleister->kontakte->isEmpty())
                         <p class="text-sm text-gray-400 text-center py-4">Noch keine Ansprechpartner angelegt.</p>
                     @else
                         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                            @foreach ($dienstleister->ansprechpartner as $ap)
+                            @foreach ($dienstleister->kontakte as $ap)
                             <div class="border border-gray-200 rounded-lg p-4">
                                 <div class="flex items-start justify-between mb-2">
                                     <div>
