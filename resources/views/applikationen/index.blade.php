@@ -193,20 +193,27 @@
         var container = document.getElementById('app-table');
         container.style.opacity = '0.5';
         fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-            .then(function (r) { return r.text(); })
+            .then(function (r) {
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                return r.text();
+            })
             .then(function (html) {
                 container.innerHTML = html;
                 container.style.opacity = '1';
                 history.pushState(null, '', url);
                 attachTableHandlers();
-                if (window.Alpine) Alpine.initTree(container);
+                if (window.Alpine) window.Alpine.initTree(container);
             })
-            .catch(function () { container.style.opacity = '1'; });
+            .catch(function (err) {
+                console.error('[app-table] fetch error:', err);
+                container.style.opacity = '1';
+            });
     }
 
     function buildUrl() {
         var form = document.getElementById('filter-form');
-        var params = new URLSearchParams(new FormData(form));
+        var params = new URLSearchParams();
+        new FormData(form).forEach(function (v, k) { params.append(k, v); });
         params.set('filter_applied', '1');
         return baseUrl + '?' + params.toString();
     }
