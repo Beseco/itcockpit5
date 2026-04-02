@@ -78,15 +78,11 @@ class EntsorgungController extends Controller
 
     public function edit(Entsorgung $eintrag)
     {
-        Auth::user()->hasModulePermission('entsorgung', 'edit') || abort(403);
-
         return view('entsorgung::edit', array_merge(['eintrag' => $eintrag], $this->formData()));
     }
 
     public function update(Request $request, Entsorgung $eintrag)
     {
-        Auth::user()->hasModulePermission('entsorgung', 'edit') || abort(403);
-
         $this->validateForm($request);
         [$hersteller, $typ, $entsorgungsgrund] = $this->resolveListFields($request);
 
@@ -114,7 +110,9 @@ class EntsorgungController extends Controller
     {
         $user = Auth::user();
 
-        if (!$eintrag->kannGeloeschtWerden() && !$user->hasModulePermission('entsorgung', 'delete')) {
+        // Unbegrenzt löschen darf nur, wer das delete-Recht hat.
+        // Alle anderen (mind. edit durch Route) dürfen nur innerhalb der 1-Stunden-Frist löschen.
+        if (!$user->hasModulePermission('entsorgung', 'delete') && !$eintrag->kannGeloeschtWerden()) {
             abort(403, 'Löschen nur innerhalb von 1 Stunde nach Erstellung möglich.');
         }
 

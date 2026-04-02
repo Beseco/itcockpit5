@@ -60,6 +60,15 @@ class RbacSeeder extends Seeder
             ]
         );
 
+        $entsorgungModule = Module::firstOrCreate(
+            ['name' => 'entsorgung'],
+            [
+                'display_name' => 'Entsorgung',
+                'description' => 'Dokumentation der IT-Geräteentsorgung nach BSI-Grundschutz',
+                'is_active' => true,
+            ]
+        );
+
         // Create base module permissions
         $basePermissions = [
             ['name' => 'base.users.view', 'module_id' => $baseModule->id],
@@ -100,13 +109,21 @@ class RbacSeeder extends Seeder
             ['name' => 'hh.approve', 'module_id' => $hhModule->id],
         ];
 
+        // Create entsorgung module permissions
+        $entsorgungPermissions = [
+            ['name' => 'entsorgung.view',   'module_id' => $entsorgungModule->id],
+            ['name' => 'entsorgung.edit',   'module_id' => $entsorgungModule->id],
+            ['name' => 'entsorgung.delete', 'module_id' => $entsorgungModule->id],
+        ];
+
         // Combine all permissions
         $allPermissions = array_merge(
             $basePermissions,
             $announcementsPermissions,
             $auditPermissions,
             $networkPermissions,
-            $hhPermissions
+            $hhPermissions,
+            $entsorgungPermissions
         );
 
         // Create all permissions

@@ -39,6 +39,7 @@ class OrderController extends Controller
         $filterDateFrom = $request->get('date_from', '');
         $filterDateTo   = $request->get('date_to', '');
         $filterOwn      = $request->boolean('filter_own');
+        $search         = trim($request->get('search', ''));
 
         $query = Order::with(['vendor', 'costCenter', 'accountCode'])
             ->orderBy('order_date', 'desc');
@@ -56,6 +57,13 @@ class OrderController extends Controller
         }
         if (!empty($filterDateTo)) {
             $query->where('order_date', '<=', $filterDateTo);
+        }
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('subject', 'like', "%{$search}%")
+                  ->orWhere('buyer_username', 'like', "%{$search}%")
+                  ->orWhereHas('vendor', fn ($v) => $v->where('firmenname', 'like', "%{$search}%"));
+            });
         }
 
         $orders = $query->paginate(25)->withQueryString();
@@ -79,7 +87,7 @@ class OrderController extends Controller
 
         return view('orders.index', compact(
             'obligo', 'kstSummen', 'orders', 'kstDetails', 'kstAccounts',
-            'filterStatus', 'filterDateFrom', 'filterDateTo', 'filterOwn'
+            'filterStatus', 'filterDateFrom', 'filterDateTo', 'filterOwn', 'search'
         ));
     }
 
