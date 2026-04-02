@@ -43,7 +43,13 @@ class DienstleisterController extends Controller
                   ->orWhere('bewertungsnotiz', 'LIKE', "%{$search}%")
                   ->orWhere('verantwortliche_stelle', 'LIKE', "%{$search}%")
                   ->orWhere('email', 'LIKE', "%{$search}%")
-                  ->orWhere('website', 'LIKE', "%{$search}%");
+                  ->orWhere('website', 'LIKE', "%{$search}%")
+                  ->orWhereHas('kontakte', fn ($k) =>
+                      $k->where('vorname', 'LIKE', "%{$search}%")
+                        ->orWhere('nachname', 'LIKE', "%{$search}%")
+                        ->orWhere('funktion', 'LIKE', "%{$search}%")
+                        ->orWhere('email', 'LIKE', "%{$search}%")
+                  );
             });
         }
 
