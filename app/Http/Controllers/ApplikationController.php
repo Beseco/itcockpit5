@@ -90,7 +90,7 @@ class ApplikationController extends Controller
 
         $apps = $query->paginate(25)->withQueryString();
 
-        if ($request->ajax()) {
+        if ($request->ajax() || $request->has('_ajax')) {
             return view('applikationen._table', compact('apps', 'sort', 'order'));
         }
 

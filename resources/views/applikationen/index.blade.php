@@ -215,6 +215,7 @@
         var params = new URLSearchParams();
         new FormData(form).forEach(function (v, k) { params.append(k, v); });
         params.set('filter_applied', '1');
+        params.set('_ajax', '1');
         return baseUrl + '?' + params.toString();
     }
 
