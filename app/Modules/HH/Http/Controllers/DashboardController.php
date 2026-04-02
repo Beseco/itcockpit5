@@ -11,7 +11,7 @@ use App\Modules\HH\Services\BudgetCalculationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Cookie;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -107,19 +107,17 @@ class DashboardController extends Controller
 
         $canWrite = $this->authService->isLeiter($request->user());
 
-        $response = response()->view('hh::dashboard', compact(
+        // Cookies setzen (30 Tage)
+        $minutes = self::COOKIE_DAYS * 24 * 60;
+        Cookie::queue(self::COOKIE_YEAR, $budgetYear->id, $minutes, '/', null, false, false);
+        if ($selectedCostCenter) {
+            Cookie::queue(self::COOKIE_CC, $selectedCostCenter->id, $minutes, '/', null, false, false);
+        }
+
+        return view('hh::dashboard', compact(
             'budgetYear', 'allBudgetYears', 'allCostCenters', 'allAccounts',
             'selectedCostCenter', 'activeVersion', 'totals', 'accountsWithTotals', 'canWrite'
         ));
-
-        // Cookies setzen (30 Tage)
-        $minutes = self::COOKIE_DAYS * 24 * 60;
-        $response->cookie(self::COOKIE_YEAR, $budgetYear->id, $minutes, '/', null, false, false);
-        if ($selectedCostCenter) {
-            $response->cookie(self::COOKIE_CC, $selectedCostCenter->id, $minutes, '/', null, false, false);
-        }
-
-        return $response;
     }
 
     public function accountPositions(Request $request, BudgetYear $budgetYear, CostCenter $costCenter, Account $account): View
