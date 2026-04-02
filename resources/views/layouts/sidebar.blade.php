@@ -68,38 +68,15 @@
         </a>
         @endif
 
-        {{-- Bestellungen (aufklappbar) --}}
+        {{-- Bestellungen --}}
         @if($canSee('orders', 'orders.view'))
-        <div x-data="{ open: {{ $inOrdersSection ? 'true' : 'false' }} }">
-            <button @click="open = !open"
-                    class="w-full group flex items-center px-2 py-1.5 text-sm font-medium rounded-md {{ $inOrdersSection ? 'bg-gray-700 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
-                <svg class="mr-3 flex-shrink-0 h-6 w-6 {{ $inOrdersSection ? 'text-white' : 'text-gray-400 group-hover:text-gray-300' }}" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-                </svg>
-                <span class="flex-1 text-left">Bestellungen</span>
-                <svg :class="open ? 'rotate-180' : ''" class="h-4 w-4 text-gray-400 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                </svg>
-            </button>
-            <div x-show="open" x-cloak class="mt-0.5 ml-3 pl-3 border-l border-gray-600 space-y-0.5">
-                <a href="{{ route('orders.index') }}"
-                   class="group flex items-center px-2 py-1 text-sm rounded-md {{ request()->routeIs('orders.*') ? 'bg-gray-900 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white' }}">
-                    Bestellungen
-                </a>
-                @if($isSuperAdmin || $user->hasPermissionTo('cost-centers.view'))
-                <a href="{{ route('cost-centers.index') }}"
-                   class="group flex items-center px-2 py-1 text-sm rounded-md {{ request()->routeIs('cost-centers.*') ? 'bg-gray-900 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white' }}">
-                    Kostenstellen
-                </a>
-                @endif
-                @if($isSuperAdmin || $user->hasPermissionTo('account-codes.view'))
-                <a href="{{ route('account-codes.index') }}"
-                   class="group flex items-center px-2 py-1 text-sm rounded-md {{ request()->routeIs('account-codes.*') ? 'bg-gray-900 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white' }}">
-                    Sachkonten
-                </a>
-                @endif
-            </div>
-        </div>
+        <a href="{{ route('orders.index') }}"
+           class="group flex items-center px-2 py-1.5 text-sm font-medium rounded-md {{ $inOrdersSection ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
+            <svg class="mr-3 flex-shrink-0 h-6 w-6 {{ $inOrdersSection ? 'text-white' : 'text-gray-400 group-hover:text-gray-300' }}" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+            </svg>
+            Bestellungen
+        </a>
         @endif
 
         {{-- Dienstleister --}}
