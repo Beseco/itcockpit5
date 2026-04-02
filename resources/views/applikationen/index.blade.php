@@ -186,63 +186,86 @@
 @push('scripts')
 <script>
 (function () {
-    var searchTimer;
-    var baseUrl = '{{ route("applikationen.index") }}';
+    var form      = document.getElementById('filter-form');
+    var container = document.getElementById('app-table');
+    if (!form || !container) return;
 
+    var base        = '{{ route("applikationen.index") }}';
+    var searchTimer = null;
+
+    /* Formularwerte als URLSearchParams einlesen (ohne FormData-Bugs) */
+    function collectParams() {
+        var p = new URLSearchParams();
+        Array.from(form.elements).forEach(function (el) {
+            if (!el.name || el.disabled) return;
+            if ((el.type === 'checkbox' || el.type === 'radio') && !el.checked) return;
+            p.set(el.name, el.value);
+        });
+        p.set('filter_applied', '1');
+        p.set('_ajax', '1');
+        return p;
+    }
+
+    /* Tabelle per AJAX laden */
     function loadTable(url) {
-        var container = document.getElementById('app-table');
         container.style.opacity = '0.5';
         fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
             .then(function (r) {
-                if (!r.ok) throw new Error('HTTP ' + r.status);
+                /* Redirect (z. B. Session-Restore) → normale Navigation */
+                if (r.redirected) { window.location.href = r.url; return null; }
                 return r.text();
             })
             .then(function (html) {
+                if (html === null) return;
+                /* Sicherheits-Fallback: wenn versehentlich ganze Seite zurückkommt */
+                if (/^\s*<!/.test(html) || /^\s*<html/i.test(html)) {
+                    var cleanUrl = url.replace(/[?&]_ajax=1/, '');
+                    window.location.href = cleanUrl;
+                    return;
+                }
                 container.innerHTML = html;
                 container.style.opacity = '1';
-                history.pushState(null, '', url);
-                attachTableHandlers();
+                /* URL sauber halten (ohne _ajax=1) */
+                var pu = new URL(url, window.location.origin);
+                pu.searchParams.delete('_ajax');
+                history.pushState(null, '', pu.toString());
+                bindLinks();
                 if (window.Alpine) window.Alpine.initTree(container);
             })
-            .catch(function (err) {
-                console.error('[app-table] fetch error:', err);
-                container.style.opacity = '1';
-            });
+            .catch(function () { container.style.opacity = '1'; });
     }
 
-    function buildUrl() {
-        var form = document.getElementById('filter-form');
-        var params = new URLSearchParams();
-        new FormData(form).forEach(function (v, k) { params.append(k, v); });
-        params.set('filter_applied', '1');
-        params.set('_ajax', '1');
-        return baseUrl + '?' + params.toString();
+    function submitForm() {
+        loadTable(base + '?' + collectParams().toString());
     }
 
-    function attachTableHandlers() {
-        document.querySelectorAll('#app-table a.app-table-link, #app-table .app-table-pagination a').forEach(function (a) {
-            a.addEventListener('click', function (e) {
-                e.preventDefault();
-                loadTable(this.href);
-            });
-        });
-    }
-
-    // Search: debounced 400ms
-    var searchInput = document.getElementById('app-search-input');
-    if (searchInput) {
-        searchInput.addEventListener('input', function () {
-            clearTimeout(searchTimer);
-            searchTimer = setTimeout(function () { loadTable(buildUrl()); }, 400);
-        });
-    }
-
-    // Selects: immediate on change
-    document.querySelectorAll('#filter-form select').forEach(function (sel) {
-        sel.addEventListener('change', function () { loadTable(buildUrl()); });
+    /* Selects: sofort auslösen */
+    form.querySelectorAll('select').forEach(function (sel) {
+        sel.addEventListener('change', submitForm);
     });
 
-    attachTableHandlers();
+    /* Suchfeld: 400 ms Debounce */
+    var searchEl = document.getElementById('app-search-input');
+    if (searchEl) {
+        searchEl.addEventListener('input', function () {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(submitForm, 400);
+        });
+    }
+
+    /* Sort- und Paginierungslinks in der Tabelle abfangen */
+    function bindLinks() {
+        container.querySelectorAll('a.app-table-link, .app-table-pagination a').forEach(function (a) {
+            a.addEventListener('click', function (e) {
+                e.preventDefault();
+                var u = new URL(this.href, window.location.origin);
+                u.searchParams.set('_ajax', '1');
+                loadTable(u.toString());
+            });
+        });
+    }
+
+    bindLinks();
 }());
 </script>
 @endpush
