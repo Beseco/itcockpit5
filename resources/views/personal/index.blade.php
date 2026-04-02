@@ -439,7 +439,7 @@
                             </span>
                             <div class="flex-1 min-w-0">
                                 <p class="text-sm text-gray-700">{{ $a->message }}</p>
-                                <p class="text-xs text-gray-400 mt-0.5">{{ $a->starts_at->format('d.m.Y H:i') }}</p>
+                                <p class="text-xs text-gray-400 mt-0.5">{{ $a->starts_at?->format('d.m.Y H:i') }}</p>
                             </div>
                         </li>
                         @endforeach
