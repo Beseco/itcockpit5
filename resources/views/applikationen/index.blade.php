@@ -46,6 +46,12 @@
                             </svg>
                         </div>
 
+                        {{-- Suchen-Button --}}
+                        <button type="submit"
+                                class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md text-sm font-medium text-white hover:bg-indigo-700">
+                            Suchen
+                        </button>
+
                         {{-- Filter-Toggle --}}
                         <button type="button" @click="filtersOpen = !filtersOpen"
                                 :class="filtersOpen ? 'bg-indigo-50 text-indigo-700 border-indigo-300' : 'bg-white text-gray-600 border-gray-300'"
@@ -186,10 +192,10 @@
 (function () {
     var form = document.getElementById('filter-form');
     if (!form) return;
-    var timer;
 
     /* Nur nicht-leere Werte in die URL aufnehmen */
-    function cleanSubmit() {
+    function cleanSubmit(e) {
+        e.preventDefault();
         var params = new URLSearchParams();
         Array.from(form.elements).forEach(function (el) {
             if (!el.name || el.disabled) return;
@@ -200,19 +206,12 @@
         window.location.href = form.action + '?' + params.toString();
     }
 
+    form.addEventListener('submit', cleanSubmit);
+
     /* Selects: sofort */
     form.querySelectorAll('select').forEach(function (sel) {
-        sel.addEventListener('change', cleanSubmit);
+        sel.addEventListener('change', function () { form.requestSubmit(); });
     });
-
-    /* Suchfeld: 500 ms Debounce */
-    var input = document.getElementById('app-search-input');
-    if (input) {
-        input.addEventListener('input', function () {
-            clearTimeout(timer);
-            timer = setTimeout(cleanSubmit, 500);
-        });
-    }
 }());
 </script>
 @endpush
