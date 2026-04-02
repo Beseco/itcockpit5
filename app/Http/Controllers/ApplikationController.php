@@ -90,10 +90,6 @@ class ApplikationController extends Controller
 
         $apps = $query->paginate(25)->withQueryString();
 
-        if ($request->ajax() || $request->has('_ajax')) {
-            return view('applikationen._table', compact('apps', 'sort', 'order'));
-        }
-
         $abteilungen         = Abteilung::orderBy('sort_order')->orderBy('name')->get();
         $adminUsers          = User::whereIn('id', Applikation::whereNotNull('admin_user_id')->pluck('admin_user_id'))
                                    ->orderBy('name')->get();

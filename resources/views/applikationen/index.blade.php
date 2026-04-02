@@ -91,7 +91,8 @@
 
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Sachgebiet</label>
-                            <select name="filter_abteilung_id"                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <select name="filter_abteilung_id" onchange="this.form.submit()"
+                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="">Alle</option>
                                 @foreach($abteilungen as $abt)
                                     <option value="{{ $abt->id }}" {{ $filterAbteilungId == $abt->id ? 'selected' : '' }}>
@@ -103,7 +104,8 @@
 
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Baustein</label>
-                            <select name="filter_baustein"                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <select name="filter_baustein" onchange="this.form.submit()"
+                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="">Alle</option>
                                 @foreach(\App\Models\Applikation::BAUSTEINE as $key => $label)
                                     <option value="{{ $key }}" {{ $filterBaustein === $key ? 'selected' : '' }}>{{ $key }}</option>
@@ -113,7 +115,8 @@
 
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Administrator</label>
-                            <select name="filter_admin_user_id"                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <select name="filter_admin_user_id" onchange="this.form.submit()"
+                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="">Alle</option>
                                 <option value="none" {{ $filterAdminUserId === 'none' ? 'selected' : '' }}>— Ohne Administrator —</option>
                                 @foreach($adminUsers as $u)
@@ -124,7 +127,8 @@
 
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Verantwortlicher</label>
-                            <select name="filter_ohne_verantwortlich"                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <select name="filter_ohne_verantwortlich" onchange="this.form.submit()"
+                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="">Alle</option>
                                 <option value="1" {{ $filterOhneVerantwortlich ? 'selected' : '' }}>— Ohne Verantwortlichen —</option>
                             </select>
@@ -136,7 +140,8 @@
 
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Vertraulichkeit</label>
-                            <select name="filter_confidentiality"                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <select name="filter_confidentiality" onchange="this.form.submit()"
+                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="">Alle</option>
                                 @foreach(\App\Models\Applikation::SCHUTZBEDARF as $key => $label)
                                     <option value="{{ $key }}" {{ $filterConfidentiality === $key ? 'selected' : '' }}>{{ $key }} – {{ $label }}</option>
@@ -146,7 +151,8 @@
 
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Integrität</label>
-                            <select name="filter_integrity"                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <select name="filter_integrity" onchange="this.form.submit()"
+                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="">Alle</option>
                                 @foreach(\App\Models\Applikation::SCHUTZBEDARF as $key => $label)
                                     <option value="{{ $key }}" {{ $filterIntegrity === $key ? 'selected' : '' }}>{{ $key }} – {{ $label }}</option>
@@ -156,7 +162,8 @@
 
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Verfügbarkeit</label>
-                            <select name="filter_availability"                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <select name="filter_availability" onchange="this.form.submit()"
+                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="">Alle</option>
                                 @foreach(\App\Models\Applikation::SCHUTZBEDARF as $key => $label)
                                     <option value="{{ $key }}" {{ $filterAvailability === $key ? 'selected' : '' }}>{{ $key }} – {{ $label }}</option>
@@ -166,7 +173,8 @@
 
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Revision</label>
-                            <select name="filter_offene_revision"                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm
+                            <select name="filter_offene_revision" onchange="this.form.submit()"
+                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm
                                            {{ $filterOffeneRevision ? 'border-red-300 bg-red-50 text-red-700' : '' }}">
                                 <option value="">Alle</option>
                                 <option value="1" {{ $filterOffeneRevision ? 'selected' : '' }}>Offene Revision (überfällig)</option>
@@ -177,95 +185,22 @@
 
             </form>
 
-            <div id="app-table">
-                @include('applikationen._table')
-            </div>
+            @include('applikationen._table')
 
         </div>
     </div>
 @push('scripts')
 <script>
 (function () {
-    var form      = document.getElementById('filter-form');
-    var container = document.getElementById('app-table');
-    if (!form || !container) return;
-
-    var base        = '{{ route("applikationen.index") }}';
-    var searchTimer = null;
-
-    /* Formularwerte als URLSearchParams einlesen (ohne FormData-Bugs) */
-    function collectParams() {
-        var p = new URLSearchParams();
-        Array.from(form.elements).forEach(function (el) {
-            if (!el.name || el.disabled) return;
-            if ((el.type === 'checkbox' || el.type === 'radio') && !el.checked) return;
-            p.set(el.name, el.value);
-        });
-        p.set('filter_applied', '1');
-        p.set('_ajax', '1');
-        return p;
-    }
-
-    /* Tabelle per AJAX laden */
-    function loadTable(url) {
-        container.style.opacity = '0.5';
-        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-            .then(function (r) {
-                /* Redirect (z. B. Session-Restore) → normale Navigation */
-                if (r.redirected) { window.location.href = r.url; return null; }
-                return r.text();
-            })
-            .then(function (html) {
-                if (html === null) return;
-                /* Sicherheits-Fallback: wenn versehentlich ganze Seite zurückkommt */
-                if (/^\s*<!/.test(html) || /^\s*<html/i.test(html)) {
-                    var cleanUrl = url.replace(/[?&]_ajax=1/, '');
-                    window.location.href = cleanUrl;
-                    return;
-                }
-                container.innerHTML = html;
-                container.style.opacity = '1';
-                /* URL sauber halten (ohne _ajax=1) */
-                var pu = new URL(url, window.location.origin);
-                pu.searchParams.delete('_ajax');
-                history.pushState(null, '', pu.toString());
-                bindLinks();
-                if (window.Alpine) window.Alpine.initTree(container);
-            })
-            .catch(function () { container.style.opacity = '1'; });
-    }
-
-    function submitForm() {
-        loadTable(base + '?' + collectParams().toString());
-    }
-
-    /* Selects: sofort auslösen */
-    form.querySelectorAll('select').forEach(function (sel) {
-        sel.addEventListener('change', submitForm);
+    var input = document.getElementById('app-search-input');
+    if (!input) return;
+    var timer;
+    input.addEventListener('input', function () {
+        clearTimeout(timer);
+        timer = setTimeout(function () {
+            document.getElementById('filter-form').submit();
+        }, 500);
     });
-
-    /* Suchfeld: 400 ms Debounce */
-    var searchEl = document.getElementById('app-search-input');
-    if (searchEl) {
-        searchEl.addEventListener('input', function () {
-            clearTimeout(searchTimer);
-            searchTimer = setTimeout(submitForm, 400);
-        });
-    }
-
-    /* Sort- und Paginierungslinks in der Tabelle abfangen */
-    function bindLinks() {
-        container.querySelectorAll('a.app-table-link, .app-table-pagination a').forEach(function (a) {
-            a.addEventListener('click', function (e) {
-                e.preventDefault();
-                var u = new URL(this.href, window.location.origin);
-                u.searchParams.set('_ajax', '1');
-                loadTable(u.toString());
-            });
-        });
-    }
-
-    bindLinks();
 }());
 </script>
 @endpush
