@@ -150,15 +150,35 @@
                                 <span class="text-sm font-normal text-gray-400">({{ $orders->total() }} gesamt)</span>
                             @endif
                         </h3>
-                        @can('orders.create')
-                        <a href="{{ route('orders.create') }}"
-                           class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                            </svg>
-                            Neue Bestellung
-                        </a>
-                        @endcan
+                        <div class="flex items-center gap-2">
+                            @if(auth()->user()->isSuperAdmin() || auth()->user()->hasPermissionTo('cost-centers.view'))
+                            <a href="{{ route('cost-centers.index') }}"
+                               class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50 transition">
+                                <svg class="w-4 h-4 mr-1.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                                </svg>
+                                Kostenstellen
+                            </a>
+                            @endif
+                            @if(auth()->user()->isSuperAdmin() || auth()->user()->hasPermissionTo('account-codes.view'))
+                            <a href="{{ route('account-codes.index') }}"
+                               class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50 transition">
+                                <svg class="w-4 h-4 mr-1.5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 11h.01M12 11h.01M15 11h.01M12 7h.01M9 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2h-4m-5 0V1m0 2h4V1m-4 0h4"/>
+                                </svg>
+                                Sachkonten
+                            </a>
+                            @endif
+                            @can('orders.create')
+                            <a href="{{ route('orders.create') }}"
+                               class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                                </svg>
+                                Neue Bestellung
+                            </a>
+                            @endcan
+                        </div>
                     </div>
 
                     <div class="overflow-x-auto">
