@@ -91,8 +91,7 @@
 
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Sachgebiet</label>
-                            <select name="filter_abteilung_id" onchange="this.form.submit()"
-                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <select name="filter_abteilung_id"                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="">Alle</option>
                                 @foreach($abteilungen as $abt)
                                     <option value="{{ $abt->id }}" {{ $filterAbteilungId == $abt->id ? 'selected' : '' }}>
@@ -104,8 +103,7 @@
 
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Baustein</label>
-                            <select name="filter_baustein" onchange="this.form.submit()"
-                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <select name="filter_baustein"                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="">Alle</option>
                                 @foreach(\App\Models\Applikation::BAUSTEINE as $key => $label)
                                     <option value="{{ $key }}" {{ $filterBaustein === $key ? 'selected' : '' }}>{{ $key }}</option>
@@ -115,8 +113,7 @@
 
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Administrator</label>
-                            <select name="filter_admin_user_id" onchange="this.form.submit()"
-                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <select name="filter_admin_user_id"                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="">Alle</option>
                                 <option value="none" {{ $filterAdminUserId === 'none' ? 'selected' : '' }}>— Ohne Administrator —</option>
                                 @foreach($adminUsers as $u)
@@ -127,8 +124,7 @@
 
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Verantwortlicher</label>
-                            <select name="filter_ohne_verantwortlich" onchange="this.form.submit()"
-                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <select name="filter_ohne_verantwortlich"                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="">Alle</option>
                                 <option value="1" {{ $filterOhneVerantwortlich ? 'selected' : '' }}>— Ohne Verantwortlichen —</option>
                             </select>
@@ -140,8 +136,7 @@
 
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Vertraulichkeit</label>
-                            <select name="filter_confidentiality" onchange="this.form.submit()"
-                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <select name="filter_confidentiality"                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="">Alle</option>
                                 @foreach(\App\Models\Applikation::SCHUTZBEDARF as $key => $label)
                                     <option value="{{ $key }}" {{ $filterConfidentiality === $key ? 'selected' : '' }}>{{ $key }} – {{ $label }}</option>
@@ -151,8 +146,7 @@
 
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Integrität</label>
-                            <select name="filter_integrity" onchange="this.form.submit()"
-                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <select name="filter_integrity"                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="">Alle</option>
                                 @foreach(\App\Models\Applikation::SCHUTZBEDARF as $key => $label)
                                     <option value="{{ $key }}" {{ $filterIntegrity === $key ? 'selected' : '' }}>{{ $key }} – {{ $label }}</option>
@@ -162,8 +156,7 @@
 
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Verfügbarkeit</label>
-                            <select name="filter_availability" onchange="this.form.submit()"
-                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                            <select name="filter_availability"                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                                 <option value="">Alle</option>
                                 @foreach(\App\Models\Applikation::SCHUTZBEDARF as $key => $label)
                                     <option value="{{ $key }}" {{ $filterAvailability === $key ? 'selected' : '' }}>{{ $key }} – {{ $label }}</option>
@@ -173,8 +166,7 @@
 
                         <div>
                             <label class="block text-xs font-medium text-gray-500 mb-1">Revision</label>
-                            <select name="filter_offene_revision" onchange="this.form.submit()"
-                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm
+                            <select name="filter_offene_revision"                                    class="block w-full text-sm border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm
                                            {{ $filterOffeneRevision ? 'border-red-300 bg-red-50 text-red-700' : '' }}">
                                 <option value="">Alle</option>
                                 <option value="1" {{ $filterOffeneRevision ? 'selected' : '' }}>Offene Revision (überfällig)</option>
@@ -192,15 +184,35 @@
 @push('scripts')
 <script>
 (function () {
-    var input = document.getElementById('app-search-input');
-    if (!input) return;
+    var form = document.getElementById('filter-form');
+    if (!form) return;
     var timer;
-    input.addEventListener('input', function () {
-        clearTimeout(timer);
-        timer = setTimeout(function () {
-            document.getElementById('filter-form').submit();
-        }, 500);
+
+    /* Nur nicht-leere Werte in die URL aufnehmen */
+    function cleanSubmit() {
+        var params = new URLSearchParams();
+        Array.from(form.elements).forEach(function (el) {
+            if (!el.name || el.disabled) return;
+            if ((el.type === 'checkbox' || el.type === 'radio') && !el.checked) return;
+            if (el.value !== '') params.set(el.name, el.value);
+        });
+        params.set('filter_applied', '1');
+        window.location.href = form.action + '?' + params.toString();
+    }
+
+    /* Selects: sofort */
+    form.querySelectorAll('select').forEach(function (sel) {
+        sel.addEventListener('change', cleanSubmit);
     });
+
+    /* Suchfeld: 500 ms Debounce */
+    var input = document.getElementById('app-search-input');
+    if (input) {
+        input.addEventListener('input', function () {
+            clearTimeout(timer);
+            timer = setTimeout(cleanSubmit, 500);
+        });
+    }
 }());
 </script>
 @endpush
