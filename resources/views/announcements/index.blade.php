@@ -77,22 +77,36 @@
                                                 </span>
                                             @endif
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium" x-data="{ showDeleteConfirm: false }">
-                                            <a href="{{ route('announcements.edit', $announcement) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">{{ __('Edit') }}</a>
-                                            
+                                        <td class="px-6 py-4 whitespace-nowrap" x-data="{ showDeleteConfirm: false }">
+                                            <div class="inline-flex items-center gap-1">
+                                            <a href="{{ route('announcements.edit', $announcement) }}"
+                                               class="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200"
+                                               title="{{ __('Edit') }}">
+                                                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                </svg>
+                                            </a>
                                             @if($announcement->type === 'critical' && !$announcement->is_fixed)
                                                 <form action="{{ route('announcements.mark-as-fixed', $announcement) }}" method="POST" class="inline">
                                                     @csrf
-                                                    <button type="submit" class="text-green-600 hover:text-green-900 mr-3">
-                                                        {{ __('Mark as Fixed') }}
+                                                    <button type="submit"
+                                                            class="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"
+                                                            title="{{ __('Mark as Fixed') }}">
+                                                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                                        </svg>
                                                     </button>
                                                 </form>
                                             @endif
-                                            
-                                            <button @click="showDeleteConfirm = true" type="button" class="text-red-600 hover:text-red-900">
-                                                {{ __('Delete') }}
+                                            <button @click="showDeleteConfirm = true" type="button"
+                                                    class="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-red-50 text-red-600 hover:bg-red-100 border border-red-200"
+                                                    title="{{ __('Delete') }}">
+                                                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                </svg>
                                             </button>
                                             
+                                            </div>
                                             <!-- Delete Confirmation Modal -->
                                             <div x-show="showDeleteConfirm" 
                                                  x-cloak

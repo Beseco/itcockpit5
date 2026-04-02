@@ -50,28 +50,41 @@
                                                 {{ $module->is_active ? __('Active') : __('Inactive') }}
                                             </span>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <a href="{{ route('modules.edit', $module) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">{{ __('Edit') }}</a>
-                                            
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="inline-flex items-center gap-1">
+                                            <a href="{{ route('modules.edit', $module) }}"
+                                               class="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200"
+                                               title="{{ __('Edit') }}">
+                                                <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                </svg>
+                                            </a>
                                             @if ($module->is_active)
                                                 @if ($module->name !== 'base')
                                                     <form action="{{ route('modules.deactivate', $module) }}" method="POST" class="inline">
                                                         @csrf
-                                                        <button type="submit" class="text-yellow-600 hover:text-yellow-900">
-                                                            {{ __('Deactivate') }}
+                                                        <button type="submit"
+                                                                class="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-yellow-50 text-yellow-700 hover:bg-yellow-100 border border-yellow-200"
+                                                                title="{{ __('Deactivate') }}">
+                                                            <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                                                            </svg>
                                                         </button>
                                                     </form>
-                                                @else
-                                                    <span class="text-gray-400">{{ __('Cannot deactivate') }}</span>
                                                 @endif
                                             @else
                                                 <form action="{{ route('modules.activate', $module) }}" method="POST" class="inline">
                                                     @csrf
-                                                    <button type="submit" class="text-green-600 hover:text-green-900">
-                                                        {{ __('Activate') }}
+                                                    <button type="submit"
+                                                            class="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"
+                                                            title="{{ __('Activate') }}">
+                                                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                                        </svg>
                                                     </button>
                                                 </form>
                                             @endif
+                                            </div>
                                         </td>
                                     </tr>
                                 @empty
