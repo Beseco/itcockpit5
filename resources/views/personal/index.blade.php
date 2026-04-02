@@ -303,6 +303,72 @@
             </div>
         </div>
 
+        {{-- MEINE APPLIKATIONEN --}}
+        @if($meineApps->isNotEmpty())
+        @php $offeneRevisionCount = $meineApps->filter(fn($a) => $a->revision_date && $a->revision_date->isPast())->count(); @endphp
+        <div class="bg-white shadow rounded-xl overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
+                    </svg>
+                    <h3 class="text-sm font-semibold text-gray-800">Meine Applikationen</h3>
+                    <span class="text-xs text-gray-400">(IT-Admin)</span>
+                    @if($offeneRevisionCount > 0)
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-semibold bg-red-100 text-red-700 rounded-full">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                            </svg>
+                            {{ $offeneRevisionCount }} Revision{{ $offeneRevisionCount > 1 ? 'en' : '' }} fällig
+                        </span>
+                    @endif
+                </div>
+                @can('applikationen.view')
+                <a href="{{ route('applikationen.index', ['filter_applied' => 1, 'filter_admin_user_id' => Auth::id()]) }}"
+                   class="text-xs text-indigo-600 hover:text-indigo-800 font-medium">Alle ansehen →</a>
+                @endcan
+            </div>
+            <div class="divide-y divide-gray-50">
+                @foreach($meineApps as $app)
+                @php $revFaellig = $app->revision_date && $app->revision_date->isPast(); @endphp
+                <div class="px-6 py-3 flex items-center justify-between gap-4 {{ $revFaellig ? 'bg-red-50' : 'hover:bg-gray-50' }}">
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-sm font-medium text-gray-800">{{ $app->name }}</span>
+                            @if($app->abteilung)
+                                <span class="text-xs text-gray-400">{{ $app->abteilung->anzeigename }}</span>
+                            @elseif($app->sg)
+                                <span class="text-xs text-gray-400">{{ $app->sg }}</span>
+                            @endif
+                            @if($app->baustein)
+                                <span class="px-1.5 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-700 rounded">{{ $app->baustein }}</span>
+                            @endif
+                        </div>
+                        @if($revFaellig)
+                            <p class="text-xs text-red-600 mt-0.5 flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                Revision fällig seit {{ $app->revision_date->format('d.m.Y') }}
+                            </p>
+                        @elseif($app->revision_date)
+                            <p class="text-xs text-gray-400 mt-0.5">Nächste Revision: {{ $app->revision_date->format('d.m.Y') }}</p>
+                        @endif
+                    </div>
+                    @can('applikationen.edit')
+                    <a href="{{ route('applikationen.edit', $app) }}"
+                       class="flex-shrink-0 inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200">
+                        <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                        </svg>
+                    </a>
+                    @endcan
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
         {{-- BESTELLUNGEN + ANKÜNDIGUNGEN --}}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 

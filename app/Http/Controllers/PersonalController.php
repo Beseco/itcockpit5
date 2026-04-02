@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Announcement;
+use App\Models\Applikation;
 use App\Models\AufgabeZuweisung;
 use App\Models\Order;
 use Illuminate\Http\Request;
@@ -42,12 +43,19 @@ class PersonalController extends Controller
         // Stelle des Users (erste, falls vorhanden)
         $stelle = $user->stellen()->with(['gruppe', 'stellenbeschreibung.arbeitsvorgaenge'])->first();
 
+        // Applikationen wo User als IT-Admin eingetragen ist
+        $meineApps = Applikation::where('admin_user_id', $user->id)
+            ->with(['abteilung'])
+            ->orderBy('name')
+            ->get();
+
         return view('personal.index', compact(
             'user',
             'bestellungen',
             'ankuendigungen',
             'aufgabenZuweisungen',
-            'stelle'
+            'stelle',
+            'meineApps'
         ));
     }
 

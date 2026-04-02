@@ -47,6 +47,7 @@ class ApplikationController extends Controller
         $filterConfidentiality    = $request->get('filter_confidentiality', '');
         $filterIntegrity          = $request->get('filter_integrity', '');
         $filterAvailability       = $request->get('filter_availability', '');
+        $filterOffeneRevision     = $request->boolean('filter_offene_revision');
 
         // Aktive Filter in Session speichern (nur bei expliziter Filterübergabe)
         if ($request->has('filter_applied')) {
@@ -59,6 +60,7 @@ class ApplikationController extends Controller
                 'filter_confidentiality'    => $filterConfidentiality,
                 'filter_integrity'          => $filterIntegrity,
                 'filter_availability'       => $filterAvailability,
+                'filter_offene_revision'    => $filterOffeneRevision ? '1' : '',
             ]]);
         }
 
@@ -84,6 +86,7 @@ class ApplikationController extends Controller
         if ($filterConfidentiality !== '') $query->where('confidentiality', $filterConfidentiality);
         if ($filterIntegrity !== '')       $query->where('integrity', $filterIntegrity);
         if ($filterAvailability !== '')    $query->where('availability', $filterAvailability);
+        if ($filterOffeneRevision)         $query->whereNotNull('revision_date')->where('revision_date', '<=', now()->toDateString());
 
         $apps = $query->paginate(25)->withQueryString();
 
@@ -98,6 +101,7 @@ class ApplikationController extends Controller
             'filterAbteilungId', 'filterBaustein', 'filterAdminUserId',
             'filterOhneVerantwortlich',
             'filterConfidentiality', 'filterIntegrity', 'filterAvailability',
+            'filterOffeneRevision',
             'abteilungen', 'adminUsers', 'verantwortlichUsers'
         ));
     }
