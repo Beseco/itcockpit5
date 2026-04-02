@@ -164,7 +164,7 @@ class DienstleisterController extends Controller
                 continue;
             }
 
-            $dienstleister->ansprechpartner()->create([
+            $dienstleister->kontakte()->create([
                 'anrede'     => $ap['anrede']   ?? '',
                 'vorname'    => $ap['vorname']  ?? '',
                 'nachname'   => $nachname,
