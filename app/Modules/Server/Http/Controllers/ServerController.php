@@ -93,8 +93,7 @@ class ServerController extends Controller
 
     public function create()
     {
-        $server = null;
-        return view('server::create', $this->formData());
+        return view('server::create', array_merge($this->formData(), ['server' => null]));
     }
 
     public function store(Request $request)
