@@ -253,14 +253,10 @@
                                                             class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm font-medium rounded">
                                                         {{ __('Abbrechen') }}
                                                     </button>
-                                                    <form action="{{ route('network.vlans.destroy', $vlan) }}" method="POST" class="inline">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit"
-                                                                class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded">
-                                                            {{ __('Löschen') }}
-                                                        </button>
-                                                    </form>
+                                                    <button type="button" onclick="document.getElementById('delete-vlan-form').submit()"
+                                                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded">
+                                                        {{ __('Löschen') }}
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
@@ -306,6 +302,12 @@
 
                     </div>
                 </div>
+            </form>
+
+            {{-- Delete-Formular außerhalb des Update-Formulars (nested forms sind invalid HTML) --}}
+            <form id="delete-vlan-form" action="{{ route('network.vlans.destroy', $vlan) }}" method="POST" class="hidden">
+                @csrf
+                @method('DELETE')
             </form>
         </div>
     </div>
