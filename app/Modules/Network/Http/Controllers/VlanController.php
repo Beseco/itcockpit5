@@ -278,7 +278,8 @@ class VlanController extends Controller
      */
     public function edit(Vlan $vlan): View
     {
-        return view('network::vlans.edit', compact('vlan'));
+        $dhcpServers = DhcpServer::orderBy('name')->get();
+        return view('network::vlans.edit', compact('vlan', 'dhcpServers'));
     }
 
     /**
