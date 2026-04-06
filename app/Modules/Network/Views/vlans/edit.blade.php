@@ -21,6 +21,11 @@
                             </div>
                             <div class="p-6 space-y-4">
 
+                                {{-- Hidden inputs für read-only Felder die trotzdem submitted werden müssen --}}
+                                <input type="hidden" name="vlan_id" value="{{ $vlan->vlan_id }}">
+                                <input type="hidden" name="network_address" value="{{ $vlan->network_address }}">
+                                <input type="hidden" name="cidr_suffix" value="{{ $vlan->cidr_suffix }}">
+
                                 <!-- VLAN ID (read-only) -->
                                 <div>
                                     <x-input-label :value="__('VLAN ID')" />
