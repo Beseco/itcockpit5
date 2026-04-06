@@ -64,6 +64,7 @@
                                 <!-- DHCP Bereich -->
                                 <div x-data="dhcpSection()" class="space-y-3">
                                     {{-- Checkbox: DHCP Bereich anlegen --}}
+                                    <input type="hidden" name="dhcp_enabled" value="0">
                                     <label class="inline-flex items-center gap-2 cursor-pointer">
                                         <input type="checkbox" x-model="enabled" name="dhcp_enabled" value="1"
                                                {{ old('dhcp_enabled', $vlan->dhcp_enabled) ? 'checked' : '' }}

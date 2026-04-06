@@ -289,8 +289,17 @@ class VlanController extends Controller
     {
         $oldData = $vlan->only(['network_address', 'cidr_suffix']);
 
+        $data = $request->validated();
+
+        // If DHCP is disabled, clear the DHCP fields explicitly
+        if (empty($data['dhcp_enabled'])) {
+            $data['dhcp_from']      = null;
+            $data['dhcp_to']        = null;
+            $data['dhcp_server_id'] = null;
+        }
+
         // Update the VLAN
-        $vlan->update($request->validated());
+        $vlan->update($data);
 
         // Check if network parameters changed
         $networkChanged = $oldData['network_address'] !== $vlan->network_address
