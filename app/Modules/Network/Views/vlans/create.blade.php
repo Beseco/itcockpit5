@@ -21,10 +21,32 @@
                             </div>
                             <div class="p-6 space-y-4">
 
+                                <!-- Freie VLAN-ID Suche -->
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                    <p class="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-2">Freie VLAN-IDs suchen</p>
+                                    <div class="flex items-center gap-2">
+                                        <input type="number" id="free-from" min="1" max="4094" placeholder="von" value="300"
+                                               class="w-24 text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                        <span class="text-gray-500 text-sm">–</span>
+                                        <input type="number" id="free-to" min="1" max="4094" placeholder="bis" value="400"
+                                               class="w-24 text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                        <button type="button" onclick="searchFreeVlans()"
+                                                class="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700">
+                                            Suchen
+                                        </button>
+                                    </div>
+                                    <div id="free-vlan-result" class="mt-3 hidden">
+                                        <p id="free-vlan-count" class="text-xs text-gray-600 mb-2"></p>
+                                        <div id="free-vlan-chips" class="flex flex-wrap gap-1.5"></div>
+                                    </div>
+                                    <p id="free-vlan-error" class="mt-2 text-xs text-red-600 hidden"></p>
+                                </div>
+
                                 <!-- VLAN ID -->
                                 <div>
                                     <x-input-label for="vlan_id" :value="__('VLAN ID')" />
                                     <x-text-input id="vlan_id" class="block mt-1 w-full" type="number" name="vlan_id" :value="old('vlan_id')" required autofocus min="1" max="4094" placeholder="1 - 4094" />
+                                    <div id="vlan-id-status" class="mt-1 text-sm hidden"></div>
                                     <x-input-error :messages="$errors->get('vlan_id')" class="mt-2" />
                                 </div>
 
@@ -318,7 +340,89 @@ function validateDhcp() {
 // Init on page load if old values exist
 document.addEventListener('DOMContentLoaded', function() {
     calculateNetwork();
+
+    // VLAN-ID Prüfung beim Verlassen des Feldes
+    document.getElementById('vlan_id').addEventListener('blur', function() {
+        const id = parseInt(this.value);
+        const statusEl = document.getElementById('vlan-id-status');
+        if (!id || id < 1 || id > 4094) {
+            statusEl.classList.add('hidden');
+            return;
+        }
+        fetch('{{ route("network.vlans.check-id") }}?id=' + id)
+            .then(r => r.json())
+            .then(data => {
+                statusEl.classList.remove('hidden');
+                if (data.taken) {
+                    statusEl.className = 'mt-1 text-sm text-red-600';
+                    statusEl.textContent = '✕ VLAN-ID ' + id + ' ist bereits vergeben.';
+                } else {
+                    statusEl.className = 'mt-1 text-sm text-green-600';
+                    statusEl.textContent = '✓ VLAN-ID ' + id + ' ist verfügbar.';
+                }
+            })
+            .catch(() => statusEl.classList.add('hidden'));
+    });
 });
+
+// Freie VLAN-IDs suchen
+function searchFreeVlans() {
+    const from = parseInt(document.getElementById('free-from').value);
+    const to   = parseInt(document.getElementById('free-to').value);
+    const errEl = document.getElementById('free-vlan-error');
+    const resEl = document.getElementById('free-vlan-result');
+
+    errEl.classList.add('hidden');
+    resEl.classList.add('hidden');
+
+    if (!from || !to || from < 1 || to > 4094 || from > to) {
+        errEl.textContent = 'Bitte einen gültigen Bereich eingeben (1–4094).';
+        errEl.classList.remove('hidden');
+        return;
+    }
+
+    fetch('{{ route("network.vlans.free-ids") }}?from=' + from + '&to=' + to)
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                errEl.textContent = data.error;
+                errEl.classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('free-vlan-count').textContent =
+                data.free_count + ' von ' + data.total_in_range + ' IDs im Bereich ' + from + '–' + to + ' sind frei.';
+
+            const chips = document.getElementById('free-vlan-chips');
+            chips.innerHTML = '';
+
+            if (data.next5.length === 0) {
+                chips.innerHTML = '<span class="text-xs text-gray-500 italic">Keine freien IDs im Bereich.</span>';
+            } else {
+                data.next5.forEach(function(vid) {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.textContent = vid;
+                    btn.className = 'px-2.5 py-1 text-sm font-mono font-medium bg-white border border-blue-300 text-blue-700 rounded hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-colors';
+                    btn.onclick = function() {
+                        document.getElementById('vlan_id').value = vid;
+                        // Direkt Status als verfügbar setzen
+                        const s = document.getElementById('vlan-id-status');
+                        s.className = 'mt-1 text-sm text-green-600';
+                        s.textContent = '✓ VLAN-ID ' + vid + ' ist verfügbar.';
+                        s.classList.remove('hidden');
+                    };
+                    chips.appendChild(btn);
+                });
+            }
+
+            resEl.classList.remove('hidden');
+        })
+        .catch(() => {
+            errEl.textContent = 'Fehler bei der Anfrage.';
+            errEl.classList.remove('hidden');
+        });
+}
 </script>
 
 </x-app-layout>

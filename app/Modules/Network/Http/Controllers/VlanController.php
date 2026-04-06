@@ -79,6 +79,50 @@ class VlanController extends Controller
     }
 
     /**
+     * AJAX: Check if a VLAN ID is already taken.
+     */
+    public function checkVlanId(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $id = (int) $request->query('id');
+        $exists = Vlan::where('vlan_id', $id)->exists();
+        return response()->json(['taken' => $exists]);
+    }
+
+    /**
+     * AJAX: Find free VLAN IDs in a given range.
+     */
+    public function freeVlanIds(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $from = max(1, (int) $request->query('from', 1));
+        $to   = min(4094, (int) $request->query('to', 4094));
+
+        if ($from > $to) {
+            return response()->json(['error' => 'Ungültiger Bereich'], 422);
+        }
+
+        $taken = Vlan::whereBetween('vlan_id', [$from, $to])
+            ->pluck('vlan_id')
+            ->flip();
+
+        $free = [];
+        $next5 = [];
+        for ($i = $from; $i <= $to; $i++) {
+            if (!$taken->has($i)) {
+                $free[] = $i;
+                if (count($next5) < 5) {
+                    $next5[] = $i;
+                }
+            }
+        }
+
+        return response()->json([
+            'total_in_range' => $to - $from + 1,
+            'free_count'     => count($free),
+            'next5'          => $next5,
+        ]);
+    }
+
+    /**
      * Store a newly created VLAN in storage.
      */
     public function store(\App\Modules\Network\Http\Requests\StoreVlanRequest $request): \Illuminate\Http\RedirectResponse
