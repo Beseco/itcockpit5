@@ -205,13 +205,12 @@
                                             <label class="block text-xs font-medium text-gray-600 mb-1">
                                                 DHCP-Server <span class="text-red-500">*</span>
                                             </label>
-                                            <select name="dhcp_server_id"
+                                            <select name="dhcp_server_id" x-model="selectedServerId"
+                                                    :disabled="!enabled"
                                                     class="block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                                                 <option value="">— Server auswählen —</option>
                                                 <template x-for="srv in servers" :key="srv.id">
-                                                    <option :value="srv.id"
-                                                            :selected="srv.id == {{ old('dhcp_server_id', 0) }}"
-                                                            x-text="srv.name"></option>
+                                                    <option :value="srv.id" x-text="srv.name"></option>
                                                 </template>
                                             </select>
                                             <x-input-error :messages="$errors->get('dhcp_server_id')" class="mt-1" />
@@ -221,9 +220,9 @@
                                         <div>
                                             <label class="block text-xs font-medium text-gray-600 mb-1">DHCP Bereich</label>
                                             <div class="flex gap-2 items-center">
-                                                <x-text-input id="dhcp_from" class="flex-1" type="text" name="dhcp_from" :value="old('dhcp_from')" placeholder="Von z.B. 192.168.1.100" oninput="validateDhcp()" required />
+                                                <x-text-input id="dhcp_from" class="flex-1" type="text" name="dhcp_from" :value="old('dhcp_from')" placeholder="Von z.B. 192.168.1.100" oninput="validateDhcp()" :disabled="!enabled" required />
                                                 <span class="text-gray-500 text-sm">–</span>
-                                                <x-text-input id="dhcp_to" class="flex-1" type="text" name="dhcp_to" :value="old('dhcp_to')" placeholder="Bis z.B. 192.168.1.200" oninput="validateDhcp()" required />
+                                                <x-text-input id="dhcp_to" class="flex-1" type="text" name="dhcp_to" :value="old('dhcp_to')" placeholder="Bis z.B. 192.168.1.200" oninput="validateDhcp()" :disabled="!enabled" required />
                                             </div>
                                             <p id="dhcp-error" class="mt-1 text-sm text-red-600 hidden"></p>
                                             <x-input-error :messages="$errors->get('dhcp_from')" class="mt-1" />
@@ -587,6 +586,7 @@ function dhcpSection() {
         enabled: {{ old('dhcp_enabled') ? 'true' : 'false' }},
         showManage: false,
         servers: @json($dhcpServers ?? []),
+        selectedServerId: '{{ old('dhcp_server_id', '') }}',
         newServer: { name: '', symbol: 'server', color: 'blue', description: '' },
         manageMsg: '', manageErr: '',
         symbols: [
