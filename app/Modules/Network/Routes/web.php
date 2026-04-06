@@ -41,6 +41,7 @@ Route::middleware(['auth', 'module.permission:network,edit'])->group(function ()
     Route::post('/vlans', [VlanController::class, 'store'])->name('vlans.store');
     Route::get('/vlans/check-id', [VlanController::class, 'checkVlanId'])->name('vlans.check-id');
     Route::get('/vlans/free-ids', [VlanController::class, 'freeVlanIds'])->name('vlans.free-ids');
+    Route::get('/vlans/check-network', [VlanController::class, 'checkNetwork'])->name('vlans.check-network');
     
     // IP address update route
     Route::put('/ip-addresses/{ipAddress}', [IpAddressController::class, 'update'])->name('ip-addresses.update');

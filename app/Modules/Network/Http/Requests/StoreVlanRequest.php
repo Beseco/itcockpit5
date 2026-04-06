@@ -2,6 +2,7 @@
 
 namespace App\Modules\Network\Http\Requests;
 
+use App\Modules\Network\Models\Vlan;
 use App\Modules\Network\Services\IpGeneratorService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
@@ -78,6 +79,29 @@ class StoreVlanRequest extends FormRequest
                 if (!$this->isIpInSubnet($gateway, $subnetInfo)) {
                     $validator->errors()->add('gateway', 'The gateway address must be within the VLAN subnet.');
                 }
+            }
+
+            // Check for network overlap with existing VLANs
+            $mask     = $cidrSuffix === 0 ? 0 : ((0xFFFFFFFF << (32 - $cidrSuffix)) & 0xFFFFFFFF);
+            $newStart = ip2long($networkAddress) & $mask;
+            $newEnd   = $newStart | (~$mask & 0xFFFFFFFF);
+
+            $overlappingNames = [];
+            Vlan::all(['vlan_id', 'vlan_name', 'network_address', 'cidr_suffix'])
+                ->each(function (Vlan $v) use ($newStart, $newEnd, &$overlappingNames) {
+                    $eMask  = $v->cidr_suffix === 0 ? 0 : ((0xFFFFFFFF << (32 - $v->cidr_suffix)) & 0xFFFFFFFF);
+                    $eStart = ip2long($v->network_address) & $eMask;
+                    $eEnd   = $eStart | (~$eMask & 0xFFFFFFFF);
+                    if ($newStart <= $eEnd && $eStart <= $newEnd) {
+                        $overlappingNames[] = "VLAN {$v->vlan_id} ({$v->network_address}/{$v->cidr_suffix})";
+                    }
+                });
+
+            if (!empty($overlappingNames) && !$this->boolean('overlap_confirmed')) {
+                $validator->errors()->add(
+                    'network_address',
+                    'Dieses Netz überschneidet sich mit: ' . implode(', ', $overlappingNames) . '. Bitte bestätige die Überlappung.'
+                );
             }
 
             // Validate DHCP range

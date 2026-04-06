@@ -79,6 +79,44 @@ class VlanController extends Controller
     }
 
     /**
+     * AJAX: Check if a network address/CIDR already exists or overlaps with existing networks.
+     */
+    public function checkNetwork(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $network = trim($request->query('network', ''));
+        $cidr    = (int) $request->query('cidr', 0);
+
+        if (!filter_var($network, FILTER_VALIDATE_IP) || $cidr < 0 || $cidr > 32) {
+            return response()->json(['error' => 'Ungültige Eingabe'], 422);
+        }
+
+        $mask      = $cidr === 0 ? 0 : ((0xFFFFFFFF << (32 - $cidr)) & 0xFFFFFFFF);
+        $newStart  = ip2long($network) & $mask;
+        $newEnd    = $newStart | (~$mask & 0xFFFFFFFF);
+
+        $exact     = [];
+        $overlaps  = [];
+
+        Vlan::all(['id', 'vlan_id', 'vlan_name', 'network_address', 'cidr_suffix'])
+            ->each(function (Vlan $v) use ($network, $cidr, $newStart, $newEnd, &$exact, &$overlaps) {
+                $eMask  = $v->cidr_suffix === 0 ? 0 : ((0xFFFFFFFF << (32 - $v->cidr_suffix)) & 0xFFFFFFFF);
+                $eStart = ip2long($v->network_address) & $eMask;
+                $eEnd   = $eStart | (~$eMask & 0xFFFFFFFF);
+
+                if ($v->network_address === $network && $v->cidr_suffix === $cidr) {
+                    $exact[] = ['vlan_id' => $v->vlan_id, 'vlan_name' => $v->vlan_name, 'subnet' => "{$v->network_address}/{$v->cidr_suffix}"];
+                } elseif ($newStart <= $eEnd && $eStart <= $newEnd) {
+                    $overlaps[] = ['vlan_id' => $v->vlan_id, 'vlan_name' => $v->vlan_name, 'subnet' => "{$v->network_address}/{$v->cidr_suffix}"];
+                }
+            });
+
+        return response()->json([
+            'exact'    => $exact,
+            'overlaps' => $overlaps,
+        ]);
+    }
+
+    /**
      * AJAX: Check if a VLAN ID is already taken.
      */
     public function checkVlanId(Request $request): \Illuminate\Http\JsonResponse

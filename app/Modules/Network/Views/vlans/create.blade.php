@@ -61,8 +61,8 @@
                                 <div>
                                     <x-input-label :value="__('Netzwerkadresse / CIDR')" />
                                     <div class="flex gap-2 mt-1">
-                                        <x-text-input id="network_address" class="flex-1" type="text" name="network_address" :value="old('network_address')" required placeholder="z.B. 192.168.1.0" oninput="calculateNetwork()" />
-                                        <select id="cidr_suffix" name="cidr_suffix" required onchange="calculateNetwork()"
+                                        <x-text-input id="network_address" class="flex-1" type="text" name="network_address" :value="old('network_address')" required placeholder="z.B. 192.168.1.0" oninput="calculateNetwork()" onblur="checkNetworkOverlap()" />
+                                        <select id="cidr_suffix" name="cidr_suffix" required onchange="calculateNetwork(); checkNetworkOverlap();"
                                                 class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm">
                                             @for($i = 1; $i <= 32; $i++)
                                                 <option value="{{ $i }}" {{ old('cidr_suffix', 24) == $i ? 'selected' : '' }}>/{{ $i }}</option>
@@ -71,6 +71,39 @@
                                     </div>
                                     <x-input-error :messages="$errors->get('network_address')" class="mt-2" />
                                     <x-input-error :messages="$errors->get('cidr_suffix')" class="mt-2" />
+
+                                    {{-- Netzwerk-Überlappungs-Warnung --}}
+                                    <div id="network-overlap-warning" class="hidden mt-3 p-3 bg-amber-50 border border-amber-300 rounded-lg">
+                                        <div class="flex items-start gap-2">
+                                            <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                            </svg>
+                                            <div>
+                                                <p class="text-sm font-semibold text-amber-800" id="network-overlap-title"></p>
+                                                <ul id="network-overlap-list" class="mt-1 text-xs text-amber-700 space-y-0.5 list-disc list-inside"></ul>
+                                                <label class="inline-flex items-center mt-2 gap-2 cursor-pointer">
+                                                    <input type="checkbox" id="overlap_confirmed" name="overlap_confirmed" value="1"
+                                                           {{ old('overlap_confirmed') ? 'checked' : '' }}
+                                                           onchange="updateSubmitState()"
+                                                           class="rounded border-amber-400 text-amber-600 shadow-sm focus:ring-amber-500">
+                                                    <span class="text-xs font-medium text-amber-800">Ich bin mir bewusst, dass dieser Netzbereich bereits verwendet wird, und möchte trotzdem speichern.</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Exakt-Duplikat-Fehler --}}
+                                    <div id="network-exact-warning" class="hidden mt-3 p-3 bg-red-50 border border-red-300 rounded-lg">
+                                        <div class="flex items-start gap-2">
+                                            <svg class="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                            </svg>
+                                            <div>
+                                                <p class="text-sm font-semibold text-red-700">Dieses Netz existiert bereits:</p>
+                                                <ul id="network-exact-list" class="mt-1 text-xs text-red-600 space-y-0.5 list-disc list-inside"></ul>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <!-- Gateway -->
@@ -337,9 +370,72 @@ function validateDhcp() {
     err.classList.add('hidden');
 }
 
+var networkOverlapDetected = false;
+
+function checkNetworkOverlap() {
+    const network = document.getElementById('network_address').value.trim();
+    const cidr    = document.getElementById('cidr_suffix').value;
+    const overlapBox = document.getElementById('network-overlap-warning');
+    const exactBox   = document.getElementById('network-exact-warning');
+
+    if (!network || !cidr) return;
+
+    fetch('{{ route("network.vlans.check-network") }}?network=' + encodeURIComponent(network) + '&cidr=' + cidr)
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) return;
+
+            // Exakt-Treffer
+            if (data.exact.length > 0) {
+                const list = document.getElementById('network-exact-list');
+                list.innerHTML = data.exact.map(v => `<li>VLAN ${v.vlan_id} – ${v.vlan_name} (${v.subnet})</li>`).join('');
+                exactBox.classList.remove('hidden');
+            } else {
+                exactBox.classList.add('hidden');
+            }
+
+            // Überlappungen
+            if (data.overlaps.length > 0) {
+                networkOverlapDetected = true;
+                const title = document.getElementById('network-overlap-title');
+                const list  = document.getElementById('network-overlap-list');
+                title.textContent = data.overlaps.length === 1
+                    ? 'Dieses Netz überschneidet sich mit einem vorhandenen VLAN:'
+                    : 'Dieses Netz überschneidet sich mit ' + data.overlaps.length + ' vorhandenen VLANs:';
+                list.innerHTML = data.overlaps.map(v => `<li>VLAN ${v.vlan_id} – ${v.vlan_name} (${v.subnet})</li>`).join('');
+                overlapBox.classList.remove('hidden');
+            } else {
+                networkOverlapDetected = false;
+                overlapBox.classList.add('hidden');
+            }
+
+            updateSubmitState();
+        })
+        .catch(() => {});
+}
+
+function updateSubmitState() {
+    const confirmed = document.getElementById('overlap_confirmed')?.checked;
+    const submitBtn = document.querySelector('#vlan-form button[type="submit"]');
+    if (!submitBtn) return;
+
+    if (networkOverlapDetected && !confirmed) {
+        submitBtn.disabled = true;
+        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    } else {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+}
+
 // Init on page load if old values exist
 document.addEventListener('DOMContentLoaded', function() {
     calculateNetwork();
+
+    // Netzwerk-Prüfung bei old()-Werten nach Validation-Fehler
+    if (document.getElementById('network_address').value) {
+        checkNetworkOverlap();
+    }
 
     // VLAN-ID Prüfung beim Verlassen des Feldes
     document.getElementById('vlan_id').addEventListener('blur', function() {
