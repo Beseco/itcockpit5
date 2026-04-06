@@ -3,6 +3,7 @@
 namespace App\Modules\Network\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Network\Models\DhcpServer;
 use App\Modules\Network\Models\Vlan;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -54,7 +55,7 @@ class VlanController extends Controller
             $query->orderBy($sortColumn, $sortDirection);
         }
 
-        $vlans = $query->get();
+        $vlans = $query->with('dhcpServer')->get();
 
         return view('network::vlans.index', compact('vlans', 'sortColumn', 'sortDirection'));
     }
@@ -75,7 +76,8 @@ class VlanController extends Controller
      */
     public function create(): View
     {
-        return view('network::vlans.create');
+        $dhcpServers = DhcpServer::orderBy('name')->get();
+        return view('network::vlans.create', compact('dhcpServers'));
     }
 
     /**

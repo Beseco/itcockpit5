@@ -2,6 +2,7 @@
 
 namespace App\Modules\Network\Http\Requests;
 
+use App\Modules\Network\Models\DhcpServer;
 use App\Modules\Network\Models\Vlan;
 use App\Modules\Network\Services\IpGeneratorService;
 use Illuminate\Foundation\Http\FormRequest;
@@ -30,8 +31,10 @@ class StoreVlanRequest extends FormRequest
             'network_address' => ['required', 'ip'],
             'cidr_suffix' => ['required', 'integer', 'min:0', 'max:32'],
             'gateway' => ['nullable', 'ip'],
+            'dhcp_enabled' => ['boolean'],
             'dhcp_from' => ['nullable', 'ip'],
             'dhcp_to' => ['nullable', 'ip'],
+            'dhcp_server_id' => ['nullable', 'integer', 'exists:network_dhcp_servers,id'],
             'description' => ['nullable', 'string', 'max:1000'],
             'internes_netz' => ['boolean'],
             'ipscan' => ['boolean'],
@@ -79,6 +82,12 @@ class StoreVlanRequest extends FormRequest
                 if (!$this->isIpInSubnet($gateway, $subnetInfo)) {
                     $validator->errors()->add('gateway', 'The gateway address must be within the VLAN subnet.');
                 }
+            }
+
+            // DHCP-Server Pflicht wenn DHCP aktiviert und mehrere Server vorhanden
+            $dhcpEnabled = isset($data['dhcp_enabled']) && $data['dhcp_enabled'];
+            if ($dhcpEnabled && DhcpServer::count() > 0 && empty($data['dhcp_server_id'])) {
+                $validator->errors()->add('dhcp_server_id', 'Bitte einen DHCP-Server auswählen.');
             }
 
             // Check for network overlap with existing VLANs

@@ -4,6 +4,7 @@ namespace App\Modules\Network\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Vlan extends Model
@@ -24,8 +25,10 @@ class Vlan extends Model
         'network_address',
         'cidr_suffix',
         'gateway',
+        'dhcp_enabled',
         'dhcp_from',
         'dhcp_to',
+        'dhcp_server_id',
         'description',
         'internes_netz',
         'ipscan',
@@ -36,6 +39,8 @@ class Vlan extends Model
     protected $casts = [
         'vlan_id' => 'integer',
         'cidr_suffix' => 'integer',
+        'dhcp_enabled' => 'boolean',
+        'dhcp_server_id' => 'integer',
         'internes_netz' => 'boolean',
         'ipscan' => 'boolean',
         'scan_interval_minutes' => 'integer',
@@ -47,6 +52,14 @@ class Vlan extends Model
         'ipscan' => false,
         'scan_interval_minutes' => 60,
     ];
+
+    /**
+     * Get the DHCP server for this VLAN.
+     */
+    public function dhcpServer(): BelongsTo
+    {
+        return $this->belongsTo(DhcpServer::class, 'dhcp_server_id');
+    }
 
     /**
      * Get all IP addresses for this VLAN.

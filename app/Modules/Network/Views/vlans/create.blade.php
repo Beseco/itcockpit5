@@ -114,17 +114,122 @@
                                     <x-input-error :messages="$errors->get('gateway')" class="mt-2" />
                                 </div>
 
-                                <!-- DHCP in einer Zeile -->
-                                <div>
-                                    <x-input-label :value="__('DHCP Bereich (optional)')" />
-                                    <div class="flex gap-2 mt-1 items-center">
-                                        <x-text-input id="dhcp_from" class="flex-1" type="text" name="dhcp_from" :value="old('dhcp_from')" placeholder="Von z.B. 192.168.1.100" oninput="validateDhcp()" />
-                                        <span class="text-gray-500 text-sm">–</span>
-                                        <x-text-input id="dhcp_to" class="flex-1" type="text" name="dhcp_to" :value="old('dhcp_to')" placeholder="Bis z.B. 192.168.1.200" oninput="validateDhcp()" />
+                                <!-- DHCP Bereich -->
+                                <div x-data="dhcpSection()" class="space-y-3">
+                                    {{-- Checkbox: DHCP Bereich anlegen --}}
+                                    <label class="inline-flex items-center gap-2 cursor-pointer">
+                                        <input type="checkbox" x-model="enabled" name="dhcp_enabled" value="1"
+                                               {{ old('dhcp_enabled') ? 'checked' : '' }}
+                                               class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                                        <span class="text-sm font-medium text-gray-700">DHCP Bereich anlegen</span>
+                                    </label>
+
+                                    <div x-show="enabled" x-cloak class="border border-blue-100 bg-blue-50 rounded-lg p-4 space-y-3">
+
+                                        {{-- DHCP-Server Verwaltung --}}
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-xs font-semibold text-blue-700 uppercase tracking-wide">DHCP-Server</span>
+                                            <button type="button" @click="showManage = !showManage"
+                                                    class="text-xs text-blue-600 hover:text-blue-800 underline">
+                                                DHCP-Server verwalten
+                                            </button>
+                                        </div>
+
+                                        {{-- Server-Verwaltung Panel --}}
+                                        <div x-show="showManage" x-cloak class="bg-white border border-blue-200 rounded-lg p-3 space-y-2">
+                                            <p class="text-xs font-semibold text-gray-600 mb-2">DHCP-Server anlegen</p>
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <input type="text" x-model="newServer.name" placeholder="Name *"
+                                                       class="text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                                <input type="text" x-model="newServer.description" placeholder="Beschreibung"
+                                                       class="text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                            </div>
+                                            <div class="grid grid-cols-2 gap-2">
+                                                {{-- Symbol --}}
+                                                <div>
+                                                    <label class="block text-xs text-gray-500 mb-1">Symbol</label>
+                                                    <div class="flex gap-1.5 flex-wrap">
+                                                        <template x-for="sym in symbols" :key="sym.key">
+                                                            <button type="button" @click="newServer.symbol = sym.key"
+                                                                    :class="newServer.symbol === sym.key ? 'ring-2 ring-indigo-500 bg-indigo-50' : 'bg-white'"
+                                                                    class="p-1.5 border border-gray-200 rounded hover:bg-gray-50" :title="sym.label">
+                                                                <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="sym.path"/>
+                                                                </svg>
+                                                            </button>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                                {{-- Farbe --}}
+                                                <div>
+                                                    <label class="block text-xs text-gray-500 mb-1">Farbe</label>
+                                                    <div class="flex gap-1.5">
+                                                        <template x-for="col in colors" :key="col.key">
+                                                            <button type="button" @click="newServer.color = col.key"
+                                                                    :class="[col.bg, newServer.color === col.key ? 'ring-2 ring-offset-1 ring-gray-600' : '']"
+                                                                    class="w-7 h-7 rounded-full border border-gray-200" :title="col.label">
+                                                            </button>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center gap-2">
+                                                <button type="button" @click="addServer()"
+                                                        class="px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-md hover:bg-blue-700">
+                                                    Server anlegen
+                                                </button>
+                                                <span x-show="manageMsg" x-text="manageMsg" class="text-xs text-green-600"></span>
+                                                <span x-show="manageErr" x-text="manageErr" class="text-xs text-red-600"></span>
+                                            </div>
+
+                                            {{-- Bestehende Server --}}
+                                            <div x-show="servers.length > 0" class="mt-2 divide-y divide-gray-100">
+                                                <template x-for="srv in servers" :key="srv.id">
+                                                    <div class="flex items-center justify-between py-1.5">
+                                                        <div class="flex items-center gap-2">
+                                                            <svg class="w-4 h-4" :class="colorClass(srv.color)" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="symbolPath(srv.symbol)"/>
+                                                            </svg>
+                                                            <span class="text-sm font-medium text-gray-800" x-text="srv.name"></span>
+                                                            <span class="text-xs text-gray-400" x-text="srv.description"></span>
+                                                        </div>
+                                                        <button type="button" @click="deleteServer(srv.id)"
+                                                                class="text-xs text-red-500 hover:text-red-700">Löschen</button>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+
+                                        {{-- DHCP-Server Auswahl --}}
+                                        <div x-show="servers.length > 0">
+                                            <label class="block text-xs font-medium text-gray-600 mb-1">
+                                                DHCP-Server <span class="text-red-500">*</span>
+                                            </label>
+                                            <select name="dhcp_server_id"
+                                                    class="block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                                                <option value="">— Server auswählen —</option>
+                                                <template x-for="srv in servers" :key="srv.id">
+                                                    <option :value="srv.id"
+                                                            :selected="srv.id == {{ old('dhcp_server_id', 0) }}"
+                                                            x-text="srv.name"></option>
+                                                </template>
+                                            </select>
+                                            <x-input-error :messages="$errors->get('dhcp_server_id')" class="mt-1" />
+                                        </div>
+
+                                        {{-- DHCP Bereich --}}
+                                        <div>
+                                            <label class="block text-xs font-medium text-gray-600 mb-1">DHCP Bereich</label>
+                                            <div class="flex gap-2 items-center">
+                                                <x-text-input id="dhcp_from" class="flex-1" type="text" name="dhcp_from" :value="old('dhcp_from')" placeholder="Von z.B. 192.168.1.100" oninput="validateDhcp()" />
+                                                <span class="text-gray-500 text-sm">–</span>
+                                                <x-text-input id="dhcp_to" class="flex-1" type="text" name="dhcp_to" :value="old('dhcp_to')" placeholder="Bis z.B. 192.168.1.200" oninput="validateDhcp()" />
+                                            </div>
+                                            <p id="dhcp-error" class="mt-1 text-sm text-red-600 hidden"></p>
+                                            <x-input-error :messages="$errors->get('dhcp_from')" class="mt-1" />
+                                            <x-input-error :messages="$errors->get('dhcp_to')" class="mt-1" />
+                                        </div>
                                     </div>
-                                    <p id="dhcp-error" class="mt-1 text-sm text-red-600 hidden"></p>
-                                    <x-input-error :messages="$errors->get('dhcp_from')" class="mt-2" />
-                                    <x-input-error :messages="$errors->get('dhcp_to')" class="mt-2" />
                                 </div>
 
                                 <!-- Description -->
@@ -460,6 +565,71 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(() => statusEl.classList.add('hidden'));
     });
 });
+
+// Alpine.js DHCP Section
+function dhcpSection() {
+    const SYMBOL_PATHS = {
+        server:   'M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01',
+        firewall: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z',
+        router:   'M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0',
+        switch:   'M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z',
+        cloud:    'M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z',
+    };
+    const COLOR_CLASSES = {
+        blue:   { bg: 'bg-blue-500',   icon: 'text-blue-600' },
+        red:    { bg: 'bg-red-500',    icon: 'text-red-600' },
+        green:  { bg: 'bg-green-500',  icon: 'text-green-600' },
+        yellow: { bg: 'bg-yellow-400', icon: 'text-yellow-600' },
+        purple: { bg: 'bg-purple-500', icon: 'text-purple-600' },
+    };
+
+    return {
+        enabled: {{ old('dhcp_enabled') ? 'true' : 'false' }},
+        showManage: false,
+        servers: @json($dhcpServers ?? []),
+        newServer: { name: '', symbol: 'server', color: 'blue', description: '' },
+        manageMsg: '', manageErr: '',
+        symbols: [
+            { key: 'server',   label: 'Server',   path: SYMBOL_PATHS.server },
+            { key: 'firewall', label: 'Firewall', path: SYMBOL_PATHS.firewall },
+            { key: 'router',   label: 'Router',   path: SYMBOL_PATHS.router },
+            { key: 'switch',   label: 'Switch',   path: SYMBOL_PATHS.switch },
+            { key: 'cloud',    label: 'Cloud',    path: SYMBOL_PATHS.cloud },
+        ],
+        colors: [
+            { key: 'blue',   label: 'Blau',   bg: 'bg-blue-500' },
+            { key: 'red',    label: 'Rot',    bg: 'bg-red-500' },
+            { key: 'green',  label: 'Grün',   bg: 'bg-green-500' },
+            { key: 'yellow', label: 'Gelb',   bg: 'bg-yellow-400' },
+            { key: 'purple', label: 'Lila',   bg: 'bg-purple-500' },
+        ],
+        symbolPath(sym) { return SYMBOL_PATHS[sym] || SYMBOL_PATHS.server; },
+        colorClass(col) { return (COLOR_CLASSES[col] || COLOR_CLASSES.blue).icon; },
+        addServer() {
+            this.manageMsg = ''; this.manageErr = '';
+            if (!this.newServer.name.trim()) { this.manageErr = 'Name ist Pflicht.'; return; }
+            fetch('{{ route("network.dhcp-servers.store") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+                body: JSON.stringify(this.newServer),
+            }).then(r => r.json()).then(data => {
+                if (data.errors) { this.manageErr = Object.values(data.errors).flat().join(' '); return; }
+                this.servers.push(data);
+                this.newServer = { name: '', symbol: 'server', color: 'blue', description: '' };
+                this.manageMsg = 'Server angelegt.';
+                setTimeout(() => this.manageMsg = '', 2000);
+            }).catch(() => { this.manageErr = 'Fehler beim Speichern.'; });
+        },
+        deleteServer(id) {
+            fetch('{{ url("network/dhcp-servers") }}/' + id, {
+                method: 'DELETE',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+            }).then(r => r.json()).then(() => {
+                this.servers = this.servers.filter(s => s.id !== id);
+            });
+        },
+    };
+}
 
 // Freie VLAN-IDs suchen
 function searchFreeVlans() {

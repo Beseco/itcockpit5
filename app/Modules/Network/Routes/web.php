@@ -5,6 +5,7 @@ use App\Modules\Network\Http\Controllers\IpAddressController;
 use App\Modules\Network\Http\Controllers\VlanCommentController;
 use App\Modules\Network\Http\Controllers\SearchController;
 use App\Modules\Network\Http\Controllers\ExportController;
+use App\Modules\Network\Http\Controllers\DhcpServerController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -42,6 +43,12 @@ Route::middleware(['auth', 'module.permission:network,edit'])->group(function ()
     Route::get('/vlans/check-id', [VlanController::class, 'checkVlanId'])->name('vlans.check-id');
     Route::get('/vlans/free-ids', [VlanController::class, 'freeVlanIds'])->name('vlans.free-ids');
     Route::get('/vlans/check-network', [VlanController::class, 'checkNetwork'])->name('vlans.check-network');
+
+    // DHCP Server management
+    Route::get('/dhcp-servers', [DhcpServerController::class, 'index'])->name('dhcp-servers.index');
+    Route::post('/dhcp-servers', [DhcpServerController::class, 'store'])->name('dhcp-servers.store');
+    Route::put('/dhcp-servers/{dhcpServer}', [DhcpServerController::class, 'update'])->name('dhcp-servers.update');
+    Route::delete('/dhcp-servers/{dhcpServer}', [DhcpServerController::class, 'destroy'])->name('dhcp-servers.destroy');
     
     // IP address update route
     Route::put('/ip-addresses/{ipAddress}', [IpAddressController::class, 'update'])->name('ip-addresses.update');
