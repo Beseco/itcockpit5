@@ -168,10 +168,10 @@
                                         <div>
                                             <label class="block text-xs font-medium text-gray-600 mb-1">DHCP Bereich</label>
                                             <div class="flex gap-2 items-center">
-                                                <input id="dhcp_from" type="text" name="dhcp_from" value="{{ old('dhcp_from', $vlan->dhcp_from) }}" placeholder="Von z.B. 192.168.1.100" oninput="validateDhcp()" x-bind:disabled="!enabled" required
+                                                <input id="dhcp_from" type="text" name="dhcp_from" value="{{ old('dhcp_from', $vlan->dhcp_from) }}" placeholder="Von z.B. 192.168.1.100" oninput="validateDhcp()" x-bind:disabled="!enabled" x-bind:required="enabled"
                                                        class="flex-1 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
                                                 <span class="text-gray-500 text-sm">–</span>
-                                                <input id="dhcp_to" type="text" name="dhcp_to" value="{{ old('dhcp_to', $vlan->dhcp_to) }}" placeholder="Bis z.B. 192.168.1.200" oninput="validateDhcp()" x-bind:disabled="!enabled" required
+                                                <input id="dhcp_to" type="text" name="dhcp_to" value="{{ old('dhcp_to', $vlan->dhcp_to) }}" placeholder="Bis z.B. 192.168.1.200" oninput="validateDhcp()" x-bind:disabled="!enabled" x-bind:required="enabled"
                                                        class="flex-1 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm" />
                                             </div>
                                             <p id="dhcp-error" class="mt-1 text-sm text-red-600 hidden"></p>
