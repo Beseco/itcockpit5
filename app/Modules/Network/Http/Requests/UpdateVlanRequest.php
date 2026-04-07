@@ -34,6 +34,7 @@ class UpdateVlanRequest extends FormRequest
             'network_address' => ['required', 'ip'],
             'cidr_suffix' => ['required', 'integer', 'min:0', 'max:32'],
             'gateway' => ['nullable', 'ip'],
+            'status' => ['required', 'string', 'in:geplant,produktiv,eol,geloescht'],
             'dhcp_enabled' => ['boolean'],
             'dhcp_from' => ['required_if:dhcp_enabled,1', 'nullable', 'ip'],
             'dhcp_to' => ['required_if:dhcp_enabled,1', 'nullable', 'ip'],

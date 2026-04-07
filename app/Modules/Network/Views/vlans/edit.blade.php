@@ -44,6 +44,19 @@
                                     <x-input-error :messages="$errors->get('vlan_name')" class="mt-2" />
                                 </div>
 
+                                <!-- Status -->
+                                <div>
+                                    <x-input-label for="status" :value="__('Status')" />
+                                    <select id="status" name="status" required
+                                            class="block mt-1 w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                        <option value="geplant"   {{ old('status', $vlan->status) === 'geplant'   ? 'selected' : '' }}>Geplant</option>
+                                        <option value="produktiv" {{ old('status', $vlan->status) === 'produktiv' ? 'selected' : '' }}>Produktiv</option>
+                                        <option value="eol"       {{ old('status', $vlan->status) === 'eol'       ? 'selected' : '' }}>EOL</option>
+                                        <option value="geloescht" {{ old('status', $vlan->status) === 'geloescht' ? 'selected' : '' }}>Gelöscht</option>
+                                    </select>
+                                    <x-input-error :messages="$errors->get('status')" class="mt-2" />
+                                </div>
+
                                 <!-- Network Address + CIDR (read-only) -->
                                 <div>
                                     <x-input-label :value="__('Netzwerkadresse / CIDR')" />

@@ -43,6 +43,39 @@
             <!-- Search Bar -->
             @include('network::components.search-bar')
 
+            <!-- Status Filter -->
+            @php
+                $statusConfig = [
+                    'geplant'   => ['label' => 'Geplant',   'active' => 'bg-blue-600 text-white border-blue-600',   'inactive' => 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'],
+                    'produktiv' => ['label' => 'Produktiv', 'active' => 'bg-green-600 text-white border-green-600', 'inactive' => 'bg-white text-green-700 border-green-300 hover:bg-green-50'],
+                    'eol'       => ['label' => 'EOL',       'active' => 'bg-yellow-500 text-white border-yellow-500','inactive' => 'bg-white text-yellow-700 border-yellow-300 hover:bg-yellow-50'],
+                    'geloescht' => ['label' => 'Gelöscht',  'active' => 'bg-red-600 text-white border-red-600',     'inactive' => 'bg-white text-red-700 border-red-300 hover:bg-red-50'],
+                ];
+            @endphp
+            <div class="mb-4 flex items-center gap-2 flex-wrap">
+                <span class="text-xs font-medium text-gray-500 uppercase tracking-wide mr-1">Filter:</span>
+                @foreach($statusConfig as $key => $cfg)
+                    @php $isActive = in_array($key, $statusFilter); @endphp
+                    <a href="{{ route('network.index', array_merge(
+                            request()->except('status'),
+                            ['status' => $isActive
+                                ? array_values(array_filter($statusFilter, fn($s) => $s !== $key))
+                                : array_values(array_merge($statusFilter, [$key]))
+                            ]
+                        )) }}"
+                       class="inline-flex items-center px-3 py-1 rounded-full border text-xs font-semibold transition-colors {{ $isActive ? $cfg['active'] : $cfg['inactive'] }}">
+                        {{ $cfg['label'] }}
+                        @if($isActive)
+                            <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        @endif
+                    </a>
+                @endforeach
+                @if($statusFilter !== ['geplant','produktiv'])
+                    <a href="{{ route('network.index', array_merge(request()->except('status'), ['status' => ['geplant','produktiv']])) }}"
+                       class="text-xs text-gray-400 hover:text-gray-600 underline ml-1">Zurücksetzen</a>
+                @endif
+            </div>
+
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">
                     <!-- VLANs Table -->
@@ -118,9 +151,28 @@
                                         </td>
                                         <td class="px-6 py-4">
                                             <div class="flex flex-col">
-                                                <a href="{{ route('network.vlans.show', $vlan) }}" class="text-indigo-600 hover:text-indigo-900 font-medium">
-                                                    {{ $vlan->vlan_name }}
-                                                </a>
+                                                <div class="flex items-center gap-2">
+                                                    <a href="{{ route('network.vlans.show', $vlan) }}" class="text-indigo-600 hover:text-indigo-900 font-medium">
+                                                        {{ $vlan->vlan_name }}
+                                                    </a>
+                                                    @php
+                                                        $statusBadge = match($vlan->status) {
+                                                            'geplant'   => 'bg-blue-100 text-blue-700',
+                                                            'produktiv' => 'bg-green-100 text-green-700',
+                                                            'eol'       => 'bg-yellow-100 text-yellow-700',
+                                                            'geloescht' => 'bg-red-100 text-red-700',
+                                                            default     => 'bg-gray-100 text-gray-700',
+                                                        };
+                                                        $statusLabel = match($vlan->status) {
+                                                            'geplant'   => 'Geplant',
+                                                            'produktiv' => 'Produktiv',
+                                                            'eol'       => 'EOL',
+                                                            'geloescht' => 'Gelöscht',
+                                                            default     => $vlan->status,
+                                                        };
+                                                    @endphp
+                                                    <span class="px-1.5 py-0.5 text-xs font-medium rounded {{ $statusBadge }}">{{ $statusLabel }}</span>
+                                                </div>
                                                 @if($vlan->description)
                                                     <span class="text-xs text-gray-500 mt-1">
                                                         {{ Str::limit(Str::before($vlan->description . "\n", "\n"), 60) }}

@@ -30,11 +30,14 @@ class Vlan extends Model
         'dhcp_to',
         'dhcp_server_id',
         'description',
+        'status',
         'internes_netz',
         'ipscan',
         'scan_interval_minutes',
         'last_scanned_at',
     ];
+
+    const STATUSES = ['geplant', 'produktiv', 'eol', 'geloescht'];
 
     protected $casts = [
         'vlan_id' => 'integer',
@@ -48,6 +51,7 @@ class Vlan extends Model
     ];
 
     protected $attributes = [
+        'status' => 'produktiv',
         'internes_netz' => false,
         'ipscan' => false,
         'scan_interval_minutes' => 60,

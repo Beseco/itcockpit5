@@ -28,6 +28,23 @@
                             <div>
                                 <span class="text-sm font-medium text-gray-700">VLAN-ID:</span>
                                 <span class="text-sm text-gray-900 ml-2">{{ str_pad($vlan->vlan_id, 3, '0', STR_PAD_LEFT) }}</span>
+                                @php
+                                    $statusBadge = match($vlan->status ?? 'produktiv') {
+                                        'geplant'   => 'bg-blue-100 text-blue-700',
+                                        'produktiv' => 'bg-green-100 text-green-700',
+                                        'eol'       => 'bg-yellow-100 text-yellow-700',
+                                        'geloescht' => 'bg-red-100 text-red-700',
+                                        default     => 'bg-gray-100 text-gray-700',
+                                    };
+                                    $statusLabel = match($vlan->status ?? 'produktiv') {
+                                        'geplant'   => 'Geplant',
+                                        'produktiv' => 'Produktiv',
+                                        'eol'       => 'EOL',
+                                        'geloescht' => 'Gelöscht',
+                                        default     => $vlan->status,
+                                    };
+                                @endphp
+                                <span class="ml-2 px-2 py-0.5 text-xs font-medium rounded {{ $statusBadge }}">{{ $statusLabel }}</span>
                                 <span class="text-xs text-gray-500 ml-1">({{ number_format($totalIps, 0, ',', '.') }} IPs)</span>
                             </div>
                             <div>

@@ -40,12 +40,27 @@ class VlanController extends Controller
         session()->put('network.vlan_list.sort_column', $sortColumn);
         session()->put('network.vlan_list.sort_direction', $sortDirection);
 
+        // Status filter — default: geplant + produktiv
+        $defaultStatuses = ['geplant', 'produktiv'];
+        if ($request->has('status')) {
+            $statusFilter = (array) $request->input('status');
+            $statusFilter = array_intersect($statusFilter, Vlan::STATUSES);
+            if (empty($statusFilter)) {
+                $statusFilter = $defaultStatuses;
+            }
+            session()->put('network.vlan_list.status_filter', $statusFilter);
+        } else {
+            $statusFilter = session('network.vlan_list.status_filter', $defaultStatuses);
+        }
+
         // Build query with sorting
         $query = Vlan::query();
 
+        // Apply status filter
+        $query->whereIn('status', $statusFilter);
+
         // Apply sorting
         if ($sortColumn === 'online_count') {
-            // Use subquery for online count
             $query->withCount([
                 'ipAddresses as online_count' => function ($q) {
                     $q->where('is_online', true);
@@ -57,7 +72,7 @@ class VlanController extends Controller
 
         $vlans = $query->with('dhcpServer')->get();
 
-        return view('network::vlans.index', compact('vlans', 'sortColumn', 'sortDirection'));
+        return view('network::vlans.index', compact('vlans', 'sortColumn', 'sortDirection', 'statusFilter'));
     }
 
     /**
