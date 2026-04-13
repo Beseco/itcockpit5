@@ -4,13 +4,13 @@ namespace App\Modules\Server\Services;
 
 use App\Modules\AdUsers\Services\LdapConnectionService;
 use App\Modules\Server\Models\Server;
+use App\Modules\Server\Models\ServerSyncOu;
 use App\Services\AuditLogger;
 
 class ServerSyncService
 {
-    private const BASE_DN = 'OU=Server,OU=LRA-FS,DC=lra,DC=lan';
-    private const FILTER  = '(objectClass=computer)';
-    private const ATTRS   = [
+    private const FILTER = '(objectClass=computer)';
+    private const ATTRS  = [
         'cn', 'dnshostname', 'operatingsystem', 'operatingsystemversion',
         'description', 'managedby', 'distinguishedname',
     ];
@@ -25,52 +25,61 @@ class ServerSyncService
      */
     public function sync(bool $dryRun = false): array
     {
-        $entries      = $this->ldap->searchWithBaseDn(self::BASE_DN, self::FILTER, self::ATTRS);
-        $synced       = 0;
-        $ipsResolved  = 0;
-        $foundDns     = [];
+        $ous = ServerSyncOu::enabled()->get();
 
-        foreach ($entries as $entry) {
-            $dn = LdapConnectionService::getAttr($entry, 'distinguishedname');
-            if (!$dn) {
-                continue;
-            }
+        if ($ous->isEmpty()) {
+            throw new \RuntimeException('Keine OUs konfiguriert. Bitte in den Einstellungen mindestens eine aktive OU hinzufügen.');
+        }
 
-            $foundDns[]   = $dn;
-            $dnsHostname  = LdapConnectionService::getAttr($entry, 'dnshostname');
+        $synced      = 0;
+        $ipsResolved = 0;
+        $foundDns    = [];
 
-            $data = [
-                'name'             => LdapConnectionService::getAttr($entry, 'cn'),
-                'dns_hostname'     => $dnsHostname,
-                'operating_system' => LdapConnectionService::getAttr($entry, 'operatingsystem'),
-                'os_version'       => LdapConnectionService::getAttr($entry, 'operatingsystemversion'),
-                'description'      => LdapConnectionService::getAttr($entry, 'description'),
-                'managed_by_ldap'  => LdapConnectionService::getAttr($entry, 'managedby'),
-                'ldap_synced'      => true,
-                'last_sync_at'     => now(),
-                'raw_ldap_data'    => $entry,
-            ];
+        foreach ($ous as $ou) {
+            $entries = $this->ldap->searchWithBaseDn($ou->distinguished_name, self::FILTER, self::ATTRS);
 
-            // DNS-Auflösung: Hostname → IP
-            if ($dnsHostname) {
-                $resolved = self::resolveDns($dnsHostname);
-                if ($resolved) {
-                    $data['ip_address'] = $resolved;
-                    $ipsResolved++;
+            foreach ($entries as $entry) {
+                $dn = LdapConnectionService::getAttr($entry, 'distinguishedname');
+                if (!$dn) {
+                    continue;
                 }
-            }
 
-            if (!$dryRun) {
-                $existing = Server::where('distinguished_name', $dn)->first();
-                if ($existing) {
-                    $existing->update($data);
-                } else {
-                    $data['revision_date'] = now()->addDays(7);
-                    Server::create(array_merge(['distinguished_name' => $dn], $data));
+                $foundDns[]  = $dn;
+                $dnsHostname = LdapConnectionService::getAttr($entry, 'dnshostname');
+
+                $data = [
+                    'name'             => LdapConnectionService::getAttr($entry, 'cn'),
+                    'dns_hostname'     => $dnsHostname,
+                    'operating_system' => LdapConnectionService::getAttr($entry, 'operatingsystem'),
+                    'os_version'       => LdapConnectionService::getAttr($entry, 'operatingsystemversion'),
+                    'description'      => LdapConnectionService::getAttr($entry, 'description'),
+                    'managed_by_ldap'  => LdapConnectionService::getAttr($entry, 'managedby'),
+                    'ldap_synced'      => true,
+                    'last_sync_at'     => now(),
+                    'raw_ldap_data'    => $entry,
+                ];
+
+                // DNS-Auflösung: Hostname → IP
+                if ($dnsHostname) {
+                    $resolved = self::resolveDns($dnsHostname);
+                    if ($resolved) {
+                        $data['ip_address'] = $resolved;
+                        $ipsResolved++;
+                    }
                 }
-            }
 
-            $synced++;
+                if (!$dryRun) {
+                    $existing = Server::where('distinguished_name', $dn)->first();
+                    if ($existing) {
+                        $existing->update($data);
+                    } else {
+                        $data['revision_date'] = now()->addDays(7);
+                        Server::create(array_merge(['distinguished_name' => $dn], $data));
+                    }
+                }
+
+                $synced++;
+            }
         }
 
         $markedUnsynced = 0;
@@ -85,6 +94,7 @@ class ServerSyncService
                 'synced'          => $synced,
                 'ips_resolved'    => $ipsResolved,
                 'marked_unsynced' => $markedUnsynced,
+                'ous_count'       => $ous->count(),
             ]);
         }
 

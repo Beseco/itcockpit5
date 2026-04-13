@@ -7,9 +7,12 @@ use Illuminate\Support\Facades\Route;
 // Spezifische Routen VOR parametrisierten Routen (verhindert Konflikte)
 
 Route::middleware(['auth', 'module.permission:server,config'])->group(function () {
-    Route::get('/settings',                         [ServerSettingsController::class, 'index'])->name('settings');
-    Route::post('/settings/options',                [ServerSettingsController::class, 'storeOption'])->name('settings.options.store');
-    Route::delete('/settings/options/{option}',     [ServerSettingsController::class, 'destroyOption'])->name('settings.options.destroy');
+    Route::get('/settings',                              [ServerSettingsController::class, 'index'])->name('settings');
+    Route::post('/settings/options',                     [ServerSettingsController::class, 'storeOption'])->name('settings.options.store');
+    Route::delete('/settings/options/{option}',          [ServerSettingsController::class, 'destroyOption'])->name('settings.options.destroy');
+    Route::post('/settings/sync-ous',                    [ServerSettingsController::class, 'storeOu'])->name('settings.sync-ous.store');
+    Route::delete('/settings/sync-ous/{ou}',             [ServerSettingsController::class, 'destroyOu'])->name('settings.sync-ous.destroy');
+    Route::patch('/settings/sync-ous/{ou}/toggle',       [ServerSettingsController::class, 'toggleOu'])->name('settings.sync-ous.toggle');
 });
 
 Route::middleware(['auth', 'module.permission:server,sync'])->group(function () {
