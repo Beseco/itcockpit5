@@ -367,8 +367,8 @@ class ExportService
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   @page {
-    /* Hochformat A4, 1 cm links/rechts, Platz fuer Canvas-Header (38pt) und -Footer (24pt) */
-    margin: 40px 28px 28px 28px;
+    /* Hochformat A4: 1cm links/rechts, Platz fuer Canvas-Header (38pt≈13.4mm) und -Footer (24pt≈8.5mm) */
+    margin: 15mm 10mm 10mm 10mm;
   }
 
   body {
