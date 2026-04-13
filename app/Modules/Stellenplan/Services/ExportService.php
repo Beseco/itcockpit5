@@ -290,19 +290,41 @@ class ExportService
 
         $canSeeSensitive = $actor->can('module.stellenplan.view_sensitive');
         $filename        = 'stellenplan_' . now()->format('Y-m-d') . '.pdf';
-        $html            = $this->buildPdfHtml($gruppen, $ohneGruppe, $canSeeSensitive);
+        $datetime        = now()->format('d.m.Y, H:i') . ' Uhr';
+        $date            = now()->format('d.m.Y');
+        $html            = $this->buildPdfHtml($gruppen, $ohneGruppe, $canSeeSensitive, $datetime, $date);
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)->setPaper('a4', 'portrait');
         $pdf->render();
 
-        // Seitenzahlen via Canvas (DomPDF-native, funktioniert auf jeder Seite)
         $dom    = $pdf->getDomPDF();
         $canvas = $dom->getCanvas();
-        $w      = $canvas->get_width();   // A4 portrait ~ 595
-        $h      = $canvas->get_height();  // A4 portrait ~ 842
-        $font   = $dom->getFontMetrics()->getFont('DejaVu Sans', 'normal');
-        // Rechts in der Fusszeile, 20px vom unteren Seitenrand
-        $canvas->page_text($w - 85, $h - 20, 'Seite {PAGE_NUM} / {PAGE_COUNT}', $font, 7, [0.4, 0.4, 0.4]);
+        $w      = $canvas->get_width();   // A4 portrait ≈ 595 pt
+        $h      = $canvas->get_height();  // A4 portrait ≈ 842 pt
+
+        // Kopf- und Fusszeile via DomPDF-Canvas-API: erscheint zuverlässig auf jeder Seite
+        $canvas->page_script(function ($pageNum, $pageCount, $cv, $fm) use ($w, $h, $datetime, $date) {
+            $bold   = $fm->getFont('DejaVu Sans', 'bold');
+            $normal = $fm->getFont('DejaVu Sans', 'normal');
+
+            // === Kopfzeile ===
+            $cv->filled_rectangle(0, 0, $w, 36, [0.118, 0.106, 0.294]);    // #1E1B4B
+            $cv->filled_rectangle(0, 36, $w, 2,  [0.388, 0.251, 0.796]);    // #6366F1 Akzent
+            $cv->text(12, 8,  'IT Cockpit',                                          $bold,   14, [1.0,   1.0,   1.0]);
+            $cv->text(112, 13, "\xe2\x80\x93 Ihr zentrales IT-Management-Tool",     $normal,  8, [0.647, 0.706, 0.988]);
+            $cv->text($w - 158,  7, 'STELLENPLAN',                                  $bold,   10, [0.878, 0.902, 1.0]);
+            $cv->text($w - 158, 20, 'Exportiert am ' . $datetime,                   $normal,  7, [0.506, 0.549, 0.973]);
+
+            // === Fusszeile ===
+            $cv->filled_rectangle(0, $h - 24, $w, 24, [0.945, 0.957, 0.976]);       // #F1F5F9
+            $cv->line(0, $h - 24, $w, $h - 24, [0.780, 0.824, 0.996], 0.5);
+            $cv->text(12, $h - 15,
+                "IT Cockpit  \xc2\xb7  Stellenplan  \xc2\xb7  Stand " . $date,
+                $normal, 7, [0.392, 0.455, 0.545]);
+            $cv->text($w - 82, $h - 15,
+                'Seite ' . $pageNum . ' / ' . $pageCount,
+                $normal, 7, [0.392, 0.455, 0.545]);
+        });
 
         return response($dom->output(), 200, [
             'Content-Type'        => 'application/pdf',
@@ -310,8 +332,13 @@ class ExportService
         ]);
     }
 
-    private function buildPdfHtml(Collection $gruppen, Collection $ohneGruppe, bool $canSeeSensitive): string
-    {
+    private function buildPdfHtml(
+        Collection $gruppen,
+        Collection $ohneGruppe,
+        bool $canSeeSensitive,
+        string $datetime,
+        string $date
+    ): string {
         $besGrSpalte = $canSeeSensitive ? '<th class="bes">Bes.-Gr.</th>' : '';
 
         $alleStellen  = $gruppen->flatMap->stellen->merge($ohneGruppe);
@@ -330,23 +357,18 @@ class ExportService
             $gruppenHtml .= $this->buildPdfGroupTable('Ohne Gruppe', $ohneGruppe, $canSeeSensitive, $besGrSpalte);
         }
 
-        $date     = now()->format('d.m.Y');
-        $datetime = now()->format('d.m.Y, H:i') . ' Uhr';
-
-        // Hinweis: Dies ist ein PHP-Heredoc, kein Blade-Template.
-        // Blade-Kommentare dürfen hier NICHT verwendet werden – sie erscheinen als Klartext im PDF.
         return <<<HTML
 <!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Stellenplan &ndash; IT Cockpit</title>
+<title>Stellenplan - IT Cockpit</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   @page {
-    size: A4 portrait;
-    margin: 50px 28px 36px 28px;
+    /* Hochformat A4, 1 cm links/rechts, Platz fuer Canvas-Header (38pt) und -Footer (24pt) */
+    margin: 40px 28px 28px 28px;
   }
 
   body {
@@ -354,38 +376,6 @@ class ExportService
     font-size: 9px;
     color: #111827;
   }
-
-  /* Kopfzeile – position:fixed wiederholt DomPDF auf jeder Seite */
-  .page-header {
-    position: fixed;
-    top: -46px;
-    left: -28px;
-    right: -28px;
-    height: 44px;
-    background: #1E1B4B;
-  }
-  .page-header table { width: 100%; height: 44px; border-collapse: collapse; }
-  .page-header td   { padding: 0 14px; vertical-align: middle; }
-  .ph-brand         { font-size: 13px; font-weight: bold; color: #FFFFFF; letter-spacing: 0.04em; }
-  .ph-claim         { font-size: 7.5px; color: #A5B4FC; margin-left: 5px; }
-  .ph-right         { text-align: right; }
-  .ph-title         { font-size: 10px; font-weight: bold; color: #E0E7FF; text-transform: uppercase; letter-spacing: 0.07em; }
-  .ph-date          { font-size: 7px; color: #818CF8; margin-top: 2px; }
-  .ph-bar           { display: inline-block; width: 3px; height: 24px; background: #6366F1; vertical-align: middle; margin-right: 8px; }
-
-  /* Fusszeile – Seitenzahl kommt via Canvas, Text links */
-  .page-footer {
-    position: fixed;
-    bottom: -32px;
-    left: -28px;
-    right: -28px;
-    height: 30px;
-    background: #F1F5F9;
-    border-top: 1.5px solid #C7D2FE;
-  }
-  .page-footer table { width: 100%; height: 30px; border-collapse: collapse; }
-  .page-footer td   { padding: 0 14px; vertical-align: middle; font-size: 7px; color: #64748B; }
-  .pf-brand         { font-weight: bold; color: #4338CA; }
 
   /* Inhaltsheader */
   .content-header   { margin-bottom: 8px; border-bottom: 1.5px solid #E0E7FF; padding-bottom: 5px; }
@@ -441,25 +431,6 @@ class ExportService
 </head>
 <body>
 
-<div class="page-header">
-  <table><tr>
-    <td>
-      <span class="ph-bar"></span><span class="ph-brand">IT Cockpit</span><span class="ph-claim">– Ihr zentrales IT-Management-Tool</span>
-    </td>
-    <td class="ph-right" style="width:220px;">
-      <div class="ph-title">Stellenplan</div>
-      <div class="ph-date">Exportiert am {$datetime}</div>
-    </td>
-  </tr></table>
-</div>
-
-<div class="page-footer">
-  <table><tr>
-    <td><span class="pf-brand">IT Cockpit</span> &nbsp;&middot;&nbsp; Integriertes IT-Managementsystem &nbsp;&middot;&nbsp; Stellenplan &nbsp;&middot;&nbsp; Stand {$date}</td>
-    <td style="width:90px;">&nbsp;</td>
-  </tr></table>
-</div>
-
 <div class="content-header">
   <h1>Stellenplan</h1>
   <div class="sub">Stand: {$date} &nbsp;&middot;&nbsp; Exportiert am {$datetime}</div>
@@ -497,15 +468,18 @@ HTML;
             $freiClass = 'pct' . ($frei >= 50 && !$stelle->isFrei() ? ' frei-val' : ($stelle->isFrei() ? ' frei-val' : ''));
 
             $nr       = htmlspecialchars($stelle->stellennummer ?? '', ENT_QUOTES, 'UTF-8');
-            $bez      = htmlspecialchars($stelle->stellenbeschreibung?->bezeichnung ?? '&mdash;', ENT_QUOTES, 'UTF-8');
+            // Null-Fallback VOR htmlspecialchars trennen – sonst wird '&mdash;' zu '&amp;mdash;'
+            $bezRaw   = $stelle->stellenbeschreibung?->bezeichnung;
+            $bez      = $bezRaw ? htmlspecialchars($bezRaw, ENT_QUOTES, 'UTF-8') : '&mdash;';
             $inhaber  = $stelle->isFrei()
                 ? '<span class="frei-badge">FREI</span>'
                 : htmlspecialchars($stelle->stelleninhaber?->name ?? '', ENT_QUOTES, 'UTF-8');
-            $belegStr = $belegt > 0 ? number_format($belegt, 0) . '&thinsp;%' : '&mdash;';
-            $freiStr  = $frei > 0 ? number_format($frei, 0) . '&thinsp;%' : '&mdash;';
+            $belegStr = $belegt > 0 ? number_format($belegt, 0) . '&nbsp;%' : '&mdash;';
+            $freiStr  = $frei > 0 ? number_format($frei, 0) . '&nbsp;%' : '&mdash;';
 
+            $besGrRaw  = $stelle->bes_gruppe;
             $besGrCell = $canSeeSensitive
-                ? '<td>' . htmlspecialchars($stelle->bes_gruppe ?? '&mdash;', ENT_QUOTES, 'UTF-8') . '</td>'
+                ? '<td>' . ($besGrRaw ? htmlspecialchars($besGrRaw, ENT_QUOTES, 'UTF-8') : '&mdash;') . '</td>'
                 : '';
 
             $rows .= "<tr class=\"{$rowClass}\">
@@ -518,8 +492,8 @@ HTML;
             </tr>\n";
         }
 
-        $sumBelegt = number_format($gBelegt, 0) . '&thinsp;%';
-        $sumFrei   = number_format($gFrei, 0) . '&thinsp;%';
+        $sumBelegt = number_format($gBelegt, 0) . '&nbsp;%';
+        $sumFrei   = number_format($gFrei, 0) . '&nbsp;%';
         $sumCols   = $canSeeSensitive ? 4 : 3;
 
         return <<<HTML
