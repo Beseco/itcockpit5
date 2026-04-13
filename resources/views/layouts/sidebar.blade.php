@@ -21,6 +21,7 @@
     <!-- Logo -->
     <div class="flex items-center h-16 flex-shrink-0 px-4 bg-gray-900">
         <h1 class="text-white text-xl font-bold">IT Cockpit</h1>
+        <span class="ml-2 text-gray-500 text-xs font-mono leading-none" style="margin-top:3px;">v{{ config('version.version') }}</span>
     </div>
 
     <!-- Navigation -->
