@@ -42,7 +42,7 @@ class ExportService
     // XLSX
     // -------------------------------------------------------------------------
 
-    public function exportXlsx(User $actor): StreamedResponse
+    public function exportXlsx(User $actor): \Symfony\Component\HttpFoundation\Response
     {
         ['gruppen' => $gruppen, 'ohneGruppe' => $ohneGruppe] = $this->loadData();
 

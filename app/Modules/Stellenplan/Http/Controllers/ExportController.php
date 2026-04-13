@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Modules\Stellenplan\Services\ExportService;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ExportController extends Controller
 {
@@ -14,7 +13,7 @@ class ExportController extends Controller
         private ExportService $exportService,
     ) {}
 
-    public function xlsx(Request $request): StreamedResponse
+    public function xlsx(Request $request): Response
     {
         $this->authorize('module.stellenplan.view');
 
