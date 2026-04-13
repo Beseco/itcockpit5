@@ -292,10 +292,21 @@ class ExportService
         $filename        = 'stellenplan_' . now()->format('Y-m-d') . '.pdf';
         $html            = $this->buildPdfHtml($gruppen, $ohneGruppe, $canSeeSensitive);
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)
-            ->setPaper('a4', 'landscape');
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)->setPaper('a4', 'landscape');
+        $pdf->render();
 
-        return $pdf->download($filename);
+        // Seitenzahlen über DomPDF-Canvas einfügen
+        $dom    = $pdf->getDomPDF();
+        $canvas = $dom->getCanvas();
+        $w      = $canvas->get_width();
+        $h      = $canvas->get_height();
+        $font   = $dom->getFontMetrics()->getFont('DejaVu Sans', 'normal');
+        $canvas->page_text($w - 95, $h - 16, 'Seite {PAGE_NUM} / {PAGE_COUNT}', $font, 7, [0.5, 0.5, 0.5]);
+
+        return response($dom->output(), 200, [
+            'Content-Type'        => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 
     private function buildPdfHtml(Collection $gruppen, Collection $ohneGruppe, bool $canSeeSensitive): string
@@ -322,33 +333,101 @@ class ExportService
             $gruppenHtml .= $this->buildPdfGroupTable('Ohne Gruppe', $ohneGruppe, $canSeeSensitive, $besGrSpalte);
         }
 
-        $date = now()->format('d.m.Y');
+        $date     = now()->format('d.m.Y');
+        $datetime = now()->format('d.m.Y, H:i') . ' Uhr';
 
         return <<<HTML
 <!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Stellenplan</title>
+<title>Stellenplan – IT Cockpit</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 9px; color: #111827; }
 
-  .header { margin-bottom: 12px; border-bottom: 2px solid #4338CA; padding-bottom: 6px; }
-  .header h1 { font-size: 15px; color: #1E1B4B; }
-  .header .meta { font-size: 8px; color: #6B7280; margin-top: 2px; }
-  .stats { display: flex; gap: 16px; margin-bottom: 10px; font-size: 8px; }
-  .stats span { background: #F3F4F6; padding: 2px 8px; border-radius: 3px; }
+  @page {
+    size: A4 landscape;
+    margin: 48px 15px 32px 15px;
+  }
+
+  body {
+    font-family: DejaVu Sans, Arial, sans-serif;
+    font-size: 9px;
+    color: #111827;
+  }
+
+  /* ── Kopfzeile (wiederholt sich auf jeder Seite) ──────────────── */
+  .page-header {
+    position: fixed;
+    top: -44px;
+    left: -15px; right: -15px;
+    height: 42px;
+    background: #1E1B4B;
+    overflow: hidden;
+  }
+  .page-header table { width: 100%; height: 100%; border-collapse: collapse; }
+  .page-header td { padding: 0 14px; vertical-align: middle; }
+  .ph-left { text-align: left; }
+  .ph-right { text-align: right; }
+  .ph-brand {
+    font-size: 14px; font-weight: bold; color: #FFFFFF;
+    letter-spacing: 0.03em;
+  }
+  .ph-brand-sub {
+    font-size: 8px; color: #A5B4FC; margin-left: 6px;
+  }
+  .ph-title {
+    font-size: 10px; font-weight: bold; color: #E0E7FF;
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .ph-date { font-size: 7.5px; color: #818CF8; margin-top: 1px; }
+  .ph-accent {
+    display: inline-block;
+    width: 3px; height: 28px;
+    background: #6366F1;
+    vertical-align: middle;
+    margin-right: 10px;
+  }
+
+  /* ── Fusszeile (wiederholt sich auf jeder Seite) ──────────────── */
+  .page-footer {
+    position: fixed;
+    bottom: -28px;
+    left: -15px; right: -15px;
+    height: 26px;
+    background: #F1F5F9;
+    border-top: 1.5px solid #C7D2FE;
+    overflow: hidden;
+  }
+  .page-footer table { width: 100%; height: 100%; border-collapse: collapse; }
+  .page-footer td { padding: 0 14px; vertical-align: middle; font-size: 7px; color: #64748B; }
+  .pf-right { text-align: right; }
+  .pf-logo {
+    font-weight: bold; color: #4338CA; font-size: 8px; margin-right: 6px;
+  }
+
+  /* ── Inhaltsbereich ───────────────────────────────────────────── */
+  .content-header { margin-bottom: 10px; }
+  .content-header h1 { font-size: 13px; color: #1E1B4B; font-weight: bold; }
+  .content-header .sub { font-size: 7.5px; color: #6B7280; margin-top: 1px; }
+
+  .stats { margin-bottom: 10px; font-size: 8px; }
+  .stats span {
+    display: inline-block;
+    background: #F3F4F6; padding: 2px 8px; border-radius: 3px;
+    margin-right: 6px;
+  }
   .stats .warn { background: #FEF3C7; color: #B45309; }
   .stats .danger { background: #FEE2E2; color: #DC2626; }
 
-  .group { margin-bottom: 14px; page-break-inside: avoid; }
+  .group { margin-bottom: 12px; page-break-inside: avoid; }
   .group-header {
     background: #4338CA; color: #fff; font-weight: bold; font-size: 9px;
     padding: 4px 8px; border-radius: 2px 2px 0 0;
-    display: flex; justify-content: space-between; align-items: center;
   }
-  .group-header .g-meta { font-weight: normal; font-size: 8px; opacity: 0.85; }
+  .group-header table { width: 100%; border-collapse: collapse; }
+  .group-header td { padding: 0; background: transparent; border: none; color: #fff; font-size: 9px; }
+  .group-header td:last-child { text-align: right; font-weight: normal; font-size: 8px; opacity: 0.8; }
 
   table { width: 100%; border-collapse: collapse; }
   th {
@@ -373,36 +452,56 @@ class ExportService
     border-top: 1.5px solid #818CF8; padding: 3px 6px;
   }
   tr.summe td.pct { text-align: center; }
-
-  .total-box {
-    margin-top: 10px; border: 1.5px solid #1E1B4B; border-radius: 3px;
-    padding: 6px 10px; background: #EEF2FF; display: inline-block; min-width: 200px;
-  }
-  .total-box h3 { font-size: 9px; color: #1E1B4B; margin-bottom: 4px; }
-  .total-box table { width: auto; }
-  .total-box td { font-size: 8.5px; padding: 2px 6px; border: none; background: transparent; }
-  .total-box td:last-child { font-weight: bold; }
-
-  .footer { position: fixed; bottom: 0; left: 0; right: 0; font-size: 7px; color: #9CA3AF;
-            text-align: right; padding: 2px 8px; border-top: 1px solid #E5E7EB; }
 </style>
 </head>
 <body>
 
-<div class="header">
+{{-- Kopfzeile: wird auf jeder Seite wiederholt --}}
+<div class="page-header">
+  <table>
+    <tr>
+      <td class="ph-left">
+        <span class="ph-accent"></span>
+        <span class="ph-brand">IT Cockpit</span>
+        <span class="ph-brand-sub">– Ihr zentrales IT-Management-Tool</span>
+      </td>
+      <td class="ph-right" style="width:260px;">
+        <div class="ph-title">Stellenplan</div>
+        <div class="ph-date">Exportiert am {$datetime}</div>
+      </td>
+    </tr>
+  </table>
+</div>
+
+{{-- Fusszeile: wird auf jeder Seite wiederholt (Seitenzahlen via Canvas) --}}
+<div class="page-footer">
+  <table>
+    <tr>
+      <td>
+        <span class="pf-logo">IT Cockpit</span>
+        Integriertes IT-Managementsystem &nbsp;·&nbsp; Stellenplan &nbsp;·&nbsp; Stand {$date}
+      </td>
+      <td class="pf-right" style="width:140px;">
+        {{-- Seitenzahl wird via DomPDF-Canvas eingefügt --}}
+      </td>
+    </tr>
+  </table>
+</div>
+
+{{-- Seiteninhalt --}}
+<div class="content-header">
   <h1>Stellenplan</h1>
-  <div class="meta">Stand: {$date}</div>
+  <div class="sub">Stand: {$date} &nbsp;·&nbsp; Exportiert am {$datetime}</div>
 </div>
 
 <div class="stats">
   <span>{$totalStellen} Stellen gesamt</span>
   <span class="warn">{$freiCount} unbesetzt</span>
-  <span class="danger">{$totalFrei}&thinsp;% freie Kapazität gesamt</span>
+  <span class="danger">{$totalFrei}&thinsp;% freie Kapazität</span>
 </div>
 
 {$gruppenHtml}
 
-<div class="footer">IT Cockpit · Stellenplan · Stand {$date}</div>
 </body>
 </html>
 HTML;
@@ -455,8 +554,10 @@ HTML;
         return <<<HTML
 <div class="group">
   <div class="group-header">
-    <span>{$name}</span>
-    <span class="g-meta">{$count}&nbsp;Stellen</span>
+    <table><tr>
+      <td>{$name}</td>
+      <td style="width:80px;">{$count}&nbsp;Stellen</td>
+    </tr></table>
   </div>
   <table>
     <thead>
