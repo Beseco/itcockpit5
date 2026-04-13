@@ -16,3 +16,6 @@ Schedule::command('calendar:send-reminders')->everyMinute();
 
 // Applikationen-Revisionen täglich um 07:00 Uhr prüfen und E-Mails versenden
 Schedule::command('applikationen:send-revision-reminders')->dailyAt('07:00');
+
+// Applikationen-Revisions-Digest stündlich prüfen (Versand nur wenn konfigurierter Wochentag/Stunde/Intervall passt)
+Schedule::command('applikationen:send-revision-digest')->hourly();

@@ -21,6 +21,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\PersonalController;
 use App\Http\Controllers\StellenbeschreibungController;
 use App\Http\Controllers\StelleController;
+use App\Http\Controllers\ApplikationRevisionSettingsController;
 use App\Http\Controllers\RevisionController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -105,6 +106,13 @@ Route::middleware('auth')->group(function () {
     ])->except(['show']);
 
     // Applikationen
+    Route::get('/applikationen/revision-settings', [ApplikationRevisionSettingsController::class, 'index'])
+        ->middleware('can:applikationen.edit')
+        ->name('applikationen.revision-settings');
+    Route::put('/applikationen/revision-settings', [ApplikationRevisionSettingsController::class, 'update'])
+        ->middleware('can:applikationen.edit')
+        ->name('applikationen.revision-settings.update');
+
     Route::resource('applikationen', ApplikationController::class, [
         'parameters' => ['applikationen' => 'applikation'],
     ])->except(['show']);
