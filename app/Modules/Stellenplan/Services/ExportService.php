@@ -294,7 +294,16 @@ class ExportService
         $date            = now()->format('d.m.Y');
         $html            = $this->buildPdfHtml($gruppen, $ohneGruppe, $canSeeSensitive, $datetime, $date);
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)->setPaper('a4', 'portrait');
+        // Ränder via PHP-Option (Einheit: Inch): 15mm=0.59" oben, 10mm=0.39" links/rechts/unten
+        // @page CSS wird von DomPDF ignoriert – nur setOption() wirkt zuverlässig
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)
+            ->setPaper('a4', 'portrait')
+            ->setOption([
+                'margin_top'    => 0.59,   // ≈15mm → 42.5pt (Canvas-Header endet bei 38pt)
+                'margin_right'  => 0.39,   // ≈10mm = 1cm → 28pt
+                'margin_bottom' => 0.39,   // ≈10mm (Canvas-Footer beginnt bei h-24pt)
+                'margin_left'   => 0.39,   // ≈10mm = 1cm → 28pt
+            ]);
         $pdf->render();
 
         $dom    = $pdf->getDomPDF();
@@ -365,11 +374,6 @@ class ExportService
 <title>Stellenplan - IT Cockpit</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  @page {
-    /* Hochformat A4: 1cm links/rechts, Platz fuer Canvas-Header (38pt≈13.4mm) und -Footer (24pt≈8.5mm) */
-    margin: 15mm 10mm 10mm 10mm;
-  }
 
   body {
     font-family: DejaVu Sans, Arial, sans-serif;
