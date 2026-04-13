@@ -294,16 +294,10 @@ class ExportService
         $date            = now()->format('d.m.Y');
         $html            = $this->buildPdfHtml($gruppen, $ohneGruppe, $canSeeSensitive, $datetime, $date);
 
-        // Ränder via PHP-Option (Einheit: Inch): 15mm=0.59" oben, 10mm=0.39" links/rechts/unten
-        // @page CSS wird von DomPDF ignoriert – nur setOption() wirkt zuverlässig
+        // DomPDF-Default-Rand: 36pt (0.5") auf allen Seiten = ca. 12.7mm ≥ 1cm.
+        // setOption() kennt keine Margin-Keys – Canvas-Header muss <36pt bleiben.
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)
-            ->setPaper('a4', 'portrait')
-            ->setOption([
-                'margin_top'    => 0.59,   // ≈15mm → 42.5pt (Canvas-Header endet bei 38pt)
-                'margin_right'  => 0.39,   // ≈10mm = 1cm → 28pt
-                'margin_bottom' => 0.39,   // ≈10mm (Canvas-Footer beginnt bei h-24pt)
-                'margin_left'   => 0.39,   // ≈10mm = 1cm → 28pt
-            ]);
+            ->setPaper('a4', 'portrait');
         $pdf->render();
 
         $dom    = $pdf->getDomPDF();
@@ -316,13 +310,13 @@ class ExportService
             $bold   = $fm->getFont('DejaVu Sans', 'bold');
             $normal = $fm->getFont('DejaVu Sans', 'normal');
 
-            // === Kopfzeile ===
-            $cv->filled_rectangle(0, 0, $w, 36, [0.118, 0.106, 0.294]);    // #1E1B4B
-            $cv->filled_rectangle(0, 36, $w, 2,  [0.388, 0.251, 0.796]);    // #6366F1 Akzent
-            $cv->text(12, 8,  'IT Cockpit',                                          $bold,   14, [1.0,   1.0,   1.0]);
-            $cv->text(112, 13, "\xe2\x80\x93 Ihr zentrales IT-Management-Tool",     $normal,  8, [0.647, 0.706, 0.988]);
-            $cv->text($w - 158,  7, 'STELLENPLAN',                                  $bold,   10, [0.878, 0.902, 1.0]);
-            $cv->text($w - 158, 20, 'Exportiert am ' . $datetime,                   $normal,  7, [0.506, 0.549, 0.973]);
+            // === Kopfzeile (30pt Hintergrund + 2pt Akzent = 32pt gesamt < 36pt Standard-Rand) ===
+            $cv->filled_rectangle(0, 0, $w, 30, [0.118, 0.106, 0.294]);    // #1E1B4B
+            $cv->filled_rectangle(0, 30, $w, 2,  [0.388, 0.251, 0.796]);    // #6366F1 Akzent
+            $cv->text(10,  5, 'IT Cockpit',                                          $bold,   13, [1.0,   1.0,   1.0]);
+            $cv->text(106, 10, "\xe2\x80\x93 Ihr zentrales IT-Management-Tool",     $normal,  7.5, [0.647, 0.706, 0.988]);
+            $cv->text($w - 152,  4, 'STELLENPLAN',                                  $bold,    9, [0.878, 0.902, 1.0]);
+            $cv->text($w - 152, 16, 'Exportiert am ' . $datetime,                   $normal,  6.5, [0.506, 0.549, 0.973]);
 
             // === Fusszeile ===
             $cv->filled_rectangle(0, $h - 24, $w, 24, [0.945, 0.957, 0.976]);       // #F1F5F9
