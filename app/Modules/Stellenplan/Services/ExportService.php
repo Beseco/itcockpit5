@@ -290,8 +290,9 @@ class ExportService
 
         $canSeeSensitive = $actor->can('module.stellenplan.view_sensitive');
         $filename        = 'stellenplan_' . now()->format('Y-m-d') . '.pdf';
-        $datetime        = now()->format('d.m.Y, H:i') . ' Uhr';
-        $date            = now()->format('d.m.Y');
+        $tz              = config('app.timezone', 'Europe/Berlin');
+        $datetime        = now($tz)->format('d.m.Y, H:i') . ' Uhr';
+        $date            = now($tz)->format('d.m.Y');
         $html            = $this->buildPdfHtml($gruppen, $ohneGruppe, $canSeeSensitive, $datetime, $date);
 
         // DomPDF-Default-Rand: 36pt (0.5") auf allen Seiten = ca. 12.7mm ≥ 1cm.
