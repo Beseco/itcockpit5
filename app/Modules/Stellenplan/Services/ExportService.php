@@ -292,16 +292,17 @@ class ExportService
         $filename        = 'stellenplan_' . now()->format('Y-m-d') . '.pdf';
         $html            = $this->buildPdfHtml($gruppen, $ohneGruppe, $canSeeSensitive);
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)->setPaper('a4', 'landscape');
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)->setPaper('a4', 'portrait');
         $pdf->render();
 
-        // Seitenzahlen über DomPDF-Canvas einfügen
+        // Seitenzahlen via Canvas (DomPDF-native, funktioniert auf jeder Seite)
         $dom    = $pdf->getDomPDF();
         $canvas = $dom->getCanvas();
-        $w      = $canvas->get_width();
-        $h      = $canvas->get_height();
+        $w      = $canvas->get_width();   // A4 portrait ~ 595
+        $h      = $canvas->get_height();  // A4 portrait ~ 842
         $font   = $dom->getFontMetrics()->getFont('DejaVu Sans', 'normal');
-        $canvas->page_text($w - 95, $h - 16, 'Seite {PAGE_NUM} / {PAGE_COUNT}', $font, 7, [0.5, 0.5, 0.5]);
+        // Rechts in der Fusszeile, 20px vom unteren Seitenrand
+        $canvas->page_text($w - 85, $h - 20, 'Seite {PAGE_NUM} / {PAGE_COUNT}', $font, 7, [0.4, 0.4, 0.4]);
 
         return response($dom->output(), 200, [
             'Content-Type'        => 'application/pdf',
@@ -311,17 +312,13 @@ class ExportService
 
     private function buildPdfHtml(Collection $gruppen, Collection $ohneGruppe, bool $canSeeSensitive): string
     {
-        $besGrSpalte = $canSeeSensitive
-            ? '<th class="bes">Bes.-Gr.</th>'
-            : '';
+        $besGrSpalte = $canSeeSensitive ? '<th class="bes">Bes.-Gr.</th>' : '';
 
-        // Gesamtstatistik
         $alleStellen  = $gruppen->flatMap->stellen->merge($ohneGruppe);
         $totalStellen = $alleStellen->count();
         $totalFrei    = (int) $alleStellen->sum(fn ($s) => $s->isFrei() ? 100 : max(0, 100 - ($s->belegung ?? 100)));
         $freiCount    = $alleStellen->filter->isFrei()->count();
 
-        // Gruppen-Tabellen aufbauen
         $gruppenHtml = '';
         foreach ($gruppen as $gruppe) {
             if ($gruppe->stellen->isEmpty()) {
@@ -336,18 +333,20 @@ class ExportService
         $date     = now()->format('d.m.Y');
         $datetime = now()->format('d.m.Y, H:i') . ' Uhr';
 
+        // Hinweis: Dies ist ein PHP-Heredoc, kein Blade-Template.
+        // Blade-Kommentare dürfen hier NICHT verwendet werden – sie erscheinen als Klartext im PDF.
         return <<<HTML
 <!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>Stellenplan – IT Cockpit</title>
+<title>Stellenplan &ndash; IT Cockpit</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   @page {
-    size: A4 landscape;
-    margin: 48px 15px 32px 15px;
+    size: A4 portrait;
+    margin: 50px 28px 36px 28px;
   }
 
   body {
@@ -356,148 +355,120 @@ class ExportService
     color: #111827;
   }
 
-  /* ── Kopfzeile (wiederholt sich auf jeder Seite) ──────────────── */
+  /* Kopfzeile – position:fixed wiederholt DomPDF auf jeder Seite */
   .page-header {
     position: fixed;
-    top: -44px;
-    left: -15px; right: -15px;
-    height: 42px;
+    top: -46px;
+    left: -28px;
+    right: -28px;
+    height: 44px;
     background: #1E1B4B;
-    overflow: hidden;
   }
-  .page-header table { width: 100%; height: 100%; border-collapse: collapse; }
-  .page-header td { padding: 0 14px; vertical-align: middle; }
-  .ph-left { text-align: left; }
-  .ph-right { text-align: right; }
-  .ph-brand {
-    font-size: 14px; font-weight: bold; color: #FFFFFF;
-    letter-spacing: 0.03em;
-  }
-  .ph-brand-sub {
-    font-size: 8px; color: #A5B4FC; margin-left: 6px;
-  }
-  .ph-title {
-    font-size: 10px; font-weight: bold; color: #E0E7FF;
-    text-transform: uppercase; letter-spacing: 0.08em;
-  }
-  .ph-date { font-size: 7.5px; color: #818CF8; margin-top: 1px; }
-  .ph-accent {
-    display: inline-block;
-    width: 3px; height: 28px;
-    background: #6366F1;
-    vertical-align: middle;
-    margin-right: 10px;
-  }
+  .page-header table { width: 100%; height: 44px; border-collapse: collapse; }
+  .page-header td   { padding: 0 14px; vertical-align: middle; }
+  .ph-brand         { font-size: 13px; font-weight: bold; color: #FFFFFF; letter-spacing: 0.04em; }
+  .ph-claim         { font-size: 7.5px; color: #A5B4FC; margin-left: 5px; }
+  .ph-right         { text-align: right; }
+  .ph-title         { font-size: 10px; font-weight: bold; color: #E0E7FF; text-transform: uppercase; letter-spacing: 0.07em; }
+  .ph-date          { font-size: 7px; color: #818CF8; margin-top: 2px; }
+  .ph-bar           { display: inline-block; width: 3px; height: 24px; background: #6366F1; vertical-align: middle; margin-right: 8px; }
 
-  /* ── Fusszeile (wiederholt sich auf jeder Seite) ──────────────── */
+  /* Fusszeile – Seitenzahl kommt via Canvas, Text links */
   .page-footer {
     position: fixed;
-    bottom: -28px;
-    left: -15px; right: -15px;
-    height: 26px;
+    bottom: -32px;
+    left: -28px;
+    right: -28px;
+    height: 30px;
     background: #F1F5F9;
     border-top: 1.5px solid #C7D2FE;
-    overflow: hidden;
   }
-  .page-footer table { width: 100%; height: 100%; border-collapse: collapse; }
-  .page-footer td { padding: 0 14px; vertical-align: middle; font-size: 7px; color: #64748B; }
-  .pf-right { text-align: right; }
-  .pf-logo {
-    font-weight: bold; color: #4338CA; font-size: 8px; margin-right: 6px;
-  }
+  .page-footer table { width: 100%; height: 30px; border-collapse: collapse; }
+  .page-footer td   { padding: 0 14px; vertical-align: middle; font-size: 7px; color: #64748B; }
+  .pf-brand         { font-weight: bold; color: #4338CA; }
 
-  /* ── Inhaltsbereich ───────────────────────────────────────────── */
-  .content-header { margin-bottom: 10px; }
+  /* Inhaltsheader */
+  .content-header   { margin-bottom: 8px; border-bottom: 1.5px solid #E0E7FF; padding-bottom: 5px; }
   .content-header h1 { font-size: 13px; color: #1E1B4B; font-weight: bold; }
-  .content-header .sub { font-size: 7.5px; color: #6B7280; margin-top: 1px; }
+  .content-header .sub { font-size: 7px; color: #6B7280; margin-top: 1px; }
 
-  .stats { margin-bottom: 10px; font-size: 8px; }
-  .stats span {
+  /* Statistik-Chips */
+  .stats { margin-bottom: 9px; font-size: 7.5px; }
+  .chip {
     display: inline-block;
-    background: #F3F4F6; padding: 2px 8px; border-radius: 3px;
-    margin-right: 6px;
+    background: #F3F4F6; color: #374151;
+    padding: 1px 7px; border-radius: 3px; margin-right: 5px;
   }
-  .stats .warn { background: #FEF3C7; color: #B45309; }
-  .stats .danger { background: #FEE2E2; color: #DC2626; }
+  .chip-warn   { background: #FEF3C7; color: #B45309; }
+  .chip-danger { background: #FEE2E2; color: #DC2626; }
 
-  .group { margin-bottom: 12px; page-break-inside: avoid; }
-  .group-header {
-    background: #4338CA; color: #fff; font-weight: bold; font-size: 9px;
-    padding: 4px 8px; border-radius: 2px 2px 0 0;
-  }
+  /* Gruppen */
+  .group { margin-bottom: 10px; page-break-inside: avoid; }
+  .group-header { background: #4338CA; padding: 3px 7px; border-radius: 2px 2px 0 0; }
   .group-header table { width: 100%; border-collapse: collapse; }
-  .group-header td { padding: 0; background: transparent; border: none; color: #fff; font-size: 9px; }
-  .group-header td:last-child { text-align: right; font-weight: normal; font-size: 8px; opacity: 0.8; }
+  .group-header td { padding: 0; border: none; background: transparent; color: #fff; font-size: 8.5px; font-weight: bold; }
+  .group-header .gh-count { text-align: right; font-weight: normal; font-size: 7.5px; color: #C7D2FE; }
 
+  /* Datentabelle */
   table { width: 100%; border-collapse: collapse; }
   th {
-    background: #374151; color: #fff; text-align: left; font-size: 8px;
-    padding: 3px 6px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.03em;
+    background: #374151; color: #fff; text-align: left;
+    font-size: 7.5px; padding: 3px 5px; font-weight: bold;
+    text-transform: uppercase; letter-spacing: 0.04em;
   }
-  th.num { width: 48px; }
-  th.bez { width: 30%; }
+  th.num { width: 44px; }
+  th.bez { }
   th.inh { width: 22%; }
-  th.bes { width: 10%; }
+  th.bes { width: 11%; }
   th.pct { width: 8%; text-align: center; }
 
-  td { padding: 3px 6px; border-bottom: 1px solid #E5E7EB; font-size: 8.5px; vertical-align: middle; }
-  td.num { font-family: DejaVu Sans Mono, monospace; color: #6B7280; font-size: 8px; }
+  td { padding: 2px 5px; border-bottom: 1px solid #E5E7EB; font-size: 8px; vertical-align: middle; }
+  td.num { font-family: DejaVu Sans Mono, monospace; color: #6B7280; font-size: 7.5px; }
   td.pct { text-align: center; }
   tr.frei td { background: #FFFBEB; color: #92400E; }
+  tr.frei .frei-badge {
+    display: inline-block; background: #FDE68A; color: #92400E;
+    padding: 0 4px; border-radius: 2px; font-weight: bold; font-size: 7.5px;
+  }
   tr.frei td.frei-val { color: #B45309; font-weight: bold; }
-  tr:not(.frei):not(.summe):nth-child(even) td { background: #F9FAFB; }
-
+  tr.even td { background: #F9FAFB; }
   tr.summe td {
-    background: #E0E7FF; color: #1E1B4B; font-weight: bold; font-size: 8px;
-    border-top: 1.5px solid #818CF8; padding: 3px 6px;
+    background: #E0E7FF; color: #1E1B4B; font-weight: bold; font-size: 7.5px;
+    border-top: 1.5px solid #818CF8; padding: 3px 5px;
   }
   tr.summe td.pct { text-align: center; }
 </style>
 </head>
 <body>
 
-{{-- Kopfzeile: wird auf jeder Seite wiederholt --}}
 <div class="page-header">
-  <table>
-    <tr>
-      <td class="ph-left">
-        <span class="ph-accent"></span>
-        <span class="ph-brand">IT Cockpit</span>
-        <span class="ph-brand-sub">– Ihr zentrales IT-Management-Tool</span>
-      </td>
-      <td class="ph-right" style="width:260px;">
-        <div class="ph-title">Stellenplan</div>
-        <div class="ph-date">Exportiert am {$datetime}</div>
-      </td>
-    </tr>
-  </table>
+  <table><tr>
+    <td>
+      <span class="ph-bar"></span><span class="ph-brand">IT Cockpit</span><span class="ph-claim">– Ihr zentrales IT-Management-Tool</span>
+    </td>
+    <td class="ph-right" style="width:220px;">
+      <div class="ph-title">Stellenplan</div>
+      <div class="ph-date">Exportiert am {$datetime}</div>
+    </td>
+  </tr></table>
 </div>
 
-{{-- Fusszeile: wird auf jeder Seite wiederholt (Seitenzahlen via Canvas) --}}
 <div class="page-footer">
-  <table>
-    <tr>
-      <td>
-        <span class="pf-logo">IT Cockpit</span>
-        Integriertes IT-Managementsystem &nbsp;·&nbsp; Stellenplan &nbsp;·&nbsp; Stand {$date}
-      </td>
-      <td class="pf-right" style="width:140px;">
-        {{-- Seitenzahl wird via DomPDF-Canvas eingefügt --}}
-      </td>
-    </tr>
-  </table>
+  <table><tr>
+    <td><span class="pf-brand">IT Cockpit</span> &nbsp;&middot;&nbsp; Integriertes IT-Managementsystem &nbsp;&middot;&nbsp; Stellenplan &nbsp;&middot;&nbsp; Stand {$date}</td>
+    <td style="width:90px;">&nbsp;</td>
+  </tr></table>
 </div>
 
-{{-- Seiteninhalt --}}
 <div class="content-header">
   <h1>Stellenplan</h1>
-  <div class="sub">Stand: {$date} &nbsp;·&nbsp; Exportiert am {$datetime}</div>
+  <div class="sub">Stand: {$date} &nbsp;&middot;&nbsp; Exportiert am {$datetime}</div>
 </div>
 
 <div class="stats">
-  <span>{$totalStellen} Stellen gesamt</span>
-  <span class="warn">{$freiCount} unbesetzt</span>
-  <span class="danger">{$totalFrei}&thinsp;% freie Kapazität</span>
+  <span class="chip">{$totalStellen} Stellen gesamt</span>
+  <span class="chip chip-warn">{$freiCount} unbesetzt</span>
+  <span class="chip chip-danger">{$totalFrei}&thinsp;% freie Kapazit&auml;t</span>
 </div>
 
 {$gruppenHtml}
@@ -519,31 +490,31 @@ HTML;
         $name    = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
 
         $rows = '';
-        foreach ($stellen as $stelle) {
-            $belegt     = $stelle->isFrei() ? 0 : (float) ($stelle->belegung ?? 0);
-            $frei       = $stelle->isFrei() ? 100 : max(0, 100 - (float) ($stelle->belegung ?? 100));
-            $rowClass   = $stelle->isFrei() ? ' class="frei"' : '';
-            $freiClass  = $frei >= 50 ? ' class="pct frei-val"' : ' class="pct"';
+        foreach ($stellen as $idx => $stelle) {
+            $belegt    = $stelle->isFrei() ? 0 : (float) ($stelle->belegung ?? 0);
+            $frei      = $stelle->isFrei() ? 100 : max(0, 100 - (float) ($stelle->belegung ?? 100));
+            $rowClass  = $stelle->isFrei() ? 'frei' : ($idx % 2 !== 0 ? 'even' : '');
+            $freiClass = 'pct' . ($frei >= 50 && !$stelle->isFrei() ? ' frei-val' : ($stelle->isFrei() ? ' frei-val' : ''));
 
-            $nr        = htmlspecialchars($stelle->stellennummer ?? '', ENT_QUOTES, 'UTF-8');
-            $bez       = htmlspecialchars($stelle->stellenbeschreibung?->bezeichnung ?? '—', ENT_QUOTES, 'UTF-8');
-            $inhaber   = $stelle->isFrei()
-                ? '<span style="background:#FDE68A;padding:1px 4px;border-radius:2px;font-weight:bold;">FREI</span>'
+            $nr       = htmlspecialchars($stelle->stellennummer ?? '', ENT_QUOTES, 'UTF-8');
+            $bez      = htmlspecialchars($stelle->stellenbeschreibung?->bezeichnung ?? '&mdash;', ENT_QUOTES, 'UTF-8');
+            $inhaber  = $stelle->isFrei()
+                ? '<span class="frei-badge">FREI</span>'
                 : htmlspecialchars($stelle->stelleninhaber?->name ?? '', ENT_QUOTES, 'UTF-8');
-            $belegStr  = $belegt > 0 ? number_format($belegt, 0) . '&thinsp;%' : '—';
-            $freiStr   = $frei > 0 ? number_format($frei, 0) . '&thinsp;%' : '—';
+            $belegStr = $belegt > 0 ? number_format($belegt, 0) . '&thinsp;%' : '&mdash;';
+            $freiStr  = $frei > 0 ? number_format($frei, 0) . '&thinsp;%' : '&mdash;';
 
             $besGrCell = $canSeeSensitive
-                ? '<td>' . htmlspecialchars($stelle->bes_gruppe ?? '—', ENT_QUOTES, 'UTF-8') . '</td>'
+                ? '<td>' . htmlspecialchars($stelle->bes_gruppe ?? '&mdash;', ENT_QUOTES, 'UTF-8') . '</td>'
                 : '';
 
-            $rows .= "<tr{$rowClass}>
+            $rows .= "<tr class=\"{$rowClass}\">
                 <td class=\"num\">{$nr}</td>
                 <td>{$bez}</td>
                 <td>{$inhaber}</td>
                 {$besGrCell}
                 <td class=\"pct\">{$belegStr}</td>
-                <td{$freiClass}>{$freiStr}</td>
+                <td class=\"{$freiClass}\">{$freiStr}</td>
             </tr>\n";
         }
 
