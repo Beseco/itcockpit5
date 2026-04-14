@@ -368,21 +368,23 @@ class ExportService
 <meta charset="UTF-8">
 <title>Stellenplan - IT Cockpit</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  @page { margin: 50pt 28pt 34pt 28pt; }
 
   body {
     font-family: DejaVu Sans, Arial, sans-serif;
     font-size: 9px;
     color: #111827;
+    margin: 0;
+    padding: 0;
   }
 
   /* Inhaltsheader */
-  .content-header   { margin-bottom: 8px; border-bottom: 1.5px solid #E0E7FF; padding-bottom: 5px; }
-  .content-header h1 { font-size: 13px; color: #1E1B4B; font-weight: bold; }
-  .content-header .sub { font-size: 7px; color: #6B7280; margin-top: 1px; }
+  .content-header   { margin: 0 0 8px 0; border-bottom: 1.5px solid #E0E7FF; padding: 0 0 5px 0; }
+  .content-header h1 { font-size: 13px; color: #1E1B4B; font-weight: bold; margin: 0; padding: 0; }
+  .content-header .sub { font-size: 7px; color: #6B7280; margin: 1px 0 0 0; padding: 0; }
 
   /* Statistik-Chips */
-  .stats { margin-bottom: 9px; font-size: 7.5px; }
+  .stats { margin: 0 0 9px 0; padding: 0; font-size: 7.5px; }
   .chip {
     display: inline-block;
     background: #F3F4F6; color: #374151;
@@ -392,14 +394,14 @@ class ExportService
   .chip-danger { background: #FEE2E2; color: #DC2626; }
 
   /* Gruppen */
-  .group { margin-bottom: 10px; page-break-inside: avoid; }
+  .group { margin: 0 0 10px 0; padding: 0; page-break-inside: avoid; }
   .group-header { background: #4338CA; padding: 3px 7px; border-radius: 2px 2px 0 0; }
   .group-header table { width: 100%; border-collapse: collapse; }
   .group-header td { padding: 0; border: none; background: transparent; color: #fff; font-size: 8.5px; font-weight: bold; }
   .group-header .gh-count { text-align: right; font-weight: normal; font-size: 7.5px; color: #C7D2FE; }
 
   /* Datentabelle */
-  table { width: 100%; border-collapse: collapse; }
+  table { width: 100%; border-collapse: collapse; margin: 0; padding: 0; }
   th {
     background: #374151; color: #fff; text-align: left;
     font-size: 7.5px; padding: 3px 5px; font-weight: bold;
