@@ -263,20 +263,24 @@ class AufgabenExportService
 <meta charset="UTF-8">
 <title>Rollen &amp; Aufgaben - IT Cockpit</title>
 <style>
-  @page { margin: 40pt 28pt; }
+  @page { margin: 50pt 28pt 34pt 28pt; }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: DejaVu Sans, Arial, sans-serif;
+    font-size: 9px;
+    color: #111827;
+    margin: 0;
+    padding: 0;
+  }
 
-  body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 9px; color: #111827; margin: 0 28pt; }
+  .content-header   { margin: 0 0 8px 0; border-bottom: 1.5px solid #E0E7FF; padding: 0 0 5px 0; }
+  .content-header h1 { font-size: 13px; color: #1E1B4B; font-weight: bold; margin: 0; padding: 0; }
+  .content-header .sub { font-size: 7px; color: #6B7280; margin: 1px 0 0 0; padding: 0; }
 
-  .content-header   { margin-bottom: 8px; border-bottom: 1.5px solid #E0E7FF; padding-bottom: 5px; }
-  .content-header h1 { font-size: 13px; color: #1E1B4B; font-weight: bold; }
-  .content-header .sub { font-size: 7px; color: #6B7280; margin-top: 1px; }
-
-  .stats { margin-bottom: 9px; font-size: 7.5px; }
+  .stats { margin: 0 0 9px 0; padding: 0; font-size: 7.5px; }
   .chip { display: inline-block; background: #F3F4F6; color: #374151; padding: 1px 7px; border-radius: 3px; margin-right: 5px; }
 
-  table { width: 100%; border-collapse: collapse; }
+  table { width: 100%; border-collapse: collapse; margin: 0; padding: 0; }
   th {
     background: #374151; color: #fff; text-align: left;
     font-size: 7.5px; padding: 3px 5px; font-weight: bold;
