@@ -27,6 +27,8 @@
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bezeichnung</th>
                         <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase w-28">Stellen</th>
                         <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase w-28">AV-Gesamt</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase w-24">Bewertet</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ergebnis</th>
                         <th class="px-4 py-3 w-32"></th>
                     </tr>
                 </thead>
@@ -41,6 +43,12 @@
                                     {{ $gesamt === 100 ? 'bg-green-100 text-green-800' : ($gesamt === 0 ? 'bg-gray-100 text-gray-500' : 'bg-red-100 text-red-700') }}">
                                     {{ $gesamt }}%
                                 </span>
+                            </td>
+                            <td class="px-4 py-3 text-center text-gray-600">
+                                {{ $sb->bewertet_am?->format('Y') ?? '—' }}
+                            </td>
+                            <td class="px-4 py-3 text-gray-700">
+                                {{ $sb->bewertungsergebnis ?? '—' }}
                             </td>
                             <td class="px-4 py-3 text-right" x-data="{ showDelete: false }">
                                 <div class="inline-flex items-center gap-1">
@@ -83,7 +91,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="px-4 py-8 text-center text-gray-400">
+                            <td colspan="6" class="px-4 py-8 text-center text-gray-400">
                                 Noch keine Stellenbeschreibungen vorhanden.
                             </td>
                         </tr>
