@@ -94,7 +94,9 @@ class StellenbeschreibungController extends Controller
         $this->authorize('base.stellenbeschreibungen.edit');
 
         $validated = $request->validate([
-            'bezeichnung' => 'required|string|max:255|unique:stellenbeschreibungen,bezeichnung,' . $stellenbeschreibung->id,
+            'bezeichnung'        => 'required|string|max:255|unique:stellenbeschreibungen,bezeichnung,' . $stellenbeschreibung->id,
+            'bewertet_am'        => 'nullable|date',
+            'bewertungsergebnis' => 'nullable|string|max:255',
         ]);
 
         $stellenbeschreibung->update($validated);

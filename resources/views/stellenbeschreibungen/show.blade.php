@@ -12,6 +12,27 @@
 
     <div class="py-6 max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
+        {{-- Bewertung --}}
+        @if($stellenbeschreibung->bewertet_am || $stellenbeschreibung->bewertungsergebnis)
+        <div class="bg-white shadow rounded-lg p-6">
+            <h3 class="text-base font-semibold text-gray-800 mb-3">Bewertung</h3>
+            <dl class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 uppercase">Bewertet am</dt>
+                    <dd class="mt-1 text-gray-800">
+                        {{ $stellenbeschreibung->bewertet_am?->format('d.m.Y') ?? '—' }}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-xs font-medium text-gray-500 uppercase">Ergebnis (Bewertungsergebnis)</dt>
+                    <dd class="mt-1 text-gray-800">
+                        {{ $stellenbeschreibung->bewertungsergebnis ?? '—' }}
+                    </dd>
+                </div>
+            </dl>
+        </div>
+        @endif
+
         {{-- Arbeitsvorgänge --}}
         <div class="bg-white shadow rounded-lg p-6">
             @php $gesamt = $stellenbeschreibung->gesamtanteil(); @endphp

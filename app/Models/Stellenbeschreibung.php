@@ -9,7 +9,11 @@ class Stellenbeschreibung extends Model
 {
     protected $table = 'stellenbeschreibungen';
 
-    protected $fillable = ['bezeichnung'];
+    protected $fillable = ['bezeichnung', 'bewertet_am', 'bewertungsergebnis'];
+
+    protected $casts = [
+        'bewertet_am' => 'date',
+    ];
 
     public function arbeitsvorgaenge(): HasMany
     {

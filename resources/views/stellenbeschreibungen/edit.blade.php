@@ -32,6 +32,21 @@
                             value="{{ old('bezeichnung', $stellenbeschreibung->bezeichnung) }}" required />
                         <x-input-error :messages="$errors->get('bezeichnung')" class="mt-1" />
                     </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <x-input-label for="bewertet_am" value="Bewertet am" />
+                            <x-text-input id="bewertet_am" name="bewertet_am" type="date" class="mt-1 block w-full"
+                                value="{{ old('bewertet_am', $stellenbeschreibung->bewertet_am?->format('Y-m-d')) }}" />
+                            <x-input-error :messages="$errors->get('bewertet_am')" class="mt-1" />
+                        </div>
+                        <div>
+                            <x-input-label for="bewertungsergebnis" value="Ergebnis (Bewertungsergebnis)" />
+                            <x-text-input id="bewertungsergebnis" name="bewertungsergebnis" type="text" class="mt-1 block w-full"
+                                value="{{ old('bewertungsergebnis', $stellenbeschreibung->bewertungsergebnis) }}"
+                                placeholder="z.B. EG 8" />
+                            <x-input-error :messages="$errors->get('bewertungsergebnis')" class="mt-1" />
+                        </div>
+                    </div>
                 </div>
                 <div class="flex items-center justify-between px-6 py-4 border-t border-gray-200 bg-gray-50 rounded-b-lg">
                     <a href="{{ route('stellenbeschreibungen.index') }}" class="text-sm text-gray-600 hover:text-gray-900">Zurück</a>
