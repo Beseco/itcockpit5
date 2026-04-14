@@ -2,15 +2,36 @@
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold text-gray-800">Rollen & Aufgaben</h2>
-            @can('base.aufgaben.create')
-                <a href="{{ route('aufgaben.create') }}"
-                   class="inline-flex items-center px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-md hover:bg-gray-700">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                    </svg>
-                    Neue Aufgabe
-                </a>
-            @endcan
+            <div class="flex items-center gap-2">
+                @can('base.aufgaben.view')
+                    @php $exportQuery = http_build_query(array_filter(request()->only(['search','gruppe_id','admin_id','nur_eigene','sort']))); @endphp
+                    <a href="{{ route('aufgaben.export.xlsx') . ($exportQuery ? '?' . $exportQuery : '') }}"
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white rounded-md"
+                       style="background:#16a34a;" onmouseover="this.style.background='#15803d'" onmouseout="this.style.background='#16a34a'">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                        Excel
+                    </a>
+                    <a href="{{ route('aufgaben.export.pdf') . ($exportQuery ? '?' . $exportQuery : '') }}"
+                       class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white rounded-md"
+                       style="background:#dc2626;" onmouseover="this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                        </svg>
+                        PDF
+                    </a>
+                @endcan
+                @can('base.aufgaben.create')
+                    <a href="{{ route('aufgaben.create') }}"
+                       class="inline-flex items-center px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-md hover:bg-gray-700">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Neue Aufgabe
+                    </a>
+                @endcan
+            </div>
         </div>
     </x-slot>
 

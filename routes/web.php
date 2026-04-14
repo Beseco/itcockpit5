@@ -3,6 +3,7 @@
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\ApplikationController;
 use App\Http\Controllers\AufgabeController;
+use App\Http\Controllers\AufgabenExportController;
 use App\Http\Controllers\AufgabeZuweisungController;
 use App\Http\Controllers\AbteilungController;
 use App\Http\Controllers\GruppeController;
@@ -82,6 +83,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/personal/avatar', [PersonalController::class, 'uploadAvatar'])->name('personal.avatar');
 
     // Aufgaben / Rollen & Aufgaben
+    Route::get('/aufgaben/export/xlsx', [AufgabenExportController::class, 'xlsx'])->name('aufgaben.export.xlsx');
+    Route::get('/aufgaben/export/pdf',  [AufgabenExportController::class, 'pdf'])->name('aufgaben.export.pdf');
     Route::resource('aufgaben', AufgabeController::class, [
         'parameters' => ['aufgaben' => 'aufgabe'],
     ]);
