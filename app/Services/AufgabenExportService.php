@@ -264,6 +264,14 @@ class AufgabenExportService
 <title>Rollen &amp; Aufgaben - IT Cockpit</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  @page {
+    margin-top: 14mm;
+    margin-bottom: 13mm;
+    margin-left: 10mm;
+    margin-right: 10mm;
+  }
+
   body { font-family: DejaVu Sans, Arial, sans-serif; font-size: 9px; color: #111827; }
 
   .content-header   { margin-bottom: 8px; border-bottom: 1.5px solid #E0E7FF; padding-bottom: 5px; }
