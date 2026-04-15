@@ -36,6 +36,9 @@ class TicketsController extends Controller
         $filterStatus = $request->input('status');
         $filterSearch = $request->input('search');
         $showClosed   = $request->boolean('closed');
+        $sortBy       = $request->input('sort', 'updated_at');
+        $sortDir      = $request->input('sort_dir', 'desc');
+        $groupBy      = $request->input('group_by', '');
 
         // Email fuer Suche bestimmen
         $email = null;
@@ -57,6 +60,18 @@ class TicketsController extends Controller
             search: $filterSearch,
         );
 
+        // Sortierung anwenden
+        $priorityOrder = ['1 low' => 1, '1 niedrig' => 1, '2 normal' => 2, '3 high' => 3, '3 hoch' => 3];
+        $tickets = match($sortBy) {
+            'priority' => $sortDir === 'asc'
+                ? $tickets->sortBy(fn($t) => $priorityOrder[strtolower($t['priority'] ?? '')] ?? 5)
+                : $tickets->sortByDesc(fn($t) => $priorityOrder[strtolower($t['priority'] ?? '')] ?? 0),
+            'state'      => $sortDir === 'asc' ? $tickets->sortBy('state')      : $tickets->sortByDesc('state'),
+            'created_at' => $sortDir === 'asc' ? $tickets->sortBy('created_at') : $tickets->sortByDesc('created_at'),
+            default      => $sortDir === 'asc' ? $tickets->sortBy('updated_at') : $tickets->sortByDesc('updated_at'),
+        };
+        $tickets = $tickets->values();
+
         // Alle offenen Tickets fuer Statistik (ungefiltert nach User)
         $allTickets = $service->searchTickets(email: null, includeClosed: false);
 
@@ -75,10 +90,13 @@ class TicketsController extends Controller
             'zammadUrl'       => rtrim($settings->url, '/'),
             'users'           => $users,
             'filters'         => [
-                'user'   => $filterUser,
-                'status' => $filterStatus,
-                'search' => $filterSearch,
-                'closed' => $showClosed,
+                'user'     => $filterUser,
+                'status'   => $filterStatus,
+                'search'   => $filterSearch,
+                'closed'   => $showClosed,
+                'sort'     => $sortBy,
+                'sort_dir' => $sortDir,
+                'group_by' => $groupBy,
             ],
             'statsByOwner'    => $statsByOwner,
             'statsByGroup'    => $statsByGroup,

@@ -79,6 +79,39 @@
                     <label for="closed" class="text-sm text-gray-600">Geschlossene</label>
                 </div>
 
+                {{-- Sortierung --}}
+                <div class="min-w-[150px]">
+                    <label for="sort" class="block text-xs font-medium text-gray-500 mb-1">Sortieren nach</label>
+                    <select name="sort" id="sort"
+                            class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="updated_at"  {{ ($filters['sort'] ?? 'updated_at') === 'updated_at'  ? 'selected' : '' }}>Letzte Änderung</option>
+                        <option value="created_at"  {{ ($filters['sort'] ?? '') === 'created_at'  ? 'selected' : '' }}>Erstellt am</option>
+                        <option value="priority"    {{ ($filters['sort'] ?? '') === 'priority'    ? 'selected' : '' }}>Priorität</option>
+                        <option value="state"       {{ ($filters['sort'] ?? '') === 'state'       ? 'selected' : '' }}>Status</option>
+                    </select>
+                </div>
+
+                {{-- Sortierrichtung --}}
+                <div class="min-w-[100px]">
+                    <label for="sort_dir" class="block text-xs font-medium text-gray-500 mb-1">Richtung</label>
+                    <select name="sort_dir" id="sort_dir"
+                            class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="desc" {{ ($filters['sort_dir'] ?? 'desc') === 'desc' ? 'selected' : '' }}>↓ Absteigend</option>
+                        <option value="asc"  {{ ($filters['sort_dir'] ?? '') === 'asc'  ? 'selected' : '' }}>↑ Aufsteigend</option>
+                    </select>
+                </div>
+
+                {{-- Gruppierung --}}
+                <div class="min-w-[130px]">
+                    <label for="group_by" class="block text-xs font-medium text-gray-500 mb-1">Gruppieren nach</label>
+                    <select name="group_by" id="group_by"
+                            class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value=""         {{ ($filters['group_by'] ?? '') === ''         ? 'selected' : '' }}>Keine</option>
+                        <option value="priority" {{ ($filters['group_by'] ?? '') === 'priority' ? 'selected' : '' }}>Priorität</option>
+                        <option value="state"    {{ ($filters['group_by'] ?? '') === 'state'    ? 'selected' : '' }}>Status</option>
+                    </select>
+                </div>
+
                 {{-- Buttons --}}
                 <div class="flex items-center gap-2 pb-0.5">
                     <button type="submit"
@@ -245,57 +278,76 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
-                        @foreach($tickets as $ticket)
                         @php
-                            $state = strtolower($ticket['state'] ?? '');
-                            $badgeClass = match(true) {
-                                str_contains($state, 'closed'), str_contains($state, 'geschlossen'), str_contains($state, 'merged')
-                                    => 'bg-gray-100 text-gray-600',
-                                str_contains($state, 'pending'), str_contains($state, 'wartend')
-                                    => 'bg-amber-100 text-amber-700',
-                                str_contains($state, 'new'), str_contains($state, 'neu')
-                                    => 'bg-blue-100 text-blue-700',
-                                default => 'bg-green-100 text-green-700',
-                            };
-                            $aging = \App\Modules\Tickets\Services\ZammadService::getTicketColor($ticket);
-                            $rowClass = match($aging) {
-                                'red'    => 'bg-red-50 hover:bg-red-100 border-l-4 border-red-400',
-                                'yellow' => 'bg-yellow-50 hover:bg-yellow-100 border-l-4 border-yellow-400',
-                                default  => 'hover:bg-gray-50',
-                            };
+                            $groupBy   = $filters['group_by'] ?? '';
+                            $colCount  = ($filters['user'] ?? 'me') !== 'me' ? 9 : 8;
+                            $groups    = $groupBy ? $tickets->groupBy($groupBy) : collect(['_all' => $tickets]);
                         @endphp
-                        <tr class="{{ $rowClass }}">
-                            <td class="px-3 py-2 font-mono text-xs text-gray-600 whitespace-nowrap">
-                                <a href="{{ $zammadUrl }}/#ticket/zoom/{{ $ticket['id'] }}"
-                                   target="_blank" rel="noopener"
-                                   class="text-indigo-600 hover:text-indigo-800 hover:underline"
-                                   title="In Zammad öffnen">
-                                    #{{ $ticket['number'] }}
-                                </a>
-                            </td>
-                            <td class="px-3 py-2 text-gray-800 max-w-xs truncate" title="{{ $ticket['title'] }}">
-                                {{ \Illuminate\Support\Str::limit($ticket['title'], 50) }}
-                            </td>
-                            <td class="px-3 py-2 whitespace-nowrap">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $badgeClass }}">
-                                    {{ $ticket['state'] }}
-                                </span>
-                            </td>
-                            <td class="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{{ $ticket['priority'] }}</td>
-                            <td class="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{{ $ticket['group'] }}</td>
-                            @if(($filters['user'] ?? 'me') !== 'me')
-                            <td class="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{{ $ticket['owner'] }}</td>
+                        @foreach($groups as $groupLabel => $groupTickets)
+                            @if($groupBy)
+                            <tr>
+                                <td colspan="{{ $colCount }}"
+                                    class="px-3 py-2 bg-indigo-50 border-y border-indigo-100">
+                                    <span class="text-xs font-semibold text-indigo-700 uppercase tracking-wide">
+                                        {{ $groupBy === 'priority' ? 'Priorität' : 'Status' }}:
+                                    </span>
+                                    <span class="text-xs font-bold text-indigo-900 ml-1">{{ $groupLabel }}</span>
+                                    <span class="ml-2 text-xs text-indigo-400">({{ $groupTickets->count() }})</span>
+                                </td>
+                            </tr>
                             @endif
-                            <td class="px-3 py-2 text-xs text-gray-500 whitespace-nowrap">
-                                {{ $ticket['created_at'] ? \Carbon\Carbon::parse($ticket['created_at'])->format('d.m.Y H:i') : '—' }}
-                            </td>
-                            <td class="px-3 py-2 text-xs text-gray-500 whitespace-nowrap">
-                                {{ $ticket['pending_time'] ? \Carbon\Carbon::parse($ticket['pending_time'])->format('d.m.Y H:i') : '—' }}
-                            </td>
-                            <td class="px-3 py-2 text-xs text-gray-500 whitespace-nowrap">
-                                {{ $ticket['updated_at'] ? \Carbon\Carbon::parse($ticket['updated_at'])->format('d.m.Y H:i') : '—' }}
-                            </td>
-                        </tr>
+                            @foreach($groupTickets as $ticket)
+                            @php
+                                $state = strtolower($ticket['state'] ?? '');
+                                $badgeClass = match(true) {
+                                    str_contains($state, 'closed'), str_contains($state, 'geschlossen'), str_contains($state, 'merged')
+                                        => 'bg-gray-100 text-gray-600',
+                                    str_contains($state, 'pending'), str_contains($state, 'wartend')
+                                        => 'bg-amber-100 text-amber-700',
+                                    str_contains($state, 'new'), str_contains($state, 'neu')
+                                        => 'bg-blue-100 text-blue-700',
+                                    default => 'bg-green-100 text-green-700',
+                                };
+                                $aging = \App\Modules\Tickets\Services\ZammadService::getTicketColor($ticket);
+                                $rowClass = match($aging) {
+                                    'red'    => 'bg-red-50 hover:bg-red-100 border-l-4 border-red-400',
+                                    'yellow' => 'bg-yellow-50 hover:bg-yellow-100 border-l-4 border-yellow-400',
+                                    default  => 'hover:bg-gray-50',
+                                };
+                            @endphp
+                            <tr class="{{ $rowClass }}">
+                                <td class="px-3 py-2 font-mono text-xs text-gray-600 whitespace-nowrap">
+                                    <a href="{{ $zammadUrl }}/#ticket/zoom/{{ $ticket['id'] }}"
+                                       target="_blank" rel="noopener"
+                                       class="text-indigo-600 hover:text-indigo-800 hover:underline"
+                                       title="In Zammad öffnen">
+                                        #{{ $ticket['number'] }}
+                                    </a>
+                                </td>
+                                <td class="px-3 py-2 text-gray-800 max-w-xs truncate" title="{{ $ticket['title'] }}">
+                                    {{ \Illuminate\Support\Str::limit($ticket['title'], 50) }}
+                                </td>
+                                <td class="px-3 py-2 whitespace-nowrap">
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $badgeClass }}">
+                                        {{ $ticket['state'] }}
+                                    </span>
+                                </td>
+                                <td class="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{{ $ticket['priority'] }}</td>
+                                <td class="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{{ $ticket['group'] }}</td>
+                                @if(($filters['user'] ?? 'me') !== 'me')
+                                <td class="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{{ $ticket['owner'] }}</td>
+                                @endif
+                                <td class="px-3 py-2 text-xs text-gray-500 whitespace-nowrap">
+                                    {{ $ticket['created_at'] ? \Carbon\Carbon::parse($ticket['created_at'])->format('d.m.Y H:i') : '—' }}
+                                </td>
+                                <td class="px-3 py-2 text-xs text-gray-500 whitespace-nowrap">
+                                    {{ $ticket['pending_time'] ? \Carbon\Carbon::parse($ticket['pending_time'])->format('d.m.Y H:i') : '—' }}
+                                </td>
+                                <td class="px-3 py-2 text-xs text-gray-500 whitespace-nowrap">
+                                    {{ $ticket['updated_at'] ? \Carbon\Carbon::parse($ticket['updated_at'])->format('d.m.Y H:i') : '—' }}
+                                </td>
+                            </tr>
+                            @endforeach
                         @endforeach
                     </tbody>
                 </table>
