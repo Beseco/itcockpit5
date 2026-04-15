@@ -41,19 +41,39 @@ class ZammadService
     }
 
     /**
-     * Tickets eines Benutzers laden (nach E-Mail)
+     * Tickets laden mit flexiblen Filtern
+     *
+     * @param string|null $email  Owner-Email (null = alle)
+     * @param bool $includeClosed Geschlossene Tickets einbeziehen
+     * @param string|null $search Freitext-Suche
      */
-    public function getTicketsForUser(string $email): Collection
+    public function searchTickets(?string $email = null, bool $includeClosed = false, ?string $search = null): Collection
     {
-        $cacheKey = 'zammad_tickets_' . md5($email);
+        $queryParts = [];
 
-        return Cache::remember($cacheKey, 180, function () use ($email) {
+        if ($email) {
+            $queryParts[] = 'owner.email:"' . $email . '"';
+        }
+
+        if (!$includeClosed) {
+            $queryParts[] = 'NOT state.name:"closed"';
+            $queryParts[] = 'NOT state.name:"merged"';
+            $queryParts[] = 'NOT state.name:"geschlossen"';
+        }
+
+        if ($search) {
+            $queryParts[] = $search;
+        }
+
+        $query = implode(' AND ', $queryParts) ?: '*';
+        $cacheKey = 'zammad_tickets_' . md5($query);
+
+        return Cache::remember($cacheKey, 180, function () use ($query) {
             try {
-                // Zammad-Suche: owner.email mit Anführungszeichen für exakte Suche
                 $response = $this->request('GET', '/api/v1/tickets/search', [
-                    'query'    => 'owner.email:"' . $email . '"',
+                    'query'    => $query,
                     'expand'   => 'true',
-                    'per_page' => 50,
+                    'per_page' => 200,
                     'page'     => 1,
                 ]);
 
@@ -61,26 +81,13 @@ class ZammadService
                     return collect();
                 }
 
-                // expand=true: Zammad liefert Tickets direkt als Array
-                // Format: [ {id, number, title, state, priority, group, ...}, ... ]
-                $ticketList = $response;
+                $ticketList = $this->extractTickets($response);
 
-                // Fallback: verschachtelte Struktur (assets-Format)
-                if (isset($response['assets']['Ticket'])) {
-                    $ticketList = array_values($response['assets']['Ticket']);
-                }
-
-                if (!is_array($ticketList) || empty($ticketList)) {
+                if (empty($ticketList)) {
                     return collect();
                 }
 
-                // Prüfen ob das erste Element ein Ticket ist (hat 'id' und 'title')
-                $first = reset($ticketList);
-                if (!is_array($first) || !isset($first['id'])) {
-                    return collect();
-                }
-
-                $tickets = collect($ticketList)->map(function ($ticket) {
+                return collect($ticketList)->map(function ($ticket) {
                     return [
                         'id'           => $ticket['id'],
                         'number'       => $ticket['number'] ?? '',
@@ -88,21 +95,28 @@ class ZammadService
                         'state'        => $ticket['state'] ?? $ticket['state_name'] ?? '—',
                         'priority'     => $ticket['priority'] ?? $ticket['priority_name'] ?? '—',
                         'group'        => $ticket['group'] ?? $ticket['group_name'] ?? '—',
+                        'owner'        => $ticket['owner'] ?? $ticket['owner_name'] ?? '—',
                         'created_at'   => $ticket['created_at'] ?? null,
                         'updated_at'   => $ticket['updated_at'] ?? null,
                         'pending_time' => $ticket['pending_time'] ?? null,
                     ];
                 })->sortByDesc('updated_at')->values();
-
-                return $tickets;
             } catch (\Exception $e) {
                 Log::warning('Zammad: Tickets konnten nicht geladen werden', [
-                    'email' => $email,
+                    'query' => $query,
                     'error' => $e->getMessage(),
                 ]);
                 return collect();
             }
         });
+    }
+
+    /**
+     * Tickets eines Benutzers laden (Convenience, ohne Closed)
+     */
+    public function getTicketsForUser(string $email): Collection
+    {
+        return $this->searchTickets(email: $email, includeClosed: false);
     }
 
     /**
@@ -119,7 +133,7 @@ class ZammadService
             $state = strtolower($ticket['state'] ?? '');
             if (str_contains($state, 'pending') || str_contains($state, 'wartend')) {
                 $pending++;
-            } elseif (!str_contains($state, 'closed') && !str_contains($state, 'geschlossen') && !str_contains($state, 'merged')) {
+            } else {
                 $open++;
             }
         }
@@ -129,6 +143,57 @@ class ZammadService
             'open'    => $open,
             'pending' => $pending,
         ];
+    }
+
+    /**
+     * Statistik: Tickets pro Mitarbeiter (alle offenen)
+     */
+    public function getStatsByOwner(Collection $tickets): Collection
+    {
+        return $tickets->groupBy('owner')->map(function ($group, $owner) {
+            $open = 0;
+            $pending = 0;
+            foreach ($group as $ticket) {
+                $state = strtolower($ticket['state'] ?? '');
+                if (str_contains($state, 'pending') || str_contains($state, 'wartend')) {
+                    $pending++;
+                } else {
+                    $open++;
+                }
+            }
+            return [
+                'owner'   => $owner,
+                'total'   => $group->count(),
+                'open'    => $open,
+                'pending' => $pending,
+            ];
+        })->sortByDesc('total')->values();
+    }
+
+    /**
+     * Statistik: Tickets pro Gruppe
+     */
+    public function getStatsByGroup(Collection $tickets): Collection
+    {
+        return $tickets->groupBy('group')->map(function ($group, $name) {
+            return [
+                'group' => $name,
+                'total' => $group->count(),
+            ];
+        })->sortByDesc('total')->values();
+    }
+
+    /**
+     * Statistik: Tickets pro Priorität
+     */
+    public function getStatsByPriority(Collection $tickets): Collection
+    {
+        return $tickets->groupBy('priority')->map(function ($group, $name) {
+            return [
+                'priority' => $name,
+                'total'    => $group->count(),
+            ];
+        })->sortByDesc('total')->values();
     }
 
     /**
@@ -150,6 +215,30 @@ class ZammadService
             'per_page' => 5,
             'page'     => 1,
         ]);
+    }
+
+    /**
+     * Tickets aus der API-Antwort extrahieren (verschiedene Formate)
+     */
+    private function extractTickets(array $response): array
+    {
+        // expand=true: direkt als Array
+        if (isset($response[0]['id'])) {
+            return $response;
+        }
+
+        // assets-Format
+        if (isset($response['assets']['Ticket'])) {
+            return array_values($response['assets']['Ticket']);
+        }
+
+        // Fallback: Prüfe ob numerisch indiziertes Array mit Ticket-Objekten
+        $first = reset($response);
+        if (is_array($first) && isset($first['id']) && isset($first['title'])) {
+            return $response;
+        }
+
+        return [];
     }
 
     /**
