@@ -42,16 +42,30 @@
                     ? ['bg' => 'bg-yellow-50', 'text' => 'text-yellow-700', 'border' => 'border-yellow-200', 'label' => 'Erhöht']
                     : ['bg' => 'bg-red-50',    'text' => 'text-red-700',    'border' => 'border-red-200',    'label' => 'Kritisch']);
         @endphp
-        <div class="mt-3 p-3 rounded-md border {{ $scoreStyle['bg'] }} {{ $scoreStyle['border'] }} flex items-center justify-between">
-            <div>
-                <div class="text-xs text-gray-500">Mein Score</div>
-                <div class="text-2xl font-bold {{ $scoreStyle['text'] }}">{{ number_format($scoreVal, 1) }}</div>
-                <div class="text-xs {{ $scoreStyle['text'] }}">{{ $scoreStyle['label'] }}</div>
+
+        <div class="mt-3 pt-3 border-t border-gray-100">
+            <div class="grid grid-cols-3 gap-2">
+                {{-- Score --}}
+                <div class="rounded-md border p-2 text-center {{ $scoreStyle['bg'] }} {{ $scoreStyle['border'] }}">
+                    <div class="text-xs text-gray-500 mb-0.5">Score</div>
+                    <div class="text-xl font-bold {{ $scoreStyle['text'] }}">{{ number_format($scoreVal, 1) }}</div>
+                    <div class="text-xs {{ $scoreStyle['text'] }}">{{ $scoreStyle['label'] }}</div>
+                </div>
+                {{-- Gelbe Tickets --}}
+                <div class="rounded-md border border-yellow-200 bg-yellow-50 p-2 text-center">
+                    <div class="text-xs text-gray-500 mb-0.5">Veraltet</div>
+                    <div class="text-xl font-bold text-yellow-600">{{ $ticketScore->yellow_count }}</div>
+                    <div class="text-xs text-yellow-600">gelb</div>
+                </div>
+                {{-- Rote Tickets --}}
+                <div class="rounded-md border border-red-200 bg-red-50 p-2 text-center">
+                    <div class="text-xs text-gray-500 mb-0.5">Kritisch</div>
+                    <div class="text-xl font-bold text-red-600">{{ $ticketScore->red_count }}</div>
+                    <div class="text-xs text-red-600">rot</div>
+                </div>
             </div>
-            <div class="text-right text-xs text-gray-400">
-                <div>{{ $ticketScore->yellow_count }} gelb</div>
-                <div>{{ $ticketScore->red_count }} rot</div>
-                <div class="mt-1">{{ $ticketScore->calculated_at->format('d.m.Y') }}</div>
+            <div class="text-right text-xs text-gray-400 mt-1">
+                Stand: {{ $ticketScore->calculated_at->format('d.m.Y') }}
             </div>
         </div>
         @endif
