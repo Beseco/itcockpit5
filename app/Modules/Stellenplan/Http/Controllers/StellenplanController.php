@@ -16,8 +16,15 @@ class StellenplanController extends Controller
                                       ->orderBy('stellennummer'),
         ])->orderBy('name')->get();
 
+        $rootGruppen = Gruppe::roots()->with([
+            'childrenRecursive',
+            'stellen.stellenbeschreibung',
+            'stellen.stelleninhaber',
+            'vorgesetzter',
+        ])->get();
+
         $canSeeSensitive = auth()->user()->can('module.stellenplan.view_sensitive');
 
-        return view('stellenplan::index', compact('gruppen', 'canSeeSensitive'));
+        return view('stellenplan::index', compact('gruppen', 'rootGruppen', 'canSeeSensitive'));
     }
 }

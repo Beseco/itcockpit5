@@ -42,6 +42,16 @@ class Gruppe extends Model
         return $this->hasMany(Stelle::class);
     }
 
+    public function childrenRecursive()
+    {
+        return $this->children()->with([
+            'childrenRecursive',
+            'stellen.stellenbeschreibung',
+            'stellen.stelleninhaber',
+            'vorgesetzter',
+        ]);
+    }
+
     public function aufgabenZuweisungen()
     {
         return $this->hasMany(AufgabeZuweisung::class);

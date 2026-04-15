@@ -42,15 +42,40 @@
     @endphp
 
     <div class="py-6 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4"
-         x-data="{ deleteId: null, deleteName: '' }">
+         x-data="{ deleteId: null, deleteName: '', view: 'tabelle' }">
 
-        {{-- Zusammenfassung --}}
+        {{-- Zusammenfassung + Toggle --}}
+        <div class="flex items-center justify-between">
         <div style="display:flex;align-items:center;gap:12px;font-size:0.875rem;">
             <span style="color:#6b7280;">{{ $totalStellen }} Stellen</span>
             <span style="color:#d1d5db;">·</span>
             <span style="color:#d97706;font-weight:500;">{{ $freiCount }} unbesetzt</span>
             <span style="color:#d1d5db;">·</span>
             <span style="color:#dc2626;font-weight:500;">{{ number_format($totalFrei, 0) }} % freie Kapazität</span>
+        </div>
+        <div class="inline-flex rounded-md shadow-sm" role="group">
+            <button @click="view = 'tabelle'"
+                    :class="view === 'tabelle'
+                        ? 'bg-indigo-600 text-white border-indigo-600'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'"
+                    class="px-3 py-1.5 text-xs font-medium border rounded-l-md transition-colors">
+                <svg class="inline w-3.5 h-3.5 mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18M3 6h18M3 18h18"/>
+                </svg>
+                Tabelle
+            </button>
+            <button @click="view = 'diagramm'"
+                    :class="view === 'diagramm'
+                        ? 'bg-indigo-600 text-white border-indigo-600'
+                        : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-300'"
+                    class="px-3 py-1.5 text-xs font-medium border rounded-r-md -ml-px transition-colors">
+                <svg class="inline w-3.5 h-3.5 mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM9 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 10v2m0 0v1m0-1h5m5-2v2m0 0v1m0-1h-5m0 0v2"/>
+                </svg>
+                Diagramm
+            </button>
+        </div>
         </div>
 
         @if(session('success'))
@@ -65,6 +90,15 @@
             </div>
         @endif
 
+        @php
+            $ohneGruppe = \App\Models\Stelle::whereNull('gruppe_id')
+                ->with(['stellenbeschreibung','stelleninhaber'])
+                ->orderBy('stellennummer')->get();
+            $ogFrei = $ohneGruppe->sum(fn($s) => $s->isFrei() ? 100 : max(0, 100 - ($s->belegung ?? 100)));
+        @endphp
+
+        {{-- ===== TABELLENANSICHT ===== --}}
+        <div x-show="view === 'tabelle'" class="space-y-4">
         @foreach($gruppen as $gruppe)
             @if($gruppe->stellen->isNotEmpty())
             @php
@@ -197,12 +231,6 @@
         @endforeach
 
         {{-- Stellen ohne Gruppe --}}
-        @php
-            $ohneGruppe = \App\Models\Stelle::whereNull('gruppe_id')
-                ->with(['stellenbeschreibung','stelleninhaber'])
-                ->orderBy('stellennummer')->get();
-            $ogFrei = $ohneGruppe->sum(fn($s) => $s->isFrei() ? 100 : max(0, 100 - ($s->belegung ?? 100)));
-        @endphp
         @if($ohneGruppe->isNotEmpty())
         <div class="bg-white shadow rounded-lg overflow-hidden">
             <div class="px-5 py-3 bg-gray-100 border-b border-gray-200 flex items-center justify-between">
@@ -306,6 +334,99 @@
             </table>
         </div>
         @endif
+        </div>{{-- Ende TABELLENANSICHT --}}
+
+        {{-- ===== DIAGRAMMANSICHT ===== --}}
+        <div x-show="view === 'diagramm'" x-cloak>
+            <style>
+                .orgchart-children {
+                    position: relative;
+                    padding-top: 1.5rem;
+                }
+                /* Vertikale Linie vom Eltern-Knoten nach unten */
+                .orgchart-node > .orgchart-children::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 50%;
+                    border-left: 2px solid #c7d2fe;
+                    height: 1.5rem;
+                }
+                /* Vertikale Linie von jedem Kind nach oben */
+                .orgchart-children > .orgchart-node {
+                    position: relative;
+                    padding-top: 1.5rem;
+                }
+                .orgchart-children > .orgchart-node::before {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 50%;
+                    border-left: 2px solid #c7d2fe;
+                    height: 1.5rem;
+                }
+                /* Horizontale Verbindungslinie zwischen Geschwistern */
+                .orgchart-children > .orgchart-node:not(:only-child)::after {
+                    content: '';
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    border-top: 2px solid #c7d2fe;
+                }
+                .orgchart-children > .orgchart-node:first-child::after {
+                    left: 50%;
+                }
+                .orgchart-children > .orgchart-node:last-child::after {
+                    right: 50%;
+                }
+            </style>
+
+            <div class="overflow-x-auto pb-8">
+                <div class="inline-flex flex-col items-center min-w-full py-4">
+                    @if($rootGruppen->isNotEmpty())
+                        <div class="flex flex-row items-start gap-8">
+                            @foreach($rootGruppen as $rootGruppe)
+                                @include('stellenplan::_orgchart_node', ['gruppe' => $rootGruppe])
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="text-gray-400 text-sm py-8">Keine Gruppen vorhanden.</div>
+                    @endif
+
+                    {{-- Stellen ohne Gruppe im Diagramm --}}
+                    @if($ohneGruppe->isNotEmpty())
+                        <div class="mt-8 flex justify-center">
+                            <div class="bg-white border-2 border-dashed border-gray-300 rounded-lg shadow-sm w-64 overflow-hidden">
+                                <div class="bg-gray-100 px-3 py-2 border-b border-gray-200">
+                                    <div class="text-sm font-semibold text-gray-600">Ohne Gruppe</div>
+                                </div>
+                                <div class="divide-y divide-gray-100">
+                                    @foreach($ohneGruppe as $stelle)
+                                        <div class="px-3 py-1.5 flex items-center justify-between text-xs gap-2
+                                                    {{ $stelle->isFrei() ? 'bg-amber-50' : '' }}">
+                                            <div class="truncate min-w-0">
+                                                <span class="font-mono text-gray-400">{{ $stelle->stellennummer }}</span>
+                                                <span class="ml-1 {{ $stelle->isFrei() ? 'text-gray-400' : 'text-gray-700' }}">
+                                                    {{ \Illuminate\Support\Str::limit($stelle->stellenbeschreibung?->bezeichnung ?? '—', 18) }}
+                                                </span>
+                                            </div>
+                                            <div class="flex-shrink-0">
+                                                @if($stelle->isFrei())
+                                                    <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-700">FREI</span>
+                                                @else
+                                                    <span class="text-gray-500">{{ $stelle->stelleninhaber->name }}</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
 
         {{-- Delete Modal --}}
         <div x-show="deleteId !== null" x-cloak
