@@ -88,6 +88,56 @@
             </form>
         </div>
 
+        {{-- Verbindungstest --}}
+        <div class="bg-white shadow rounded-lg overflow-hidden"
+             x-data="{
+                 testing: false,
+                 result: null,
+                 async test() {
+                     this.testing = true;
+                     this.result = null;
+                     try {
+                         const res = await fetch('{{ route('tickets.settings.test-connection') }}', {
+                             method: 'POST',
+                             headers: {
+                                 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                                 'Accept': 'application/json',
+                             },
+                         });
+                         this.result = await res.json();
+                     } catch (e) {
+                         this.result = { success: false, message: 'Netzwerkfehler: ' + e.message };
+                     }
+                     this.testing = false;
+                 }
+             }">
+            <div class="px-6 py-4 border-b border-gray-100">
+                <h3 class="text-sm font-semibold text-gray-800">Verbindungstest</h3>
+                <p class="text-xs text-gray-500 mt-0.5">Prüft die Verbindung mit den gespeicherten Einstellungen.</p>
+            </div>
+            <div class="p-6">
+                <button @click="test()" :disabled="testing"
+                        class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 disabled:opacity-50">
+                    <svg x-show="testing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    <span x-text="testing ? 'Teste...' : 'Verbindung testen'"></span>
+                </button>
+
+                <div x-show="result" x-cloak class="mt-4">
+                    <div x-show="result?.success"
+                         class="p-3 bg-green-50 border border-green-200 rounded-md text-sm text-green-700">
+                        <span x-text="result?.message"></span>
+                    </div>
+                    <div x-show="!result?.success"
+                         class="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700">
+                        <span x-text="result?.message"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- Scoring & E-Mail-Benachrichtigung --}}
         <div class="bg-white shadow rounded-lg overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100">
@@ -143,56 +193,6 @@
                     </button>
                 </div>
             </form>
-        </div>
-
-        {{-- Verbindungstest --}}
-        <div class="bg-white shadow rounded-lg overflow-hidden"
-             x-data="{
-                 testing: false,
-                 result: null,
-                 async test() {
-                     this.testing = true;
-                     this.result = null;
-                     try {
-                         const res = await fetch('{{ route('tickets.settings.test-connection') }}', {
-                             method: 'POST',
-                             headers: {
-                                 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
-                                 'Accept': 'application/json',
-                             },
-                         });
-                         this.result = await res.json();
-                     } catch (e) {
-                         this.result = { success: false, message: 'Netzwerkfehler: ' + e.message };
-                     }
-                     this.testing = false;
-                 }
-             }">
-            <div class="px-6 py-4 border-b border-gray-100">
-                <h3 class="text-sm font-semibold text-gray-800">Verbindungstest</h3>
-                <p class="text-xs text-gray-500 mt-0.5">Prüft die Verbindung mit den gespeicherten Einstellungen.</p>
-            </div>
-            <div class="p-6">
-                <button @click="test()" :disabled="testing"
-                        class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 disabled:opacity-50">
-                    <svg x-show="testing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                    </svg>
-                    <span x-text="testing ? 'Teste...' : 'Verbindung testen'"></span>
-                </button>
-
-                <div x-show="result" x-cloak class="mt-4">
-                    <div x-show="result?.success"
-                         class="p-3 bg-green-50 border border-green-200 rounded-md text-sm text-green-700">
-                        <span x-text="result?.message"></span>
-                    </div>
-                    <div x-show="!result?.success"
-                         class="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700">
-                        <span x-text="result?.message"></span>
-                    </div>
-                </div>
-            </div>
         </div>
 
     </div>
