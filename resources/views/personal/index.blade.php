@@ -369,6 +369,9 @@
         </div>
         @endif
 
+        {{-- MEINE TICKETS (Zammad) --}}
+        @include('tickets::_personal_tickets')
+
         {{-- BESTELLUNGEN + ANKÜNDIGUNGEN --}}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
