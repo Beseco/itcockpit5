@@ -33,23 +33,28 @@ class TicketsController extends Controller
 
         // Filter aus Request
         $filterUser   = $request->input('user', 'me');
+        $filterStatus = $request->input('status');
         $filterSearch = $request->input('search');
         $showClosed   = $request->boolean('closed');
 
         // Email fuer Suche bestimmen
         $email = null;
+        $unassigned = false;
         if ($filterUser === 'me') {
             $email = Auth::user()->email;
+        } elseif ($filterUser === 'unassigned') {
+            $unassigned = true;
         } elseif ($filterUser !== 'all') {
             $selectedUser = User::find($filterUser);
             $email = $selectedUser?->email;
         }
-        // filterUser === 'all' -> email bleibt null -> alle Tickets
 
         $tickets = $service->searchTickets(
             email: $email,
+            unassigned: $unassigned,
             includeClosed: $showClosed,
-            search: $filterSearch
+            state: $filterStatus ?: null,
+            search: $filterSearch,
         );
 
         // Alle offenen Tickets fuer Statistik (ungefiltert nach User)
@@ -71,6 +76,7 @@ class TicketsController extends Controller
             'users'           => $users,
             'filters'         => [
                 'user'   => $filterUser,
+                'status' => $filterStatus,
                 'search' => $filterSearch,
                 'closed' => $showClosed,
             ],

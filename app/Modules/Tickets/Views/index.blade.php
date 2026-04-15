@@ -39,11 +39,26 @@
                             class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
                         <option value="me" {{ ($filters['user'] ?? 'me') === 'me' ? 'selected' : '' }}>Meine Tickets</option>
                         <option value="all" {{ ($filters['user'] ?? '') === 'all' ? 'selected' : '' }}>Alle Mitarbeiter</option>
+                        <option value="unassigned" {{ ($filters['user'] ?? '') === 'unassigned' ? 'selected' : '' }}>Nicht zugewiesen</option>
                         @foreach($users as $u)
                             <option value="{{ $u->id }}" {{ ($filters['user'] ?? '') == $u->id ? 'selected' : '' }}>
                                 {{ $u->name }}
                             </option>
                         @endforeach
+                    </select>
+                </div>
+
+                {{-- Status --}}
+                <div class="min-w-[140px]">
+                    <label for="status" class="block text-xs font-medium text-gray-500 mb-1">Status</label>
+                    <select name="status" id="status"
+                            class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="" {{ empty($filters['status'] ?? '') ? 'selected' : '' }}>Alle</option>
+                        <option value="new" {{ ($filters['status'] ?? '') === 'new' ? 'selected' : '' }}>Neu</option>
+                        <option value="open" {{ ($filters['status'] ?? '') === 'open' ? 'selected' : '' }}>Offen</option>
+                        <option value="pending reminder" {{ ($filters['status'] ?? '') === 'pending reminder' ? 'selected' : '' }}>Warten auf Erinnerung</option>
+                        <option value="pending close" {{ ($filters['status'] ?? '') === 'pending close' ? 'selected' : '' }}>Warten auf Schließen</option>
+                        <option value="closed" {{ ($filters['status'] ?? '') === 'closed' ? 'selected' : '' }}>Geschlossen</option>
                     </select>
                 </div>
 

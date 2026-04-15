@@ -47,18 +47,37 @@ class ZammadService
      * @param bool $includeClosed Geschlossene Tickets einbeziehen
      * @param string|null $search Freitext-Suche
      */
-    public function searchTickets(?string $email = null, bool $includeClosed = false, ?string $search = null): Collection
+    /**
+     * @param string|null $email       Owner-Email (null = alle)
+     * @param bool        $unassigned  Nur nicht zugewiesene Tickets
+     * @param bool        $includeClosed Geschlossene einbeziehen
+     * @param string|null $state       Status-Filter (z.B. "open", "pending")
+     * @param string|null $search      Freitext-Suche
+     */
+    public function searchTickets(
+        ?string $email = null,
+        bool $unassigned = false,
+        bool $includeClosed = false,
+        ?string $state = null,
+        ?string $search = null,
+    ): Collection
     {
         $queryParts = [];
 
-        if ($email) {
+        if ($unassigned) {
+            $queryParts[] = 'owner_id:1';  // Zammad: owner_id 1 = nicht zugewiesen (System/nobody)
+        } elseif ($email) {
             $queryParts[] = 'owner.email:"' . $email . '"';
         }
 
-        if (!$includeClosed) {
+        if (!$includeClosed && !$state) {
             $queryParts[] = 'NOT state.name:"closed"';
             $queryParts[] = 'NOT state.name:"merged"';
             $queryParts[] = 'NOT state.name:"geschlossen"';
+        }
+
+        if ($state) {
+            $queryParts[] = 'state.name:"' . $state . '"';
         }
 
         if ($search) {
