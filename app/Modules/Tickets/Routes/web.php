@@ -12,5 +12,6 @@ Route::middleware(['auth', 'module.permission:tickets,view'])->group(function ()
 Route::middleware(['auth', 'module.permission:tickets,config'])->group(function () {
     Route::get('/settings',                  [TicketsSettingsController::class, 'index'])->name('settings');
     Route::post('/settings',                 [TicketsSettingsController::class, 'update'])->name('settings.update');
+    Route::post('/settings/scoring',         [TicketsSettingsController::class, 'updateScoring'])->name('settings.update-scoring');
     Route::post('/settings/test-connection', [TicketsSettingsController::class, 'testConnection'])->name('settings.test-connection');
 });

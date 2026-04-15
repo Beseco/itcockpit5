@@ -96,7 +96,7 @@
                     Jeden Freitag um 12:00 Uhr wird ein Score je Benutzer berechnet. Gelbe Tickets (+0,5) und rote Tickets (+1,0) fließen ein.
                 </p>
             </div>
-            <form action="{{ route('tickets.settings.update') }}" method="POST" class="p-6 space-y-5">
+            <form action="{{ route('tickets.settings.update-scoring') }}" method="POST" class="p-6 space-y-5">
                 @csrf
 
                 <div class="flex items-center gap-2">
