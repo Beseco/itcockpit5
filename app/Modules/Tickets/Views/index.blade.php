@@ -257,8 +257,14 @@
                                     => 'bg-blue-100 text-blue-700',
                                 default => 'bg-green-100 text-green-700',
                             };
+                            $aging = \App\Modules\Tickets\Services\ZammadService::getTicketColor($ticket);
+                            $rowClass = match($aging) {
+                                'red'    => 'bg-red-50 hover:bg-red-100 border-l-4 border-red-400',
+                                'yellow' => 'bg-yellow-50 hover:bg-yellow-100 border-l-4 border-yellow-400',
+                                default  => 'hover:bg-gray-50',
+                            };
                         @endphp
-                        <tr class="hover:bg-gray-50">
+                        <tr class="{{ $rowClass }}">
                             <td class="px-3 py-2 font-mono text-xs text-gray-600 whitespace-nowrap">
                                 <a href="{{ $zammadUrl }}/#ticket/zoom/{{ $ticket['id'] }}"
                                    target="_blank" rel="noopener"
@@ -295,8 +301,20 @@
                 </table>
             </div>
 
-            <div class="text-xs text-gray-400">
-                {{ $tickets->count() }} Tickets &middot; Daten werden alle 3 Minuten aktualisiert
+            <div class="flex items-center justify-between flex-wrap gap-2">
+                <div class="text-xs text-gray-400">
+                    {{ $tickets->count() }} Tickets &middot; Daten werden alle 3 Minuten aktualisiert
+                </div>
+                <div class="flex items-center gap-4 text-xs text-gray-500">
+                    <span class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-sm bg-yellow-300 border border-yellow-400 inline-block"></span>
+                        Veraltet (&gt;14 Tage erstellt / &gt;7 Tage keine Änderung)
+                    </span>
+                    <span class="flex items-center gap-1.5">
+                        <span class="w-3 h-3 rounded-sm bg-red-300 border border-red-400 inline-block"></span>
+                        Kritisch (&gt;30 Tage erstellt / &gt;7 Tage keine Änderung)
+                    </span>
+                </div>
             </div>
         @endif
 

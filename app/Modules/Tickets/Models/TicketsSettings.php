@@ -9,19 +9,30 @@ class TicketsSettings extends Model
 {
     protected $table = 'tickets_settings';
 
-    protected $fillable = ['url', 'api_token', 'enabled'];
+    protected $fillable = [
+        'url', 'api_token', 'enabled',
+        'email_enabled', 'email_threshold', 'score_green_max', 'score_red_min',
+    ];
 
     protected $casts = [
-        'enabled' => 'boolean',
+        'enabled'       => 'boolean',
+        'email_enabled' => 'boolean',
+        'email_threshold' => 'decimal:1',
+        'score_green_max' => 'decimal:1',
+        'score_red_min'   => 'decimal:1',
     ];
 
     /** Singleton: Einstellungen abrufen oder Standardwerte erzeugen */
     public static function getSingleton(): self
     {
         return self::firstOrNew([], [
-            'url'       => '',
-            'api_token' => null,
-            'enabled'   => false,
+            'url'             => '',
+            'api_token'       => null,
+            'enabled'         => false,
+            'email_enabled'   => false,
+            'email_threshold' => 3.0,
+            'score_green_max' => 3.0,
+            'score_red_min'   => 6.0,
         ]);
     }
 

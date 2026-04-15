@@ -88,6 +88,63 @@
             </form>
         </div>
 
+        {{-- Scoring & E-Mail-Benachrichtigung --}}
+        <div class="bg-white shadow rounded-lg overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100">
+                <h3 class="text-sm font-semibold text-gray-800">Scoring & E-Mail-Benachrichtigung</h3>
+                <p class="text-xs text-gray-500 mt-0.5">
+                    Jeden Freitag um 12:00 Uhr wird ein Score je Benutzer berechnet. Gelbe Tickets (+0,5) und rote Tickets (+1,0) fließen ein.
+                </p>
+            </div>
+            <form action="{{ route('tickets.settings.update') }}" method="POST" class="p-6 space-y-5">
+                @csrf
+
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" name="email_enabled" id="email_enabled" value="1"
+                           {{ old('email_enabled', $settings->email_enabled) ? 'checked' : '' }}
+                           class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                    <label for="email_enabled" class="text-sm text-gray-700">E-Mail-Benachrichtigung aktivieren</label>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label for="email_threshold" class="block text-sm font-medium text-gray-700 mb-1">
+                            Mindest-Score für E-Mail
+                        </label>
+                        <input type="number" name="email_threshold" id="email_threshold" step="0.5" min="0"
+                               value="{{ old('email_threshold', $settings->email_threshold ?? 3.0) }}"
+                               class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <p class="text-xs text-gray-400 mt-1">E-Mail nur versenden, wenn Score ≥ diesem Wert</p>
+                    </div>
+                    <div>
+                        <label for="score_green_max" class="block text-sm font-medium text-gray-700 mb-1">
+                            Grenze Grün → Gelb
+                        </label>
+                        <input type="number" name="score_green_max" id="score_green_max" step="0.5" min="0"
+                               value="{{ old('score_green_max', $settings->score_green_max ?? 3.0) }}"
+                               class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <p class="text-xs text-gray-400 mt-1">Score ≤ diesem Wert → grün</p>
+                    </div>
+                    <div>
+                        <label for="score_red_min" class="block text-sm font-medium text-gray-700 mb-1">
+                            Grenze Gelb → Rot
+                        </label>
+                        <input type="number" name="score_red_min" id="score_red_min" step="0.5" min="0"
+                               value="{{ old('score_red_min', $settings->score_red_min ?? 6.0) }}"
+                               class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <p class="text-xs text-gray-400 mt-1">Score ≥ diesem Wert → rot</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end pt-2">
+                    <button type="submit"
+                            class="inline-flex items-center px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-md hover:bg-gray-700">
+                        Speichern
+                    </button>
+                </div>
+            </form>
+        </div>
+
         {{-- Verbindungstest --}}
         <div class="bg-white shadow rounded-lg overflow-hidden"
              x-data="{

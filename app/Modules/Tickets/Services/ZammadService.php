@@ -131,6 +131,39 @@ class ZammadService
     }
 
     /**
+     * Ticket-Highlighting-Farbe bestimmen (null | 'yellow' | 'red')
+     *
+     * Regeln:
+     * - new/open: erstellt > 30 Tage UND letzte Änderung > 7 Tage → rot
+     * - new/open: erstellt > 14 Tage UND letzte Änderung > 7 Tage → gelb
+     * - pending reminder: warten_bis < heute − 7 Tage → rot
+     * - pending reminder: warten_bis < heute → gelb
+     */
+    public static function getTicketColor(array $ticket): ?string
+    {
+        $state       = strtolower($ticket['state'] ?? '');
+        $createdAt   = !empty($ticket['created_at'])   ? \Carbon\Carbon::parse($ticket['created_at'])   : null;
+        $updatedAt   = !empty($ticket['updated_at'])   ? \Carbon\Carbon::parse($ticket['updated_at'])   : null;
+        $pendingTime = !empty($ticket['pending_time']) ? \Carbon\Carbon::parse($ticket['pending_time']) : null;
+
+        $isOpenState = in_array($state, ['new', 'open', 'neu', 'offen']);
+        $isPending   = str_contains($state, 'pending reminder') || str_contains($state, 'wartend');
+
+        if ($isPending && $pendingTime && $pendingTime->isPast()) {
+            return $pendingTime->diffInDays(now()) >= 7 ? 'red' : 'yellow';
+        }
+
+        if ($isOpenState && $createdAt && $updatedAt) {
+            $ageCreated = $createdAt->diffInDays(now());
+            $ageUpdated = $updatedAt->diffInDays(now());
+            if ($ageCreated >= 30 && $ageUpdated >= 7) return 'red';
+            if ($ageCreated >= 14 && $ageUpdated >= 7) return 'yellow';
+        }
+
+        return null;
+    }
+
+    /**
      * Tickets eines Benutzers laden (Convenience, ohne Closed)
      */
     public function getTicketsForUser(string $email): Collection
