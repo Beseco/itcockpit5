@@ -49,25 +49,45 @@ class ZammadService
 
         return Cache::remember($cacheKey, 180, function () use ($email) {
             try {
+                // Zammad-Suche: owner.email mit Anführungszeichen für exakte Suche
                 $response = $this->request('GET', '/api/v1/tickets/search', [
-                    'query'    => "owner.email:{$email}",
+                    'query'    => 'owner.email:"' . $email . '"',
                     'expand'   => 'true',
                     'per_page' => 50,
                     'page'     => 1,
                 ]);
 
-                if ($response === null || !isset($response['assets']['Ticket'])) {
+                if ($response === null) {
                     return collect();
                 }
 
-                $tickets = collect($response['assets']['Ticket'])->map(function ($ticket) use ($response) {
+                // expand=true: Zammad liefert Tickets direkt als Array
+                // Format: [ {id, number, title, state, priority, group, ...}, ... ]
+                $ticketList = $response;
+
+                // Fallback: verschachtelte Struktur (assets-Format)
+                if (isset($response['assets']['Ticket'])) {
+                    $ticketList = array_values($response['assets']['Ticket']);
+                }
+
+                if (!is_array($ticketList) || empty($ticketList)) {
+                    return collect();
+                }
+
+                // Prüfen ob das erste Element ein Ticket ist (hat 'id' und 'title')
+                $first = reset($ticketList);
+                if (!is_array($first) || !isset($first['id'])) {
+                    return collect();
+                }
+
+                $tickets = collect($ticketList)->map(function ($ticket) {
                     return [
                         'id'           => $ticket['id'],
                         'number'       => $ticket['number'] ?? '',
                         'title'        => $ticket['title'] ?? '',
-                        'state'        => $this->resolveAssetName($response, 'TicketState', $ticket['state_id'] ?? null),
-                        'priority'     => $this->resolveAssetName($response, 'TicketPriority', $ticket['priority_id'] ?? null),
-                        'group'        => $this->resolveAssetName($response, 'Group', $ticket['group_id'] ?? null),
+                        'state'        => $ticket['state'] ?? $ticket['state_name'] ?? '—',
+                        'priority'     => $ticket['priority'] ?? $ticket['priority_name'] ?? '—',
+                        'group'        => $ticket['group'] ?? $ticket['group_name'] ?? '—',
                         'created_at'   => $ticket['created_at'] ?? null,
                         'updated_at'   => $ticket['updated_at'] ?? null,
                         'pending_time' => $ticket['pending_time'] ?? null,
@@ -120,15 +140,16 @@ class ZammadService
     }
 
     /**
-     * Name aus Assets auflösen (State, Priority, Group)
+     * Rohe API-Antwort zurückgeben (für Debugging)
      */
-    private function resolveAssetName(array $response, string $assetType, ?int $id): string
+    public function debugSearch(string $email): ?array
     {
-        if (!$id || !isset($response['assets'][$assetType][$id])) {
-            return '—';
-        }
-
-        return $response['assets'][$assetType][$id]['name'] ?? '—';
+        return $this->request('GET', '/api/v1/tickets/search', [
+            'query'    => 'owner.email:"' . $email . '"',
+            'expand'   => 'true',
+            'per_page' => 5,
+            'page'     => 1,
+        ]);
     }
 
     /**

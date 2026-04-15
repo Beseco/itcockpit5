@@ -9,6 +9,27 @@ use Illuminate\Support\Facades\Auth;
 
 class TicketsController extends Controller
 {
+    /**
+     * Debug: Rohe API-Antwort anzeigen (temporär)
+     */
+    public function debug()
+    {
+        $settings = TicketsSettings::getSingleton();
+
+        if (!$settings->isConfigured()) {
+            return response()->json(['error' => 'Nicht konfiguriert']);
+        }
+
+        $service = new ZammadService();
+        $service->clearCache(Auth::user()->email);
+
+        return response()->json([
+            'email'    => Auth::user()->email,
+            'raw'      => $service->debugSearch(Auth::user()->email),
+            'parsed'   => $service->getTicketsForUser(Auth::user()->email),
+        ]);
+    }
+
     public function index()
     {
         $settings = TicketsSettings::getSingleton();
