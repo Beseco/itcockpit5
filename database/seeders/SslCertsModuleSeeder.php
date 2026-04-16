@@ -30,6 +30,7 @@ class SslCertsModuleSeeder extends Seeder
             ['name' => 'sslcerts.view',   'module_id' => $module->id],
             ['name' => 'sslcerts.edit',   'module_id' => $module->id],
             ['name' => 'sslcerts.delete', 'module_id' => $module->id],
+            ['name' => 'sslcerts.config', 'module_id' => $module->id],
         ];
 
         foreach ($permissions as $perm) {
@@ -42,16 +43,16 @@ class SslCertsModuleSeeder extends Seeder
         // Superadmin bekommt alle Permissions
         $superadmin = Role::where('name', 'superadmin')->first();
         if ($superadmin) {
-            $superadmin->givePermissionTo(['sslcerts.view', 'sslcerts.edit', 'sslcerts.delete']);
+            $superadmin->givePermissionTo(['sslcerts.view', 'sslcerts.edit', 'sslcerts.delete', 'sslcerts.config']);
         }
 
-        // Admin bekommt alle drei
+        // Admin bekommt alle vier
         $admin = Role::where('name', 'admin')->first();
         if ($admin) {
-            $admin->givePermissionTo(['sslcerts.view', 'sslcerts.edit', 'sslcerts.delete']);
+            $admin->givePermissionTo(['sslcerts.view', 'sslcerts.edit', 'sslcerts.delete', 'sslcerts.config']);
         }
 
         $this->command->info('✓ Modul "sslcerts" registriert');
-        $this->command->info('✓ 3 Permissions angelegt (sslcerts.view, sslcerts.edit, sslcerts.delete)');
+        $this->command->info('✓ 4 Permissions angelegt (sslcerts.view, sslcerts.edit, sslcerts.delete, sslcerts.config)');
     }
 }

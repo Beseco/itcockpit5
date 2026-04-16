@@ -20,12 +20,16 @@ class SslCertificate extends Model
         'valid_from', 'valid_to', 'san',
         'fingerprint_sha1', 'fingerprint_sha256',
         'cert_pem', 'private_key',
+        'notified_30_at', 'notified_14_at', 'notified_daily_at',
     ];
 
     protected $casts = [
-        'valid_from' => 'datetime',
-        'valid_to'   => 'datetime',
-        'san'        => 'array',
+        'valid_from'         => 'datetime',
+        'valid_to'           => 'datetime',
+        'san'                => 'array',
+        'notified_30_at'     => 'datetime',
+        'notified_14_at'     => 'datetime',
+        'notified_daily_at'  => 'datetime',
     ];
 
     // ─── Relationships ────────────────────────────────────────────────────────

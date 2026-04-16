@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\SslCerts\Http\Controllers\SslCertsController;
+use App\Modules\SslCerts\Http\Controllers\SslCertsSettingsController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'module.permission:sslcerts,view'])->group(function () {
@@ -18,4 +19,9 @@ Route::middleware(['auth', 'module.permission:sslcerts,edit'])->group(function (
 
 Route::middleware(['auth', 'module.permission:sslcerts,delete'])->group(function () {
     Route::delete('/{cert}', [SslCertsController::class, 'destroy'])->name('destroy');
+});
+
+Route::middleware(['auth', 'module.permission:sslcerts,config'])->group(function () {
+    Route::get('/settings',  [SslCertsSettingsController::class, 'index'])->name('settings');
+    Route::post('/settings', [SslCertsSettingsController::class, 'update'])->name('settings.update');
 });

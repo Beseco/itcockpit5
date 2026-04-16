@@ -22,3 +22,6 @@ Schedule::command('applikationen:send-revision-digest')->hourly();
 
 // Ticket-Scores berechnen und E-Mails versenden (jeden Freitag um 12:00 Uhr)
 Schedule::command('tickets:calculate-scores')->weeklyOn(5, '12:00');
+
+// SSL-Zertifikate auf Ablauf prüfen und Benachrichtigungen versenden (täglich 08:00)
+Schedule::command('sslcerts:check-expiry')->dailyAt('08:00');
