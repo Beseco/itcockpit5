@@ -62,6 +62,19 @@
                     </select>
                 </div>
 
+                {{-- Typ --}}
+                <div class="min-w-[160px]">
+                    <label for="type" class="block text-xs font-medium text-gray-500 mb-1">Typ</label>
+                    <select name="type" id="type"
+                            class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="" {{ empty($filters['type'] ?? '') ? 'selected' : '' }}>Alle Typen</option>
+                        <option value="Incident" {{ ($filters['type'] ?? '') === 'Incident' ? 'selected' : '' }}>Incident</option>
+                        <option value="Problem" {{ ($filters['type'] ?? '') === 'Problem' ? 'selected' : '' }}>Problem</option>
+                        <option value="Service Request" {{ ($filters['type'] ?? '') === 'Service Request' ? 'selected' : '' }}>Service Request</option>
+                        <option value="Change" {{ ($filters['type'] ?? '') === 'Change' ? 'selected' : '' }}>Change</option>
+                    </select>
+                </div>
+
                 {{-- Suche --}}
                 <div class="flex-1 min-w-[200px]">
                     <label for="search" class="block text-xs font-medium text-gray-500 mb-1">Suche</label>
@@ -267,6 +280,7 @@
                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Nr.</th>
                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Titel</th>
                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Status</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Typ</th>
                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Priorität</th>
                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Gruppe</th>
                             @if(($filters['user'] ?? 'me') !== 'me')
@@ -280,7 +294,7 @@
                     <tbody class="divide-y divide-gray-100">
                         @php
                             $groupBy   = $filters['group_by'] ?? '';
-                            $colCount  = ($filters['user'] ?? 'me') !== 'me' ? 9 : 8;
+                            $colCount  = ($filters['user'] ?? 'me') !== 'me' ? 10 : 9;
                             $groups    = $groupBy ? $tickets->groupBy($groupBy) : collect(['_all' => $tickets]);
                         @endphp
                         @foreach($groups as $groupLabel => $groupTickets)
@@ -332,6 +346,24 @@
                                         {{ $ticket['state'] }}
                                     </span>
                                 </td>
+                                <td class="px-3 py-2 text-xs whitespace-nowrap">
+                                    @if(!empty($ticket['type']))
+                                    @php
+                                        $typeColor = match(strtolower($ticket['type'])) {
+                                            'incident'        => 'bg-red-100 text-red-700',
+                                            'problem'         => 'bg-orange-100 text-orange-700',
+                                            'service request' => 'bg-blue-100 text-blue-700',
+                                            'change'          => 'bg-purple-100 text-purple-700',
+                                            default           => 'bg-gray-100 text-gray-600',
+                                        };
+                                    @endphp
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $typeColor }}">
+                                        {{ $ticket['type'] }}
+                                    </span>
+                                    @else
+                                        <span class="text-gray-400">—</span>
+                                    @endif
+                                </td>
                                 <td class="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{{ $ticket['priority'] }}</td>
                                 <td class="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{{ $ticket['group'] }}</td>
                                 @if(($filters['user'] ?? 'me') !== 'me')
@@ -360,11 +392,11 @@
                 <div class="flex items-center gap-4 text-xs text-gray-500">
                     <span class="flex items-center gap-1.5">
                         <span class="w-3 h-3 rounded-sm bg-yellow-300 border border-yellow-400 inline-block"></span>
-                        Veraltet (&gt;14 Tage erstellt / &gt;7 Tage keine Änderung)
+                        Incident veraltet (&gt;14 Tage erstellt / &gt;7 Tage keine Änderung)
                     </span>
                     <span class="flex items-center gap-1.5">
                         <span class="w-3 h-3 rounded-sm bg-red-300 border border-red-400 inline-block"></span>
-                        Kritisch (&gt;30 Tage erstellt / &gt;7 Tage keine Änderung)
+                        Incident kritisch (&gt;30 Tage erstellt / &gt;7 Tage keine Änderung)
                     </span>
                 </div>
             </div>

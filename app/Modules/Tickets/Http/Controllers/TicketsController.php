@@ -34,6 +34,7 @@ class TicketsController extends Controller
         // Filter aus Request
         $filterUser   = $request->input('user', 'me');
         $filterStatus = $request->input('status');
+        $filterType   = $request->input('type');
         $filterSearch = $request->input('search');
         $showClosed   = $request->boolean('closed');
         $sortBy       = $request->input('sort', 'updated_at');
@@ -59,6 +60,13 @@ class TicketsController extends Controller
             state: $filterStatus ?: null,
             search: $filterSearch,
         );
+
+        // Typ-Filter anwenden (clientseitig nach dem Fetch)
+        if ($filterType) {
+            $tickets = $tickets->filter(
+                fn($t) => strtolower($t['type'] ?? '') === strtolower($filterType)
+            )->values();
+        }
 
         // Sortierung anwenden
         $priorityOrder = ['1 low' => 1, '1 niedrig' => 1, '2 normal' => 2, '3 high' => 3, '3 hoch' => 3];
@@ -92,6 +100,7 @@ class TicketsController extends Controller
             'filters'         => [
                 'user'     => $filterUser,
                 'status'   => $filterStatus,
+                'type'     => $filterType,
                 'search'   => $filterSearch,
                 'closed'   => $showClosed,
                 'sort'     => $sortBy,

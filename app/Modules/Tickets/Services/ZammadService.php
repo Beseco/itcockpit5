@@ -115,6 +115,7 @@ class ZammadService
                         'priority'     => $ticket['priority'] ?? $ticket['priority_name'] ?? '—',
                         'group'        => $ticket['group'] ?? $ticket['group_name'] ?? '—',
                         'owner'        => $ticket['owner'] ?? $ticket['owner_name'] ?? '—',
+                        'type'         => $ticket['type'] ?? $ticket['type_name'] ?? '',
                         'created_at'   => $ticket['created_at'] ?? null,
                         'updated_at'   => $ticket['updated_at'] ?? null,
                         'pending_time' => $ticket['pending_time'] ?? null,
@@ -141,6 +142,12 @@ class ZammadService
      */
     public static function getTicketColor(array $ticket): ?string
     {
+        // Nur Incident-Tickets werden eingefärbt
+        $type = trim($ticket['type'] ?? '');
+        if ($type !== '' && strtolower($type) !== 'incident') {
+            return null;
+        }
+
         $state       = strtolower($ticket['state'] ?? '');
         $createdAt   = !empty($ticket['created_at'])   ? \Carbon\Carbon::parse($ticket['created_at'])   : null;
         $updatedAt   = !empty($ticket['updated_at'])   ? \Carbon\Carbon::parse($ticket['updated_at'])   : null;
