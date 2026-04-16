@@ -75,11 +75,15 @@ class ServerController extends Controller
         // Network-Modul: VLAN + Online-Status per IP-Abgleich (optional)
         $networkData = $this->loadNetworkData($servers->pluck('ip_address')->filter()->toArray());
 
-        return view('server::index', compact(
-            'servers', 'abteilungen', 'adminUsers', 'countNoRevision', 'networkData',
-            'search', 'filterStatus', 'filterAbt', 'filterLdap',
-            'filterAdminId', 'filterNoRevision'
-        ));
+        return response()
+            ->view('server::index', compact(
+                'servers', 'abteilungen', 'adminUsers', 'countNoRevision', 'networkData',
+                'search', 'filterStatus', 'filterAbt', 'filterLdap',
+                'filterAdminId', 'filterNoRevision'
+            ))
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
     }
 
     public function show(Server $server)
