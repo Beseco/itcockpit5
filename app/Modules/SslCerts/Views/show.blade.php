@@ -3,6 +3,7 @@
         <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold text-gray-800">{{ $cert->name }}</h2>
             <div class="flex items-center gap-2">
+                @can('sslcerts.edit')
                 <a href="{{ route('sslcerts.edit', $cert) }}"
                    class="inline-flex items-center px-3 py-2 bg-indigo-50 text-indigo-700 text-xs font-medium rounded-md hover:bg-indigo-100 border border-indigo-200">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -10,6 +11,7 @@
                     </svg>
                     Bearbeiten
                 </a>
+                @endcan
                 <a href="{{ route('sslcerts.index') }}"
                    class="inline-flex items-center px-3 py-2 bg-gray-100 text-gray-700 text-xs font-medium rounded-md hover:bg-gray-200">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -241,6 +243,7 @@
                 </a>
                 @endif
             </div>
+            @can('sslcerts.delete')
             <form method="POST" action="{{ route('sslcerts.destroy', $cert) }}"
                   onsubmit="return confirm('Zertifikat „{{ addslashes($cert->name) }}" wirklich löschen?')">
                 @csrf @method('DELETE')
@@ -252,6 +255,7 @@
                     Zertifikat löschen
                 </button>
             </form>
+            @endcan
         </div>
 
     </div>

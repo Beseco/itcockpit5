@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold text-gray-800">SSL-Zertifikate</h2>
-            @can('sslcerts.view')
+            @can('sslcerts.edit')
             <a href="{{ route('sslcerts.create') }}"
                class="inline-flex items-center px-3 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
                 <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -114,13 +114,17 @@
                             <td class="px-3 py-2 text-right whitespace-nowrap">
                                 <a href="{{ route('sslcerts.show', $cert) }}"
                                    class="text-xs text-indigo-600 hover:underline mr-3">Details</a>
+                                @can('sslcerts.edit')
                                 <a href="{{ route('sslcerts.edit', $cert) }}"
                                    class="text-xs text-gray-500 hover:underline mr-3">Bearbeiten</a>
+                                @endcan
+                                @can('sslcerts.delete')
                                 <form method="POST" action="{{ route('sslcerts.destroy', $cert) }}" class="inline"
                                       onsubmit="return confirm('Zertifikat „{{ addslashes($cert->name) }}" wirklich löschen?')">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="text-xs text-red-500 hover:text-red-700 hover:underline">Löschen</button>
                                 </form>
+                                @endcan
                             </td>
                         </tr>
                         @endforeach
