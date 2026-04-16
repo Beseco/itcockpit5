@@ -281,20 +281,17 @@
                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Titel</th>
                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Status</th>
                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Typ</th>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Priorität</th>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Gruppe</th>
-                            @if(($filters['user'] ?? 'me') !== 'me')
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Besitzer</th>
-                            @endif
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Erstellt am</th>
+                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wide">Prio</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Gruppe / Besitzer</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Erstellt</th>
                             <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Wartet bis</th>
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Letzte Änderung</th>
+                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Geändert</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @php
                             $groupBy   = $filters['group_by'] ?? '';
-                            $colCount  = ($filters['user'] ?? 'me') !== 'me' ? 10 : 9;
+                            $colCount  = 9; // Gruppe+Besitzer zusammen → immer gleich
                             $groups    = $groupBy ? $tickets->groupBy($groupBy) : collect(['_all' => $tickets]);
                         @endphp
                         @foreach($groups as $groupLabel => $groupTickets)
@@ -364,19 +361,46 @@
                                         <span class="text-gray-400">—</span>
                                     @endif
                                 </td>
-                                <td class="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{{ $ticket['priority'] }}</td>
-                                <td class="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{{ $ticket['group'] }}</td>
-                                @if(($filters['user'] ?? 'me') !== 'me')
-                                <td class="px-3 py-2 text-xs text-gray-600 whitespace-nowrap">{{ $ticket['owner'] }}</td>
+                                {{-- Priorität als Icon --}}
+                                <td class="px-3 py-2 text-center whitespace-nowrap">
+                                @php
+                                    $prio = strtolower($ticket['priority'] ?? '');
+                                    $prioLevel = match(true) {
+                                        str_contains($prio, '1') || str_contains($prio, 'low')  || str_contains($prio, 'niedrig') => 1,
+                                        str_contains($prio, '3') || str_contains($prio, 'high') || str_contains($prio, 'hoch')    => 3,
+                                        default => 2,
+                                    };
+                                @endphp
+                                @if($prioLevel === 1)
+                                    <svg class="w-4 h-4 inline text-gray-400" fill="currentColor" viewBox="0 0 20 20" title="{{ $ticket['priority'] }}">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clip-rule="evenodd"/>
+                                    </svg>
+                                @elseif($prioLevel === 3)
+                                    <svg class="w-4 h-4 inline text-red-500" fill="currentColor" viewBox="0 0 20 20" title="{{ $ticket['priority'] }}">
+                                        <path fill-rule="evenodd" d="M10 2a8 8 0 100 16A8 8 0 0010 2zm1 11a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                    </svg>
+                                @else
+                                    <svg class="w-4 h-4 inline text-green-500" fill="currentColor" viewBox="0 0 20 20" title="{{ $ticket['priority'] }}">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-9a1 1 0 10-2 0v4a1 1 0 102 0V9zm-1-5a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"/>
+                                    </svg>
                                 @endif
+                                </td>
+                                {{-- Gruppe + Besitzer kombiniert --}}
+                                <td class="px-3 py-2 text-xs whitespace-nowrap">
+                                    <div class="text-gray-700">{{ $ticket['group'] }}</div>
+                                    @if(!empty($ticket['owner']) && $ticket['owner'] !== '—')
+                                    <div class="text-gray-400 mt-0.5">{{ $ticket['owner'] }}</div>
+                                    @endif
+                                </td>
+                                {{-- Datumsfelder: kurzes Format d.m.y --}}
                                 <td class="px-3 py-2 text-xs text-gray-500 whitespace-nowrap">
-                                    {{ $ticket['created_at'] ? \Carbon\Carbon::parse($ticket['created_at'])->format('d.m.Y H:i') : '—' }}
+                                    {{ $ticket['created_at'] ? \Carbon\Carbon::parse($ticket['created_at'])->format('d.m.y') : '—' }}
                                 </td>
                                 <td class="px-3 py-2 text-xs text-gray-500 whitespace-nowrap">
-                                    {{ $ticket['pending_time'] ? \Carbon\Carbon::parse($ticket['pending_time'])->format('d.m.Y H:i') : '—' }}
+                                    {{ $ticket['pending_time'] ? \Carbon\Carbon::parse($ticket['pending_time'])->format('d.m.y') : '—' }}
                                 </td>
                                 <td class="px-3 py-2 text-xs text-gray-500 whitespace-nowrap">
-                                    {{ $ticket['updated_at'] ? \Carbon\Carbon::parse($ticket['updated_at'])->format('d.m.Y H:i') : '—' }}
+                                    {{ $ticket['updated_at'] ? \Carbon\Carbon::parse($ticket['updated_at'])->format('d.m.y') : '—' }}
                                 </td>
                             </tr>
                             @endforeach
