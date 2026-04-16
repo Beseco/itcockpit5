@@ -85,20 +85,93 @@
 
                 {{-- Server --}}
                 @if($servers->isNotEmpty())
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Server (Mehrfachauswahl)</label>
-                    <div class="border border-gray-300 rounded-md max-h-40 overflow-y-auto divide-y divide-gray-100">
-                        @foreach($servers as $server)
-                        <label class="flex items-center px-3 py-1.5 hover:bg-gray-50 cursor-pointer">
-                            <input type="checkbox" name="servers[]" value="{{ $server->id }}"
-                                   {{ in_array($server->id, old('servers', [])) ? 'checked' : '' }}
-                                   class="rounded border-gray-300 text-indigo-600 mr-2.5">
-                            <span class="text-sm text-gray-700">{{ $server->name }}</span>
-                            @if($server->dns_hostname)
-                                <span class="text-xs text-gray-400 ml-1.5 font-mono">{{ $server->dns_hostname }}</span>
-                            @endif
-                        </label>
-                        @endforeach
+                @php
+                    $oldServers = collect($servers)->whereIn('id', old('servers', []))->values();
+                @endphp
+                <div x-data="{
+                        open: false,
+                        search: '',
+                        all: {{ $servers->map(fn($s) => ['id'=>$s->id,'name'=>$s->name,'host'=>$s->dns_hostname??''])->values()->toJson() }},
+                        selected: {{ $oldServers->map(fn($s) => ['id'=>$s->id,'name'=>$s->name,'host'=>$s->dns_hostname??''])->values()->toJson() }},
+                        get filtered() {
+                            const q = this.search.toLowerCase();
+                            return this.all.filter(s =>
+                                !this.selected.find(x => x.id === s.id) &&
+                                (s.name.toLowerCase().includes(q) || s.host.toLowerCase().includes(q))
+                            );
+                        },
+                        add(s) { this.selected.push(s); this.search = ''; },
+                        remove(id) { this.selected = this.selected.filter(s => s.id !== id); }
+                    }">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Server</label>
+
+                    {{-- Hidden inputs --}}
+                    <template x-for="s in selected" :key="s.id">
+                        <input type="hidden" name="servers[]" :value="s.id">
+                    </template>
+
+                    {{-- Gewählte Server als Tags --}}
+                    <div class="flex flex-wrap gap-2 mb-2 min-h-[2rem]">
+                        <template x-for="s in selected" :key="s.id">
+                            <span class="inline-flex items-center gap-1 pl-2.5 pr-1 py-1 bg-indigo-50 text-indigo-700 text-xs rounded-md border border-indigo-200">
+                                <svg class="w-3 h-3 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/>
+                                </svg>
+                                <span x-text="s.name"></span>
+                                <button type="button" @click="remove(s.id)"
+                                        class="ml-0.5 text-indigo-400 hover:text-indigo-700">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            </span>
+                        </template>
+                        <span x-show="selected.length === 0" class="text-xs text-gray-400 self-center">Noch kein Server verknüpft</span>
+                    </div>
+
+                    <button type="button" @click="open = true"
+                            class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-md hover:bg-gray-200 border border-gray-300">
+                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Server hinzufügen
+                    </button>
+
+                    {{-- Modal --}}
+                    <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4"
+                         @keydown.escape.window="open = false">
+                        <div class="absolute inset-0 bg-black bg-opacity-30" @click="open = false"></div>
+                        <div class="relative bg-white rounded-lg shadow-xl w-full max-w-md flex flex-col" style="max-height:70vh">
+                            <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                                <h3 class="text-sm font-semibold text-gray-800">Server hinzufügen</h3>
+                                <button type="button" @click="open = false" class="text-gray-400 hover:text-gray-600">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="px-4 pt-3 pb-2">
+                                <input type="text" x-model="search" placeholder="Server suchen…"
+                                       x-ref="searchInput" @focus="$nextTick(() => $refs.searchInput.select())"
+                                       x-init="$watch('open', v => v && $nextTick(() => $refs.searchInput.focus()))"
+                                       class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
+                            <div class="overflow-y-auto flex-1 divide-y divide-gray-100 px-2 pb-2">
+                                <template x-for="s in filtered" :key="s.id">
+                                    <button type="button" @click="add(s)"
+                                            class="w-full flex items-center gap-2 px-3 py-2 rounded-md hover:bg-indigo-50 text-left group">
+                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/>
+                                        </svg>
+                                        <span class="text-sm text-gray-800" x-text="s.name"></span>
+                                        <span class="text-xs text-gray-400 font-mono" x-text="s.host"></span>
+                                    </button>
+                                </template>
+                                <div x-show="filtered.length === 0" class="px-3 py-4 text-xs text-gray-400 text-center">
+                                    Keine Server gefunden
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 @endif
