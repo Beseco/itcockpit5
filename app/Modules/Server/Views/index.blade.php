@@ -20,7 +20,7 @@
 
             {{-- Filter --}}
             <div class="bg-white shadow-sm sm:rounded-lg mb-4 p-4">
-                <form action="{{ route('server.index') }}" method="GET" class="flex flex-wrap gap-3 items-end">
+                <form id="server-filter-form" action="{{ route('server.index') }}" method="GET" class="flex flex-wrap gap-3 items-end">
 
                     <div class="flex-1 min-w-44">
                         <label class="block text-xs font-medium text-gray-500 mb-1">Suche</label>
@@ -31,6 +31,7 @@
                     <div>
                         <label class="block text-xs font-medium text-gray-500 mb-1">Status</label>
                         <select name="filter_status"
+                                onchange="document.getElementById('server-filter-form').submit()"
                                 class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                             <option value="">Alle Status</option>
                             @foreach (\App\Modules\Server\Models\Server::STATUS_LABELS as $val => $label)
@@ -42,6 +43,7 @@
                     <div>
                         <label class="block text-xs font-medium text-gray-500 mb-1">Abteilung</label>
                         <select name="filter_abteilung_id"
+                                onchange="document.getElementById('server-filter-form').submit()"
                                 class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                             <option value="">Alle Abteilungen</option>
                             @foreach ($abteilungen as $abt)
@@ -53,6 +55,7 @@
                     <div>
                         <label class="block text-xs font-medium text-gray-500 mb-1">Admin</label>
                         <select name="filter_admin_id"
+                                onchange="document.getElementById('server-filter-form').submit()"
                                 class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                             <option value="">Alle Admins</option>
                             <option value="__mine__"    @selected($filterAdminId === '__mine__')>Nur meine Server</option>
@@ -66,6 +69,7 @@
                     <div>
                         <label class="block text-xs font-medium text-gray-500 mb-1">Herkunft</label>
                         <select name="filter_ldap"
+                                onchange="document.getElementById('server-filter-form').submit()"
                                 class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                             <option value="">Alle</option>
                             <option value="synced" @selected($filterLdap === 'synced')>LDAP-synchronisiert</option>
@@ -76,6 +80,7 @@
                     <div class="flex items-center gap-2 pb-0.5">
                         <input type="checkbox" id="filter_no_revision" name="filter_no_revision" value="1"
                                @checked($filterNoRevision)
+                               onchange="document.getElementById('server-filter-form').submit()"
                                class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
                         <label for="filter_no_revision" class="text-sm text-gray-700 cursor-pointer select-none whitespace-nowrap">Kein Revisionsdatum</label>
                     </div>
