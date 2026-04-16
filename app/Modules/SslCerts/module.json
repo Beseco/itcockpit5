@@ -1,0 +1,6 @@
+{
+    "name": "SslCerts",
+    "slug": "sslcerts",
+    "version": "1.0.0",
+    "description": "SSL-Zertifikatsverwaltung"
+}
