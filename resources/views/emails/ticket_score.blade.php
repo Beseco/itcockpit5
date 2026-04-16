@@ -81,11 +81,16 @@
                                 </thead>
                                 <tbody>
                                     @foreach($redTickets as $ticket)
-                                    @php $rowBg = $loop->odd ? '#ffffff' : '#fff5f5'; @endphp
+                                    @php
+                                        $rowBg      = $loop->odd ? '#ffffff' : '#fff5f5';
+                                        $ticketUrl  = rtrim($settings->url, '/') . '/#ticket/zoom/' . $ticket['id'];
+                                    @endphp
                                     <tr style="background:{{ $rowBg }};">
-                                        <td style="padding:8px 12px;font-size:12px;font-family:monospace;color:#6b7280;border-bottom:1px solid #fee2e2;">#{{ $ticket['number'] }}</td>
+                                        <td style="padding:8px 12px;font-size:12px;font-family:monospace;border-bottom:1px solid #fee2e2;">
+                                            <a href="{{ $ticketUrl }}" style="color:#4f46e5;text-decoration:none;font-weight:600;">#{{ $ticket['number'] }}</a>
+                                        </td>
                                         <td style="padding:8px 12px;font-size:12px;color:#1f2937;border-bottom:1px solid #fee2e2;">
-                                            {{ \Illuminate\Support\Str::limit($ticket['title'], 45) }}
+                                            <a href="{{ $ticketUrl }}" style="color:#1f2937;text-decoration:none;">{{ \Illuminate\Support\Str::limit($ticket['title'], 45) }}</a>
                                         </td>
                                         <td style="padding:8px 12px;font-size:12px;color:#374151;border-bottom:1px solid #fee2e2;">{{ $ticket['state'] }}</td>
                                         <td style="padding:8px 12px;font-size:12px;color:#6b7280;white-space:nowrap;border-bottom:1px solid #fee2e2;">
@@ -118,11 +123,16 @@
                                 </thead>
                                 <tbody>
                                     @foreach($yellowTickets as $ticket)
-                                    @php $rowBg = $loop->odd ? '#ffffff' : '#fefce8'; @endphp
+                                    @php
+                                        $rowBg      = $loop->odd ? '#ffffff' : '#fefce8';
+                                        $ticketUrl  = rtrim($settings->url, '/') . '/#ticket/zoom/' . $ticket['id'];
+                                    @endphp
                                     <tr style="background:{{ $rowBg }};">
-                                        <td style="padding:8px 12px;font-size:12px;font-family:monospace;color:#6b7280;border-bottom:1px solid #fef08a;">#{{ $ticket['number'] }}</td>
+                                        <td style="padding:8px 12px;font-size:12px;font-family:monospace;border-bottom:1px solid #fef08a;">
+                                            <a href="{{ $ticketUrl }}" style="color:#4f46e5;text-decoration:none;font-weight:600;">#{{ $ticket['number'] }}</a>
+                                        </td>
                                         <td style="padding:8px 12px;font-size:12px;color:#1f2937;border-bottom:1px solid #fef08a;">
-                                            {{ \Illuminate\Support\Str::limit($ticket['title'], 45) }}
+                                            <a href="{{ $ticketUrl }}" style="color:#1f2937;text-decoration:none;">{{ \Illuminate\Support\Str::limit($ticket['title'], 45) }}</a>
                                         </td>
                                         <td style="padding:8px 12px;font-size:12px;color:#374151;border-bottom:1px solid #fef08a;">{{ $ticket['state'] }}</td>
                                         <td style="padding:8px 12px;font-size:12px;color:#6b7280;white-space:nowrap;border-bottom:1px solid #fef08a;">
