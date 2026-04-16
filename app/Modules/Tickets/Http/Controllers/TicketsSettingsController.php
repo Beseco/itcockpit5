@@ -3,9 +3,12 @@
 namespace App\Modules\Tickets\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Mail\TicketScoreMail;
+use App\Models\User;
 use App\Modules\Tickets\Models\TicketsSettings;
 use App\Modules\Tickets\Services\ZammadService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class TicketsSettingsController extends Controller
 {
@@ -65,5 +68,64 @@ class TicketsSettingsController extends Controller
         $result = $service->testConnection();
 
         return response()->json($result);
+    }
+
+    public function updateTestMail(Request $request)
+    {
+        $request->validate([
+            'test_email'   => ['required', 'email', 'max:255'],
+            'test_user_id' => ['required', 'integer', 'exists:users,id'],
+        ]);
+
+        $settings = TicketsSettings::getSingleton();
+        $settings->test_email   = $request->input('test_email');
+        $settings->test_user_id = $request->input('test_user_id');
+        $settings->save();
+
+        return redirect()->route('tickets.settings')
+            ->with('success', 'Test-E-Mail-Einstellungen gespeichert.');
+    }
+
+    public function sendTestMail(Request $request)
+    {
+        $settings = TicketsSettings::getSingleton();
+
+        if (!$settings->isConfigured()) {
+            return redirect()->route('tickets.settings')
+                ->with('error', 'Zammad ist nicht konfiguriert.');
+        }
+
+        $request->validate([
+            'test_email'   => ['required', 'email', 'max:255'],
+            'test_user_id' => ['required', 'integer', 'exists:users,id'],
+        ]);
+
+        $testEmail = $request->input('test_email');
+        $user      = User::findOrFail($request->input('test_user_id'));
+
+        // Einstellungen persistieren
+        $settings->test_email   = $testEmail;
+        $settings->test_user_id = $user->id;
+        $settings->save();
+
+        // Score für den gewählten User berechnen
+        $service = new ZammadService();
+        $tickets = $service->searchTickets(email: $user->email, includeClosed: false);
+
+        $yellowTickets = $tickets->filter(fn($t) => ZammadService::getTicketColor($t) === 'yellow');
+        $redTickets    = $tickets->filter(fn($t) => ZammadService::getTicketColor($t) === 'red');
+        $score         = ($yellowTickets->count() * 0.5) + ($redTickets->count() * 1.0);
+
+        try {
+            Mail::to($testEmail)->send(
+                new TicketScoreMail($user, $score, $yellowTickets, $redTickets, $settings)
+            );
+        } catch (\Exception $e) {
+            return redirect()->route('tickets.settings')
+                ->with('error', 'Mail konnte nicht gesendet werden: ' . $e->getMessage());
+        }
+
+        return redirect()->route('tickets.settings')
+            ->with('success', "Test-Mail für „{$user->name}" (Score: " . number_format($score, 1) . ") wurde an {$testEmail} gesendet.");
     }
 }

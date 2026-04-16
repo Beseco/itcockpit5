@@ -195,5 +195,68 @@
             </form>
         </div>
 
+        {{-- Test-Mail --}}
+        <div class="bg-white shadow rounded-lg overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100">
+                <h3 class="text-sm font-semibold text-gray-800">Score-Mail testen</h3>
+                <p class="text-xs text-gray-500 mt-0.5">
+                    Wähle einen Mitarbeiter aus und trage eine Empfänger-Adresse ein.
+                    Die Mail wird sofort versendet – exakt so, wie sie freitags ankäme.
+                </p>
+            </div>
+            <form action="{{ route('tickets.settings.send-test-mail') }}" method="POST" class="p-6 space-y-5">
+                @csrf
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {{-- Mitarbeiter --}}
+                    <div>
+                        <label for="test_user_id" class="block text-sm font-medium text-gray-700 mb-1">
+                            Mitarbeiter (Score berechnen für …)
+                        </label>
+                        <select name="test_user_id" id="test_user_id"
+                                class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                required>
+                            <option value="">— Mitarbeiter wählen —</option>
+                            @foreach(\App\Models\User::orderBy('name')->get(['id','name','email']) as $u)
+                                <option value="{{ $u->id }}"
+                                    {{ old('test_user_id', $settings->test_user_id) == $u->id ? 'selected' : '' }}>
+                                    {{ $u->name }} ({{ $u->email }})
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('test_user_id')
+                            <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- Test-E-Mail --}}
+                    <div>
+                        <label for="test_email" class="block text-sm font-medium text-gray-700 mb-1">
+                            Test-Empfänger (wohin senden?)
+                        </label>
+                        <input type="email" name="test_email" id="test_email"
+                               value="{{ old('test_email', $settings->test_email) }}"
+                               placeholder="admin@example.com"
+                               class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                               required>
+                        @error('test_email')
+                            <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end pt-2">
+                    <button type="submit"
+                            class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                        Test-Mail senden
+                    </button>
+                </div>
+            </form>
+        </div>
+
     </div>
 </x-app-layout>

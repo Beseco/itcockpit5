@@ -12,6 +12,7 @@ class TicketsSettings extends Model
     protected $fillable = [
         'url', 'api_token', 'enabled',
         'email_enabled', 'email_threshold', 'score_green_max', 'score_red_min',
+        'test_email', 'test_user_id',
     ];
 
     protected $casts = [
