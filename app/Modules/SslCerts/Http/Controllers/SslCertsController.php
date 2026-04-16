@@ -22,13 +22,25 @@ class SslCertsController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name'      => ['required', 'string', 'max:255'],
-            'p12_file'  => ['required', 'file', 'max:4096'],
-            'p12_pin'   => ['required', 'string'],
+            'name'        => ['required', 'string', 'max:255'],
+            'upload_type' => ['required', 'in:p12,pem'],
+        ]);
+
+        if ($request->input('upload_type') === 'p12') {
+            return $this->storeFromP12($request);
+        }
+
+        return $this->storeFromPem($request);
+    }
+
+    private function storeFromP12(Request $request)
+    {
+        $request->validate([
+            'p12_file' => ['required', 'file', 'max:4096'],
         ]);
 
         $p12Data = file_get_contents($request->file('p12_file')->getRealPath());
-        $pin     = $request->input('p12_pin');
+        $pin     = $request->input('p12_pin', '');
 
         $certs = [];
         if (!openssl_pkcs12_read($p12Data, $certs, $pin)) {
@@ -46,7 +58,40 @@ class SslCertsController extends Controller
                 ->withErrors(['p12_file' => 'Das P12-Zertifikat enthält kein gültiges Zertifikat.']);
         }
 
-        // Metadaten auslesen
+        return $this->saveCertificate($request->input('name'), $certPem, $privateKey);
+    }
+
+    private function storeFromPem(Request $request)
+    {
+        $request->validate([
+            'pem_cert' => ['required', 'file', 'max:4096'],
+            'pem_key'  => ['nullable', 'file', 'max:4096'],
+        ]);
+
+        $certPem = file_get_contents($request->file('pem_cert')->getRealPath());
+
+        if (!openssl_x509_parse($certPem)) {
+            return back()
+                ->withInput()
+                ->withErrors(['pem_cert' => 'Die Datei enthält kein gültiges PEM-Zertifikat.']);
+        }
+
+        $privateKey = null;
+        if ($request->hasFile('pem_key')) {
+            $privateKey = file_get_contents($request->file('pem_key')->getRealPath());
+            // Grundprüfung ob es sich um einen PEM-Key handelt
+            if (!str_contains($privateKey, '-----BEGIN')) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['pem_key' => 'Die Datei enthält keinen gültigen PEM-Key.']);
+            }
+        }
+
+        return $this->saveCertificate($request->input('name'), $certPem, $privateKey);
+    }
+
+    private function saveCertificate(string $name, string $certPem, ?string $privateKey)
+    {
         $parsed = openssl_x509_parse($certPem);
 
         $subjectCn  = $parsed['subject']['CN']  ?? null;
@@ -73,7 +118,7 @@ class SslCertsController extends Controller
         $sha256 = openssl_x509_fingerprint($certPem, 'sha256') ?: null;
 
         SslCertificate::create([
-            'name'               => $request->input('name'),
+            'name'               => $name,
             'subject_cn'         => $subjectCn,
             'subject_o'          => $subjectO,
             'subject_ou'         => $subjectOu,
@@ -90,7 +135,7 @@ class SslCertsController extends Controller
         ]);
 
         return redirect()->route('sslcerts.index')
-            ->with('success', 'Zertifikat „' . $request->input('name') . '" wurde erfolgreich importiert.');
+            ->with('success', 'Zertifikat „' . $name . '" wurde erfolgreich importiert.');
     }
 
     public function show(SslCertificate $cert)
