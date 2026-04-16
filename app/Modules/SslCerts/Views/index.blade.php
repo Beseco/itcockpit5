@@ -114,6 +114,8 @@
                             <td class="px-3 py-2 text-right whitespace-nowrap">
                                 <a href="{{ route('sslcerts.show', $cert) }}"
                                    class="text-xs text-indigo-600 hover:underline mr-3">Details</a>
+                                <a href="{{ route('sslcerts.edit', $cert) }}"
+                                   class="text-xs text-gray-500 hover:underline mr-3">Bearbeiten</a>
                                 <form method="POST" action="{{ route('sslcerts.destroy', $cert) }}" class="inline"
                                       onsubmit="return confirm('Zertifikat „{{ addslashes($cert->name) }}" wirklich löschen?')">
                                     @csrf @method('DELETE')

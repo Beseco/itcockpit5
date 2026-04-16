@@ -61,6 +61,62 @@
                     @enderror
                 </div>
 
+                {{-- Beschreibung --}}
+                <div>
+                    <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Beschreibung</label>
+                    <textarea name="description" id="description" rows="3"
+                              placeholder="Wofür wird dieses Zertifikat verwendet?"
+                              class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">{{ old('description') }}</textarea>
+                </div>
+
+                {{-- Verantwortlicher --}}
+                <div>
+                    <label for="responsible_user_id" class="block text-sm font-medium text-gray-700 mb-1">Verantwortlicher</label>
+                    <select name="responsible_user_id" id="responsible_user_id"
+                            class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">— kein Verantwortlicher —</option>
+                        @foreach($users as $user)
+                            <option value="{{ $user->id }}" {{ old('responsible_user_id') == $user->id ? 'selected' : '' }}>
+                                {{ $user->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Server --}}
+                @if($servers->isNotEmpty())
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Server (Mehrfachauswahl)</label>
+                    <div class="border border-gray-300 rounded-md max-h-40 overflow-y-auto divide-y divide-gray-100">
+                        @foreach($servers as $server)
+                        <label class="flex items-center px-3 py-1.5 hover:bg-gray-50 cursor-pointer">
+                            <input type="checkbox" name="servers[]" value="{{ $server->id }}"
+                                   {{ in_array($server->id, old('servers', [])) ? 'checked' : '' }}
+                                   class="rounded border-gray-300 text-indigo-600 mr-2.5">
+                            <span class="text-sm text-gray-700">{{ $server->name }}</span>
+                            @if($server->dns_hostname)
+                                <span class="text-xs text-gray-400 ml-1.5 font-mono">{{ $server->dns_hostname }}</span>
+                            @endif
+                        </label>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
+                {{-- Dokumentations-Link --}}
+                <div>
+                    <label for="doc_url" class="block text-sm font-medium text-gray-700 mb-1">Dokumentations-Link</label>
+                    <input type="url" name="doc_url" id="doc_url"
+                           value="{{ old('doc_url') }}"
+                           placeholder="https://wiki.example.com/ssl/..."
+                           class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    @error('doc_url')
+                        <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <hr class="border-gray-100">
+
                 {{-- P12-Felder --}}
                 <div x-show="mode === 'p12'" x-cloak class="space-y-5">
 

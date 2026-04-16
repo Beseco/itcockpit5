@@ -2,7 +2,11 @@
 
 namespace App\Modules\SslCerts\Models;
 
+use App\Models\User;
+use App\Modules\Server\Models\Server;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Crypt;
 
 class SslCertificate extends Model
@@ -10,7 +14,8 @@ class SslCertificate extends Model
     protected $table = 'ssl_certificates';
 
     protected $fillable = [
-        'name', 'subject_cn', 'subject_o', 'subject_ou',
+        'name', 'description', 'responsible_user_id', 'doc_url',
+        'subject_cn', 'subject_o', 'subject_ou',
         'issuer_cn', 'issuer_o', 'serial_number',
         'valid_from', 'valid_to', 'san',
         'fingerprint_sha1', 'fingerprint_sha256',
@@ -22,6 +27,20 @@ class SslCertificate extends Model
         'valid_to'   => 'datetime',
         'san'        => 'array',
     ];
+
+    // ─── Relationships ────────────────────────────────────────────────────────
+
+    public function responsibleUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'responsible_user_id');
+    }
+
+    public function servers(): BelongsToMany
+    {
+        return $this->belongsToMany(Server::class, 'ssl_certificate_server');
+    }
+
+    // ─── Encryption ──────────────────────────────────────────────────────────
 
     /** Private Key verschlüsselt speichern */
     public function setPrivateKeyAttribute(?string $value): void
@@ -40,6 +59,8 @@ class SslCertificate extends Model
         }
     }
 
+    // ─── Helpers ─────────────────────────────────────────────────────────────
+
     /** Ablauf-Farbe: 'red' (< 14 Tage), 'yellow' (< 30 Tage), 'green' */
     public function getExpiryColor(): string
     {
@@ -51,7 +72,7 @@ class SslCertificate extends Model
         return 'green';
     }
 
-    /** Restlaufzeit als lesbarer String */
+    /** Restlaufzeit in Tagen (negativ = abgelaufen) */
     public function getDaysRemaining(): int
     {
         if (!$this->valid_to) return 9999;

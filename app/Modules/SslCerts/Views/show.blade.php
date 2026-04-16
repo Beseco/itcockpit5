@@ -2,17 +2,34 @@
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold text-gray-800">{{ $cert->name }}</h2>
-            <a href="{{ route('sslcerts.index') }}"
-               class="inline-flex items-center px-3 py-2 bg-gray-100 text-gray-700 text-xs font-medium rounded-md hover:bg-gray-200">
-                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
-                </svg>
-                Zurück
-            </a>
+            <div class="flex items-center gap-2">
+                <a href="{{ route('sslcerts.edit', $cert) }}"
+                   class="inline-flex items-center px-3 py-2 bg-indigo-50 text-indigo-700 text-xs font-medium rounded-md hover:bg-indigo-100 border border-indigo-200">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                    Bearbeiten
+                </a>
+                <a href="{{ route('sslcerts.index') }}"
+                   class="inline-flex items-center px-3 py-2 bg-gray-100 text-gray-700 text-xs font-medium rounded-md hover:bg-gray-200">
+                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                    </svg>
+                    Zurück
+                </a>
+            </div>
         </div>
     </x-slot>
 
     <div class="py-6 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
+
+        @if(session('success'))
+            <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)"
+                 class="p-4 bg-green-100 border border-green-300 text-green-800 rounded-md text-sm">
+                {{ session('success') }}
+            </div>
+        @endif
+
 
         @php
             $color     = $cert->getExpiryColor();
@@ -58,6 +75,64 @@
                 @endif
             </div>
         </div>
+
+        {{-- Zusatzinfos --}}
+        @if($cert->description || $cert->responsibleUser || $cert->doc_url || $cert->servers->isNotEmpty())
+        <div class="bg-white shadow rounded-lg overflow-hidden">
+            <div class="px-5 py-3 bg-gray-50 border-b border-gray-100">
+                <h3 class="text-xs font-semibold text-gray-700 uppercase tracking-wide">Informationen</h3>
+            </div>
+            <div class="p-5 space-y-4">
+
+                @if($cert->description)
+                <div>
+                    <div class="text-xs text-gray-500 mb-1">Beschreibung</div>
+                    <div class="text-sm text-gray-800 whitespace-pre-wrap">{{ $cert->description }}</div>
+                </div>
+                @endif
+
+                @if($cert->responsibleUser)
+                <div>
+                    <div class="text-xs text-gray-500 mb-1">Verantwortlicher</div>
+                    <div class="text-sm text-gray-800">{{ $cert->responsibleUser->name }}</div>
+                </div>
+                @endif
+
+                @if($cert->servers->isNotEmpty())
+                <div>
+                    <div class="text-xs text-gray-500 mb-1">Verwendete Server</div>
+                    <div class="flex flex-wrap gap-2 mt-1">
+                        @foreach($cert->servers as $server)
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 text-xs border border-gray-200">
+                                <svg class="w-3 h-3 mr-1 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/>
+                                </svg>
+                                {{ $server->name }}
+                                @if($server->dns_hostname)
+                                    <span class="text-gray-400 font-mono ml-1">{{ $server->dns_hostname }}</span>
+                                @endif
+                            </span>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
+                @if($cert->doc_url)
+                <div>
+                    <div class="text-xs text-gray-500 mb-1">Dokumentation</div>
+                    <a href="{{ $cert->doc_url }}" target="_blank" rel="noopener noreferrer"
+                       class="inline-flex items-center text-sm text-indigo-600 hover:underline break-all">
+                        <svg class="w-3.5 h-3.5 mr-1 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                        </svg>
+                        {{ $cert->doc_url }}
+                    </a>
+                </div>
+                @endif
+
+            </div>
+        </div>
+        @endif
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
 
