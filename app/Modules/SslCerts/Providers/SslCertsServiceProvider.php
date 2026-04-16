@@ -20,7 +20,7 @@ class SslCertsServiceProvider extends ServiceProvider
             'label'      => 'SSL-Zertifikate',
             'route'      => 'sslcerts.index',
             'icon'       => 'heroicon-o-shield-check',
-            'permission' => 'module.sslcerts.view',
+            'permission' => 'sslcerts.view',
             'module'     => 'sslcerts',
         ]);
     }

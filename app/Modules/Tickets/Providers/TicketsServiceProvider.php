@@ -19,7 +19,7 @@ class TicketsServiceProvider extends ServiceProvider
             'label'      => 'Tickets',
             'route'      => 'tickets.index',
             'icon'       => 'heroicon-o-ticket',
-            'permission' => 'module.tickets.view',
+            'permission' => 'tickets.view',
             'module'     => 'tickets',
         ]);
 

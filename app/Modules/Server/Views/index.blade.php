@@ -19,7 +19,7 @@
             @endif
 
             {{-- Filter --}}
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-4 p-4">
+            <div class="bg-white shadow-sm sm:rounded-lg mb-4 p-4">
                 <form action="{{ route('server.index') }}" method="GET" class="flex flex-wrap gap-3 items-end">
 
                     <div class="flex-1 min-w-44">
