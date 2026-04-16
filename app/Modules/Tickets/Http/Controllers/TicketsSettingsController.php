@@ -126,6 +126,6 @@ class TicketsSettingsController extends Controller
         }
 
         return redirect()->route('tickets.settings')
-            ->with('success', "Test-Mail für „{$user->name}" (Score: " . number_format($score, 1) . ") wurde an {$testEmail} gesendet.");
+            ->with('success', 'Test-Mail fuer "' . $user->name . '" (Score: ' . number_format($score, 1) . ') wurde an ' . $testEmail . ' gesendet.');
     }
 }
