@@ -34,19 +34,19 @@
                 @csrf
 
                 {{-- Aktivieren --}}
-                <div class="flex items-center justify-between py-2">
+                <div class="flex items-center justify-between py-2"
+                     x-data="{ on: {{ $settings->notifications_enabled ? 'true' : 'false' }} }">
                     <div>
                         <div class="text-sm font-medium text-gray-700">Benachrichtigungen aktivieren</div>
                         <div class="text-xs text-gray-500 mt-0.5">E-Mails werden nur versendet wenn aktiviert und eine Adresse hinterlegt ist</div>
                     </div>
-                    <label class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" name="notifications_enabled" value="1" class="sr-only peer"
-                               {{ $settings->notifications_enabled ? 'checked' : '' }}>
-                        <div class="w-10 h-5 bg-gray-200 peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer
-                                    peer-checked:bg-indigo-600 after:content-[''] after:absolute after:top-0.5 after:left-0.5
-                                    after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all
-                                    peer-checked:after:translate-x-5"></div>
-                    </label>
+                    <button type="button" @click="on = !on"
+                            :class="on ? 'bg-indigo-600' : 'bg-gray-200'"
+                            class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                        <span :class="on ? 'translate-x-5' : 'translate-x-0'"
+                              class="inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 pointer-events-none"></span>
+                    </button>
+                    <input type="hidden" name="notifications_enabled" :value="on ? '1' : '0'">
                 </div>
 
                 {{-- E-Mail-Adresse --}}
