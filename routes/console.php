@@ -20,6 +20,9 @@ Schedule::command('applikationen:send-revision-reminders')->dailyAt('07:00');
 // Applikationen-Revisions-Digest stündlich prüfen (Versand nur wenn konfigurierter Wochentag/Stunde/Intervall passt)
 Schedule::command('applikationen:send-revision-digest')->hourly();
 
+// Abteilungs-Revisions-Erinnerung stündlich prüfen (Versand nur wenn konfigurierter Wochentag/Stunde/Intervall passt)
+Schedule::command('abteilungen:send-revision-digest')->hourly();
+
 // Ticket-Scores berechnen und E-Mails versenden (jeden Freitag um 12:00 Uhr)
 Schedule::command('tickets:calculate-scores')->weeklyOn(5, '12:00');
 

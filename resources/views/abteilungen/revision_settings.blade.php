@@ -16,19 +16,87 @@
                 </div>
             @endif
 
-            <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                <h3 class="text-sm font-semibold text-gray-700 mb-1">Neue-Software-Vorschläge</h3>
-                <p class="text-xs text-gray-400 mb-5">
-                    Wenn Abteilungsleiter im Rahmen der Revision neue (noch nicht erfasste) Software vorschlagen,
-                    wird eine E-Mail an die folgende Adresse gesendet.
-                </p>
+            <form method="POST" action="{{ route('abteilungen.revision-settings.update') }}" class="space-y-6">
+                @csrf
+                @method('PUT')
 
-                <form method="POST" action="{{ route('abteilungen.revision-settings.update') }}" class="space-y-5">
-                    @csrf
-                    @method('PUT')
+                {{-- Erinnerungs-E-Mail --}}
+                <div class="bg-white shadow-sm sm:rounded-lg p-6">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-1">Erinnerungs-E-Mail an Vorgesetzte</h3>
+                    <p class="text-xs text-gray-400 mb-5">
+                        Wenn aktiviert, erhalten Vorgesetzte (und Stellvertreter) automatisch eine Erinnerungs-E-Mail,
+                        wenn das Revisionsdatum ihrer Abteilung überschritten und die Revision noch nicht abgeschlossen ist.
+                    </p>
+
+                    {{-- Aktivieren --}}
+                    <div class="flex items-center gap-3 mb-5">
+                        <input type="checkbox" id="enabled" name="enabled" value="1"
+                               @checked(old('enabled', $settings->enabled))
+                               class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                        <label for="enabled" class="text-sm font-medium text-gray-700">Erinnerungs-E-Mail aktivieren</label>
+                    </div>
+
+                    {{-- Intervall --}}
+                    <div class="mb-5">
+                        <x-input-label value="Versandintervall *" />
+                        <div class="mt-2 flex flex-wrap gap-4">
+                            @foreach([1 => 'Jede Woche (7 Tage)', 2 => 'Alle 2 Wochen (14 Tage)', 4 => 'Alle 4 Wochen'] as $value => $label)
+                                <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                                    <input type="radio" name="interval_weeks" value="{{ $value }}"
+                                           @checked(old('interval_weeks', $settings->interval_weeks) == $value)
+                                           class="text-indigo-600 focus:ring-indigo-500">
+                                    {{ $label }}
+                                </label>
+                            @endforeach
+                        </div>
+                        <x-input-error :messages="$errors->get('interval_weeks')" class="mt-1" />
+                    </div>
+
+                    {{-- Wochentag und Stunde --}}
+                    <div class="grid grid-cols-2 gap-5">
+                        <div>
+                            <x-input-label for="weekday" value="Wochentag *" />
+                            <select id="weekday" name="weekday"
+                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                @foreach([1 => 'Montag', 2 => 'Dienstag', 3 => 'Mittwoch', 4 => 'Donnerstag', 5 => 'Freitag'] as $value => $label)
+                                    <option value="{{ $value }}" @selected(old('weekday', $settings->weekday) == $value)>
+                                        {{ $label }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <x-input-error :messages="$errors->get('weekday')" class="mt-1" />
+                        </div>
+
+                        <div>
+                            <x-input-label for="hour" value="Uhrzeit *" />
+                            <select id="hour" name="hour"
+                                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                @for($h = 7; $h <= 19; $h++)
+                                    <option value="{{ $h }}" @selected(old('hour', $settings->hour) == $h)>
+                                        {{ str_pad($h, 2, '0', STR_PAD_LEFT) }}:00 Uhr
+                                    </option>
+                                @endfor
+                            </select>
+                            <x-input-error :messages="$errors->get('hour')" class="mt-1" />
+                        </div>
+                    </div>
+
+                    @if($settings->last_sent_at)
+                        <p class="mt-4 text-xs text-gray-400">Zuletzt versendet: {{ $settings->last_sent_at->format('d.m.Y H:i') }} Uhr</p>
+                    @else
+                        <p class="mt-4 text-xs text-gray-400">Noch nie versendet</p>
+                    @endif
+                </div>
+
+                {{-- Software-Vorschläge --}}
+                <div class="bg-white shadow-sm sm:rounded-lg p-6">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-1">Neue-Software-Vorschläge</h3>
+                    <p class="text-xs text-gray-400 mb-4">
+                        Wenn Abteilungsleiter neue (noch nicht erfasste) Software vorschlagen, wird eine E-Mail an diese Adresse gesendet.
+                    </p>
 
                     <div>
-                        <x-input-label for="new_app_email" value="Empfänger-E-Mail für Software-Vorschläge *" />
+                        <x-input-label for="new_app_email" value="Empfänger-E-Mail *" />
                         <x-text-input id="new_app_email" name="new_app_email" type="email"
                                       class="mt-1 block w-full"
                                       :value="old('new_app_email', $settings->new_app_email)"
@@ -36,17 +104,17 @@
                                       required />
                         <x-input-error :messages="$errors->get('new_app_email')" class="mt-1" />
                     </div>
+                </div>
 
-                    <div class="pt-2 border-t border-gray-100 flex justify-end">
-                        <x-primary-button type="submit">Einstellungen speichern</x-primary-button>
-                    </div>
-                </form>
-            </div>
+                <div class="flex justify-end">
+                    <x-primary-button type="submit">Einstellungen speichern</x-primary-button>
+                </div>
+            </form>
 
             <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-600">
-                <strong>Hinweis:</strong> Die E-Mail wird gesendet, sobald ein Abteilungsleiter nach dem Durchlauf
-                aller Applikationen neue Software vorschlägt. Die IT-Abteilung kann diese Vorschläge dann
-                prüfen und ggf. in das IT Cockpit aufnehmen.
+                <strong>Hinweis:</strong> Die Erinnerungs-E-Mail wird an den Vorgesetzten und (falls vorhanden) den
+                Stellvertreter der Abteilung gesendet, sofern eine E-Mail-Adresse im AD hinterlegt ist.
+                Abteilungen ohne Vorgesetzten oder ohne überfälliges Revisionsdatum werden übersprungen.
             </div>
 
         </div>
