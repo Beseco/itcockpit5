@@ -41,9 +41,11 @@
                     @endif
                 </div>
                 <div class="flex gap-1 shrink-0">
+                    @php $sbLabels = ['A' => 'Normal', 'B' => 'Hoch', 'C' => 'Sehr hoch']; @endphp
                     @foreach(['C' => $app->confidentiality, 'I' => $app->integrity, 'V' => $app->availability] as $lbl => $val)
                         <span class="text-xs font-bold px-2 py-0.5 rounded
-                            {{ $val === 'C' ? 'bg-red-100 text-red-700' : ($val === 'B' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700') }}">
+                            {{ $val === 'C' ? 'bg-red-100 text-red-700' : ($val === 'B' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700') }}"
+                              title="{{ ['C'=>'Vertraulichkeit','I'=>'Integrität','V'=>'Verfügbarkeit'][$lbl] }}: {{ $sbLabels[$val] ?? $val }}">
                             {{ $lbl }}:{{ $val }}
                         </span>
                     @endforeach
@@ -111,25 +113,54 @@
                         <dd class="text-gray-700">{{ $app->servers->pluck('name')->join(', ') }}</dd>
                     </div>
                     @endif
+
+                    {{-- Schutzbedarf ausgeschrieben --}}
+                    <div>
+                        <dt class="text-xs font-medium text-gray-400 mb-0.5">Vertraulichkeit</dt>
+                        <dd>
+                            <span class="text-xs font-semibold px-2 py-0.5 rounded
+                                {{ $app->confidentiality === 'C' ? 'bg-red-100 text-red-700' : ($app->confidentiality === 'B' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700') }}">
+                                {{ $sbLabels[$app->confidentiality] ?? $app->confidentiality }}
+                            </span>
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-gray-400 mb-0.5">Integrität</dt>
+                        <dd>
+                            <span class="text-xs font-semibold px-2 py-0.5 rounded
+                                {{ $app->integrity === 'C' ? 'bg-red-100 text-red-700' : ($app->integrity === 'B' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700') }}">
+                                {{ $sbLabels[$app->integrity] ?? $app->integrity }}
+                            </span>
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-gray-400 mb-0.5">Verfügbarkeit</dt>
+                        <dd>
+                            <span class="text-xs font-semibold px-2 py-0.5 rounded
+                                {{ $app->availability === 'C' ? 'bg-red-100 text-red-700' : ($app->availability === 'B' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700') }}">
+                                {{ $sbLabels[$app->availability] ?? $app->availability }}
+                            </span>
+                        </dd>
+                    </div>
                 </dl>
             </div>
 
             <div class="px-8 pb-6 pt-1 flex items-center justify-between border-t border-gray-100">
-                {{-- Weiter ohne Änderung --}}
+                {{-- Applikation bearbeiten --}}
+                <button @click="mode = 'edit'"
+                        class="inline-flex items-center px-5 py-2 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 text-sm transition">
+                    Applikation bearbeiten
+                </button>
+
+                {{-- Bestätigen und Weiter --}}
                 <form action="{{ route('abteilung-revision.app.submit', [$token, $app->id]) }}" method="POST">
                     @csrf
                     <input type="hidden" name="skip" value="1">
                     <button type="submit"
-                            class="text-sm text-gray-500 hover:text-gray-700 underline">
-                        Weiter ohne Änderung
+                            class="inline-flex items-center px-5 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 text-sm transition">
+                        Bestätigen und Weiter →
                     </button>
                 </form>
-
-                {{-- Ändern --}}
-                <button @click="mode = 'edit'"
-                        class="inline-flex items-center px-5 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 text-sm transition">
-                    Angaben prüfen / Ändern →
-                </button>
             </div>
         </div>
 
