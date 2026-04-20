@@ -65,10 +65,30 @@
 
         @if($proposal->reason)
         <table width="100%" cellpadding="0" cellspacing="0"
-               style="background:#fef3c7;border:1px solid #fde68a;border-radius:6px;margin:0 0 24px;">
+               style="background:#fef3c7;border:1px solid #fde68a;border-radius:6px;margin:0 0 16px;">
             <tr><td style="padding:12px 16px;">
                 <p style="margin:0 0 4px;font-size:11px;font-weight:700;text-transform:uppercase;color:#92400e;">Begründung Schutzbedarf-Änderung</p>
                 <p style="margin:0;font-size:13px;color:#78350f;">{{ $proposal->reason }}</p>
+            </td></tr>
+        </table>
+        @endif
+
+        @if($proposal->kommentar)
+        <table width="100%" cellpadding="0" cellspacing="0"
+               style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;margin:0 0 16px;">
+            <tr><td style="padding:12px 16px;">
+                <p style="margin:0 0 4px;font-size:11px;font-weight:700;text-transform:uppercase;color:#0c4a6e;">Allgemeiner Kommentar</p>
+                <p style="margin:0;font-size:13px;color:#0369a1;">{{ $proposal->kommentar }}</p>
+            </td></tr>
+        </table>
+        @endif
+
+        @if($proposal->nicht_vorhanden)
+        <table width="100%" cellpadding="0" cellspacing="0"
+               style="background:#fef2f2;border:1px solid #fecaca;border-radius:6px;margin:0 0 16px;">
+            <tr><td style="padding:12px 16px;">
+                <p style="margin:0 0 4px;font-size:11px;font-weight:700;text-transform:uppercase;color:#991b1b;">⚠ App nicht mehr vorhanden / benötigt</p>
+                <p style="margin:0;font-size:13px;color:#b91c1c;">Die Abteilung hat gemeldet, dass diese Applikation nicht mehr eingesetzt wird oder nicht mehr benötigt wird. Bitte prüfen Sie, ob die App aus dem IT Cockpit entfernt werden soll.</p>
             </td></tr>
         </table>
         @endif

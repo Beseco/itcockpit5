@@ -85,6 +85,8 @@ class AbteilungRevisionController extends Controller
             'integrity'                 => ['required', 'in:A,B,C'],
             'availability'              => ['required', 'in:A,B,C'],
             'reason'                    => ['nullable', 'string', 'max:1000'],
+            'kommentar'                 => ['nullable', 'string', 'max:3000'],
+            'nicht_vorhanden'           => ['nullable', 'boolean'],
         ]);
 
         $schutzbedarfGeaendert = $validated['confidentiality'] !== $app->confidentiality
@@ -95,6 +97,8 @@ class AbteilungRevisionController extends Controller
             return back()->withErrors(['reason' => 'Bei Änderung des Schutzbedarfs ist eine Begründung erforderlich.'])
                 ->withInput();
         }
+
+        $nichtVorhanden = $request->boolean('nicht_vorhanden');
 
         $original = [
             'einsatzzweck'              => $app->einsatzzweck,
@@ -118,7 +122,7 @@ class AbteilungRevisionController extends Controller
             'availability'              => $validated['availability'],
         ];
 
-        $hasChanges = $original !== $proposed;
+        $hasChanges = $original !== $proposed || $nichtVorhanden || !empty($validated['kommentar']);
 
         $proposal = AbteilungRevisionProposal::create([
             'abteilung_revision_token' => $token,
@@ -126,6 +130,8 @@ class AbteilungRevisionController extends Controller
             'original_data'            => $original,
             'proposed_data'            => $hasChanges ? $proposed : null,
             'reason'                   => $validated['reason'] ?? null,
+            'kommentar'                => $validated['kommentar'] ?? null,
+            'nicht_vorhanden'          => $nichtVorhanden,
             'approval_token'           => $hasChanges ? Str::random(64) : null,
             'skipped'                  => false,
         ]);

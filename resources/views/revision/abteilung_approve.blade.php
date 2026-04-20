@@ -62,9 +62,20 @@
                     </div>
                 @endforeach
                 @if($proposal->reason)
-                <div class="px-4 py-2.5 bg-yellow-50">
+                <div class="px-4 py-2.5 bg-yellow-50 border-b border-gray-100 last:border-0">
                     <div class="text-xs text-gray-400 mb-1">Begründung Schutzbedarf</div>
                     <div class="text-xs text-gray-700">{{ $proposal->reason }}</div>
+                </div>
+                @endif
+                @if($proposal->kommentar)
+                <div class="px-4 py-2.5 bg-blue-50 border-b border-gray-100 last:border-0">
+                    <div class="text-xs text-gray-400 mb-1">Allgemeiner Kommentar</div>
+                    <div class="text-xs text-gray-700">{{ $proposal->kommentar }}</div>
+                </div>
+                @endif
+                @if($proposal->nicht_vorhanden)
+                <div class="px-4 py-2.5 bg-red-50">
+                    <div class="text-xs font-semibold text-red-600">⚠ App als nicht mehr vorhanden / benötigt gemeldet</div>
                 </div>
                 @endif
             </div>

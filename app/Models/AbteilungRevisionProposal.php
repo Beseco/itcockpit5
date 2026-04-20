@@ -15,16 +15,19 @@ class AbteilungRevisionProposal extends Model
         'original_data',
         'proposed_data',
         'reason',
+        'kommentar',
+        'nicht_vorhanden',
         'approval_token',
         'approved_at',
         'skipped',
     ];
 
     protected $casts = [
-        'original_data' => 'array',
-        'proposed_data' => 'array',
-        'approved_at'   => 'datetime',
-        'skipped'       => 'boolean',
+        'original_data'   => 'array',
+        'proposed_data'   => 'array',
+        'approved_at'     => 'datetime',
+        'skipped'         => 'boolean',
+        'nicht_vorhanden' => 'boolean',
     ];
 
     public function applikation(): BelongsTo
