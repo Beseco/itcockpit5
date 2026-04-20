@@ -43,7 +43,7 @@
                                 @endif
                             </p>
                             <p style="margin:0 0 20px;line-height:1.7;color:#374151;">
-                                Klicken Sie bitte auf den folgenden Button, um die erfassten Applikationen Ihrer Abteilung einzusehen und Rückmeldungen oder Änderungswünsche direkt an die IT zu übermitteln. Sie können auch bisher nicht erfasste Software vorschlagen.
+                                Klicken Sie bitte auf den folgenden Button, um die erfassten Applikationen Ihrem Bereich einzusehen und Rückmeldungen oder Änderungswünsche direkt an die IT zu übermitteln. Sie können auch bisher nicht erfasste Software vorschlagen.
                             </p>
                             @else
                             {{-- Abteilung hat keine Applikationen --}}
@@ -55,7 +55,7 @@
                                 @endif
                             </p>
                             <p style="margin:0 0 20px;line-height:1.7;color:#374151;">
-                                Sollten in Ihrer Abteilung Applikationen oder Software eingesetzt werden,
+                                Sollten in Ihrem Bereich Applikationen oder Software eingesetzt werden,
                                 bitten wir Sie, diese über den folgenden Link zu melden, damit wir diese eintragen können.
                                 Andernfalls schließen Sie die Revision einfach ab, indem Sie bestätigen, dass keine neuen Apps hinzugekommen sind.
                             </p>
