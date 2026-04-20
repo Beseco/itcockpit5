@@ -25,7 +25,7 @@
             Tragen Sie diese bitte unten ein. Ihr Vorschlag wird direkt an die IT-Abteilung weitergeleitet.
         </p>
 
-        <form action="{{ route('abteilung-revision.neue-app.submit', $token) }}" method="POST">
+        <form id="neue-app-form" action="{{ route('abteilung-revision.neue-app.submit', $token) }}" method="POST">
             @csrf
 
             <div id="app-rows" class="space-y-4 mb-5">
@@ -34,7 +34,6 @@
                         <div>
                             <label class="block text-xs font-medium text-gray-600 mb-1">Name der Software <span class="text-red-500">*</span></label>
                             <input type="text" name="apps[0][name]" placeholder="z.B. Microsoft Teams"
-                                   required
                                    class="w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                         </div>
                         <div>
@@ -57,15 +56,21 @@
             </button>
 
             <div class="flex items-center justify-between pt-4 border-t border-gray-100">
-                <button type="submit" name="skip" value="1"
-                        class="text-sm text-gray-500 hover:text-gray-700 underline">
-                    Keine neuen Apps – Revision abschließen
-                </button>
                 <button type="submit"
-                        class="inline-flex items-center px-5 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 text-sm transition">
+                        class="inline-flex items-center px-5 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 text-sm transition"
+                        onclick="return validateApps()">
                     Vorschläge senden &amp; Abschließen
                 </button>
             </div>
+        </form>
+
+        {{-- Skip-Formular außerhalb, kein required-Feld --}}
+        <form action="{{ route('abteilung-revision.neue-app.submit', $token) }}" method="POST" class="mt-4 text-center">
+            @csrf
+            <input type="hidden" name="skip" value="1">
+            <button type="submit" class="text-sm text-gray-500 hover:text-gray-700 underline">
+                Keine neuen Apps – Revision abschließen
+            </button>
         </form>
     </div>
 
@@ -74,6 +79,17 @@
 
 <script>
 var idx = 1;
+
+function validateApps() {
+    var names = document.querySelectorAll('[name^="apps"][name$="[name]"]');
+    var filled = Array.from(names).some(function(el) { return el.value.trim() !== ''; });
+    if (!filled) {
+        alert('Bitte tragen Sie mindestens eine Software ein oder wählen Sie "Keine neuen Apps".');
+        return false;
+    }
+    return true;
+}
+
 function addRow() {
     var tpl = '<div class="app-row border border-gray-200 rounded-lg p-4 bg-gray-50">'
         + '<div class="grid grid-cols-1 gap-3">'
