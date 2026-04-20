@@ -58,33 +58,19 @@
                             @php $apps = $abteilung->applikationen()->with(['adminUser'])->orderBy('name')->get(); @endphp
                             @if($apps->count())
                             <table width="100%" cellpadding="0" cellspacing="0"
-                                   style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;margin:0 0 24px;">
-                                <tr>
-                                    <td style="padding:14px 18px;">
-                                        <p style="margin:0 0 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#6b7280;">
-                                            Erfasste Applikationen ({{ $apps->count() }})
-                                        </p>
-                                        <table width="100%" cellpadding="0" cellspacing="0">
-                                            @foreach($apps as $app)
-                                            <tr>
-                                                <td style="padding:3px 0;font-size:13px;font-weight:600;color:#1f2937;width:45%;">
-                                                    {{ $app->name }}
-                                                </td>
-                                                <td style="padding:3px 0;font-size:12px;color:#9ca3af;">
-                                                    {{ $app->adminUser?->name ?? '—' }}
-                                                </td>
-                                                <td style="padding:3px 0;font-size:11px;text-align:right;">
-                                                    <span style="background:{{ $app->confidentiality === 'C' ? '#fee2e2' : ($app->confidentiality === 'B' ? '#fef3c7' : '#d1fae5') }};
-                                                                 color:{{ $app->confidentiality === 'C' ? '#991b1b' : ($app->confidentiality === 'B' ? '#92400e' : '#065f46') }};
-                                                                 padding:1px 6px;border-radius:4px;font-weight:700;">
-                                                        C:{{ $app->confidentiality }} I:{{ $app->integrity }} V:{{ $app->availability }}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                            @endforeach
-                                        </table>
-                                    </td>
+                                   style="border-collapse:collapse;border:1px solid #e5e7eb;border-radius:6px;margin:0 0 24px;overflow:hidden;">
+                                <tr style="background:#f9fafb;">
+                                    <th style="text-align:left;padding:8px 12px;font-size:11px;font-weight:700;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb;">Name</th>
+                                    <th style="text-align:left;padding:8px 12px;font-size:11px;font-weight:700;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb;">Beschreibung</th>
+                                    <th style="text-align:left;padding:8px 12px;font-size:11px;font-weight:700;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb;">Verfahrensverantwortlicher</th>
                                 </tr>
+                                @foreach($apps as $app)
+                                <tr>
+                                    <td style="padding:7px 12px;font-size:13px;font-weight:600;color:#1f2937;border-bottom:1px solid #f3f4f6;">{{ $app->name }}</td>
+                                    <td style="padding:7px 12px;font-size:12px;color:#374151;border-bottom:1px solid #f3f4f6;">{{ $app->einsatzzweck ?: '—' }}</td>
+                                    <td style="padding:7px 12px;font-size:12px;color:#374151;border-bottom:1px solid #f3f4f6;">{{ $app->verantwortlich_name ?: '—' }}</td>
+                                </tr>
+                                @endforeach
                             </table>
                             @endif
 

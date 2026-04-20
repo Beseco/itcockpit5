@@ -25,6 +25,7 @@ use App\Http\Controllers\PersonalController;
 use App\Http\Controllers\StellenbeschreibungController;
 use App\Http\Controllers\StelleController;
 use App\Http\Controllers\ApplikationRevisionSettingsController;
+use App\Http\Controllers\AbteilungRevisionSettingsController;
 use App\Http\Controllers\RevisionController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -34,8 +35,13 @@ Route::get('/revision/{token}',  [RevisionController::class, 'show'])->name('rev
 Route::post('/revision/{token}', [RevisionController::class, 'submit'])->name('revision.submit');
 
 // Abteilungs-Revision – kein Login erforderlich (tokenbasiert)
-Route::get('/abteilung-revision/{token}',  [AbteilungRevisionController::class, 'show'])->name('abteilung-revision.show');
-Route::post('/abteilung-revision/{token}', [AbteilungRevisionController::class, 'submit'])->name('abteilung-revision.submit');
+Route::get('/abteilung-revision/approve/{approvalToken}', [AbteilungRevisionController::class, 'approve'])->name('abteilung-revision.approve');
+Route::get('/abteilung-revision/{token}', [AbteilungRevisionController::class, 'show'])->name('abteilung-revision.show');
+Route::get('/abteilung-revision/{token}/app/{appId}', [AbteilungRevisionController::class, 'showApp'])->name('abteilung-revision.app');
+Route::post('/abteilung-revision/{token}/app/{appId}', [AbteilungRevisionController::class, 'submitApp'])->name('abteilung-revision.app.submit');
+Route::get('/abteilung-revision/{token}/neue-app', [AbteilungRevisionController::class, 'showNewApp'])->name('abteilung-revision.neue-app');
+Route::post('/abteilung-revision/{token}/neue-app', [AbteilungRevisionController::class, 'submitNewApp'])->name('abteilung-revision.neue-app.submit');
+Route::get('/abteilung-revision/{token}/fertig', [AbteilungRevisionController::class, 'done'])->name('abteilung-revision.fertig');
 
 // Offboarding – öffentliche Token-Routen (kein Login)
 Route::get('/offboarding/bestaetigung/{token}',           [\App\Modules\AdUsers\Http\Controllers\OffboardingController::class, 'confirmShow'])->name('offboarding.confirm');
@@ -113,6 +119,12 @@ Route::middleware('auth')->group(function () {
     Route::post('/abteilungen/{abteilung}/revision-mail-test', [AbteilungController::class, 'sendRevisionMailTest'])
         ->middleware('can:abteilungen.edit')
         ->name('abteilungen.revision-mail-test');
+    Route::get('/abteilungen/revision-settings', [AbteilungRevisionSettingsController::class, 'index'])
+        ->middleware('can:abteilungen.edit')
+        ->name('abteilungen.revision-settings');
+    Route::put('/abteilungen/revision-settings', [AbteilungRevisionSettingsController::class, 'update'])
+        ->middleware('can:abteilungen.edit')
+        ->name('abteilungen.revision-settings.update');
     Route::resource('abteilungen', AbteilungController::class, [
         'parameters' => ['abteilungen' => 'abteilung'],
     ])->except(['show']);
