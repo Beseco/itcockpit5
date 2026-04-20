@@ -164,20 +164,22 @@ class AbteilungRevisionController extends Controller
         }
 
         $validated = $request->validate([
-            'apps'                => ['required', 'array', 'min:1'],
-            'apps.*.name'         => ['required', 'string', 'max:255'],
+            'apps'                => ['nullable', 'array'],
+            'apps.*.name'         => ['nullable', 'string', 'max:255'],
             'apps.*.einsatzzweck' => ['nullable', 'string', 'max:500'],
             'apps.*.hersteller'   => ['nullable', 'string', 'max:255'],
         ]);
 
-        $apps = collect($validated['apps'])->filter(fn($a) => !empty($a['name']));
+        $apps = collect($validated['apps'] ?? [])->filter(fn($a) => !empty(trim($a['name'] ?? '')));
 
         if ($apps->isNotEmpty()) {
-            $settings = AbteilungRevisionSettings::getSingleton();
             try {
-                Mail::to($settings->new_app_email)
-                    ->send(new AbteilungNeueSoftwareMail($apps, $abteilung));
-            } catch (\Exception) {}
+                $email = AbteilungRevisionSettings::getSingleton()->new_app_email
+                    ?: 'informatiotechnik@kreis-fs.de';
+                Mail::to($email)->send(new AbteilungNeueSoftwareMail($apps->values(), $abteilung));
+            } catch (\Exception $e) {
+                \Log::error('AbteilungNeueSoftwareMail fehlgeschlagen: ' . $e->getMessage());
+            }
         }
 
         return redirect()->route('abteilung-revision.fertig', $token);
