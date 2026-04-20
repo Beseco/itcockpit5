@@ -191,6 +191,9 @@ class AbteilungRevisionController extends Controller
 
         $abteilung->revision_completed_at = now();
         $abteilung->revision_token        = Str::random(64);
+        if ($abteilung->revision_date) {
+            $abteilung->revision_date = $abteilung->revision_date->addMonths(12);
+        }
         $abteilung->save();
 
         try {
