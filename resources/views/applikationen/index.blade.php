@@ -86,6 +86,40 @@
                         @endif
                     </div>
 
+                    @php
+                        $exportParams = array_filter([
+                            'search'                     => $search,
+                            'filter_abteilung_id'        => $filterAbteilungId,
+                            'filter_baustein'            => $filterBaustein,
+                            'filter_admin_user_id'       => $filterAdminUserId,
+                            'filter_ohne_verantwortlich' => $filterOhneVerantwortlich ? '1' : '',
+                            'filter_confidentiality'     => $filterConfidentiality,
+                            'filter_integrity'           => $filterIntegrity,
+                            'filter_availability'        => $filterAvailability,
+                            'filter_offene_revision'     => $filterOffeneRevision ? '1' : '',
+                        ], fn($v) => $v !== '' && $v !== null && $v !== false);
+                        $exportQuery = http_build_query($exportParams);
+                    @endphp
+
+                    {{-- Export-Buttons --}}
+                    <a href="{{ route('applikationen.export.xlsx') . ($exportQuery ? '?' . $exportQuery : '') }}"
+                       class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-green-50 hover:border-green-400 hover:text-green-700 transition-colors"
+                       title="Als Excel exportieren">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                        Excel
+                    </a>
+
+                    <a href="{{ route('applikationen.export.pdf') . ($exportQuery ? '?' . $exportQuery : '') }}"
+                       class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-red-50 hover:border-red-400 hover:text-red-700 transition-colors"
+                       title="Als PDF exportieren">
+                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                        PDF
+                    </a>
+
                     @can('applikationen.create')
                     <a href="{{ route('applikationen.create') }}"
                        class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition">
