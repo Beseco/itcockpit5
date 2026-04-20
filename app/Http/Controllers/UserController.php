@@ -56,10 +56,11 @@ class UserController extends Controller
             })
             ->when($gruppeId, fn($q) => $q->whereHas('gruppen', fn($q2) => $q2->where('gruppen.id', $gruppeId)));
 
-        $users   = $query->orderBy('name', $sortDir)->paginate(25)->withQueryString();
+        $perPage = in_array((int) $request->get('per_page', 25), [25, 50, 100, 250]) ? (int) $request->get('per_page', 25) : 25;
+        $users   = $query->orderBy('name', $sortDir)->paginate($perPage)->withQueryString();
         $gruppen = Gruppe::orderBy('name')->get();
 
-        return view('users.index', compact('users', 'gruppen', 'search', 'gruppeId', 'sortDir'));
+        return view('users.index', compact('users', 'gruppen', 'search', 'gruppeId', 'sortDir', 'perPage'));
     }
 
     /**

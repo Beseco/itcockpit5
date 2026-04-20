@@ -39,9 +39,10 @@ class OffboardingController extends Controller
             });
         }
 
-        $records = $query->paginate(25)->withQueryString();
+        $perPage = in_array((int) $request->get('per_page', 25), [25, 50, 100, 250]) ? (int) $request->get('per_page', 25) : 25;
+        $records = $query->paginate($perPage)->withQueryString();
 
-        return view('adusers::offboarding.index', compact('records', 'filterStatus', 'search'));
+        return view('adusers::offboarding.index', compact('records', 'filterStatus', 'search', 'perPage'));
     }
 
     // ─── Anlegen ──────────────────────────────────────────────────────────────

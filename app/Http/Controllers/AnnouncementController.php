@@ -20,13 +20,14 @@ class AnnouncementController extends Controller
     /**
      * Display a listing of announcements.
      */
-    public function index()
+    public function index(Request $request)
     {
         $this->authorize('announcements.view');
 
-        $announcements = Announcement::orderBy('created_at', 'desc')->paginate(15);
+        $perPage = in_array((int) $request->get('per_page', 25), [25, 50, 100, 250]) ? (int) $request->get('per_page', 25) : 25;
+        $announcements = Announcement::orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
 
-        return view('announcements.index', compact('announcements'));
+        return view('announcements.index', compact('announcements', 'perPage'));
     }
 
     /**

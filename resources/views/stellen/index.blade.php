@@ -83,9 +83,12 @@
                     @endforelse
                 </tbody>
             </table>
-            @if($stellen->hasPages())
-                <div class="px-4 py-3 border-t border-gray-200">{{ $stellen->links() }}</div>
-            @endif
+            <div class="px-4 py-3 border-t border-gray-200 flex items-center justify-between flex-wrap gap-2">
+                <x-per-page-select :per-page="$perPage" />
+                @if($stellen->hasPages())
+                    <div>{{ $stellen->links() }}</div>
+                @endif
+            </div>
         </div>
         {{-- Delete Modal --}}
         <div x-show="deleteId !== null" x-cloak

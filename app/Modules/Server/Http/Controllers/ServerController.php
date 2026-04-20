@@ -65,7 +65,8 @@ class ServerController extends Controller
             $query->whereNull('revision_date');
         }
 
-        $servers     = $query->paginate(25)->withQueryString();
+        $perPage = in_array((int) $request->get('per_page', 25), [25, 50, 100, 250]) ? (int) $request->get('per_page', 25) : 25;
+        $servers     = $query->paginate($perPage)->withQueryString();
         $abteilungen = Abteilung::orderBy('sort_order')->orderBy('name')->get();
         $adminUsers  = User::where('is_active', true)->orderBy('name')->get();
 
@@ -79,7 +80,7 @@ class ServerController extends Controller
             ->view('server::index', compact(
                 'servers', 'abteilungen', 'adminUsers', 'countNoRevision', 'networkData',
                 'search', 'filterStatus', 'filterAbt', 'filterLdap',
-                'filterAdminId', 'filterNoRevision'
+                'filterAdminId', 'filterNoRevision', 'perPage'
             ))
             ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
             ->header('Pragma', 'no-cache')

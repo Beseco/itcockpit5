@@ -28,10 +28,11 @@ class FernwartungController extends Controller
             });
         }
 
-        $eintraege = $query->paginate(50)->withQueryString();
+        $perPage = in_array((int) $request->get('per_page', 25), [25, 50, 100, 250]) ? (int) $request->get('per_page', 25) : 25;
+        $eintraege = $query->paginate($perPage)->withQueryString();
         $canDelete = Auth::user()->can('fernwartung.delete');
 
-        return view('fernwartung::index', compact('eintraege', 'search', 'canDelete'));
+        return view('fernwartung::index', compact('eintraege', 'search', 'canDelete', 'perPage'));
     }
 
     public function create()

@@ -66,7 +66,8 @@ class OrderController extends Controller
             });
         }
 
-        $orders = $query->paginate(25)->withQueryString();
+        $perPage = in_array((int) $request->get('per_page', 25), [25, 50, 100, 250]) ? (int) $request->get('per_page', 25) : 25;
+        $orders = $query->paginate($perPage)->withQueryString();
 
         $kstDetails   = null;
         $kstAccounts  = [];
@@ -87,7 +88,8 @@ class OrderController extends Controller
 
         return view('orders.index', compact(
             'obligo', 'kstSummen', 'orders', 'kstDetails', 'kstAccounts',
-            'filterStatus', 'filterDateFrom', 'filterDateTo', 'filterOwn', 'search'
+            'filterStatus', 'filterDateFrom', 'filterDateTo', 'filterOwn', 'search',
+            'perPage'
         ));
     }
 

@@ -170,6 +170,9 @@
     </div>
 </div>
 
-@if ($apps->hasPages())
-    <div class="mt-4 app-table-pagination">{{ $apps->links() }}</div>
-@endif
+<div class="mt-4 flex items-center justify-between flex-wrap gap-2 app-table-pagination">
+    <x-per-page-select :per-page="$perPage" />
+    @if ($apps->hasPages())
+        <div>{{ $apps->links() }}</div>
+    @endif
+</div>

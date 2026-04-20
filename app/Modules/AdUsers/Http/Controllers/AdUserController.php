@@ -56,10 +56,11 @@ class AdUserController extends Controller
             $query->where('letzter_import_at', '<', now()->subDays((int) $inaktivSeit));
         }
 
-        $users     = $query->paginate(100)->withQueryString();
+        $perPage = in_array((int) $request->get('per_page', 25), [25, 50, 100, 250]) ? (int) $request->get('per_page', 25) : 25;
+        $users     = $query->paginate($perPage)->withQueryString();
         $canDelete = Auth::user()->can('adusers.delete');
 
-        return view('adusers::index', compact('users', 'settings', 'search', 'canDelete', 'offboardingSams'));
+        return view('adusers::index', compact('users', 'settings', 'search', 'canDelete', 'offboardingSams', 'perPage'));
     }
 
     public function show(AdUser $user)

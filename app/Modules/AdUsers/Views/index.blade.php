@@ -192,11 +192,12 @@
                         </tbody>
                     </table>
                 </div>
-                @if($users->hasPages())
-                    <div class="px-4 py-3 border-t border-gray-100">
-                        {{ $users->links() }}
-                    </div>
-                @endif
+                <div class="px-4 py-3 border-t border-gray-100 flex items-center justify-between flex-wrap gap-2">
+                    <x-per-page-select :per-page="$perPage" />
+                    @if($users->hasPages())
+                        <div>{{ $users->links() }}</div>
+                    @endif
+                </div>
             </div>
 
             <p class="text-xs text-gray-400">{{ $users->total() }} Benutzer gesamt</p>

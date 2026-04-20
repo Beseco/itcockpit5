@@ -158,9 +158,12 @@
                         </table>
                     </div>
 
-                    @if ($records->hasPages())
-                        <div class="mt-4">{{ $records->links() }}</div>
-                    @endif
+                    <div class="mt-4 flex items-center justify-between flex-wrap gap-2">
+                        <x-per-page-select :per-page="$perPage" />
+                        @if ($records->hasPages())
+                            <div>{{ $records->links() }}</div>
+                        @endif
+                    </div>
                 </div>
             </div>
         </div>

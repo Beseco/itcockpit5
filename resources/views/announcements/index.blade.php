@@ -150,8 +150,11 @@
                     </div>
 
                     <!-- Pagination -->
-                    <div class="mt-4">
-                        {{ $announcements->links() }}
+                    <div class="mt-4 flex items-center justify-between flex-wrap gap-2">
+                        <x-per-page-select :per-page="$perPage" />
+                        @if ($announcements->hasPages())
+                            <div>{{ $announcements->links() }}</div>
+                        @endif
                     </div>
                 </div>
             </div>

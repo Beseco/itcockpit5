@@ -111,8 +111,11 @@
                     </div>
 
                     <!-- Pagination -->
-                    <div class="mt-4">
-                        {{ $logs->withQueryString()->links() }}
+                    <div class="mt-4 flex items-center justify-between flex-wrap gap-2">
+                        <x-per-page-select :per-page="$perPage" />
+                        @if ($logs->hasPages())
+                            <div>{{ $logs->links() }}</div>
+                        @endif
                     </div>
                 </div>
             </div>

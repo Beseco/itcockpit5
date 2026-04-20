@@ -53,9 +53,10 @@ class DienstleisterController extends Controller
             });
         }
 
-        $dienstleister = $query->paginate(20)->withQueryString();
+        $perPage = in_array((int) $request->get('per_page', 25), [25, 50, 100, 250]) ? (int) $request->get('per_page', 25) : 25;
+        $dienstleister = $query->paginate($perPage)->withQueryString();
 
-        return view('dienstleister.index', compact('dienstleister', 'sort', 'order', 'search'));
+        return view('dienstleister.index', compact('dienstleister', 'sort', 'order', 'search', 'perPage'));
     }
 
     /**

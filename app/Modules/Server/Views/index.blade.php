@@ -298,9 +298,12 @@
                         </table>
                     </div>
 
-                    @if ($servers->hasPages())
-                        <div class="mt-4">{{ $servers->links() }}</div>
-                    @endif
+                    <div class="mt-4 flex items-center justify-between flex-wrap gap-2">
+                        <x-per-page-select :per-page="$perPage" />
+                        @if ($servers->hasPages())
+                            <div>{{ $servers->links() }}</div>
+                        @endif
+                    </div>
                 </div>
             </div>
 

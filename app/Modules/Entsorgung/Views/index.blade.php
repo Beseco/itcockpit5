@@ -131,11 +131,12 @@
                     </table>
                 </div>
 
-                @if($eintraege->hasPages())
-                    <div class="px-4 py-3 border-t border-gray-100">
-                        {{ $eintraege->links() }}
-                    </div>
-                @endif
+                <div class="px-4 py-3 border-t border-gray-100 flex items-center justify-between flex-wrap gap-2">
+                    <x-per-page-select :per-page="$perPage" />
+                    @if($eintraege->hasPages())
+                        <div>{{ $eintraege->links() }}</div>
+                    @endif
+                </div>
             </div>
 
         </div>

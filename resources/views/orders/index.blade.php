@@ -290,11 +290,12 @@
                         </table>
                     </div>
 
-                    @if ($orders->hasPages())
-                        <div class="mt-4">
-                            {{ $orders->links() }}
-                        </div>
-                    @endif
+                    <div class="mt-4 flex items-center justify-between flex-wrap gap-2">
+                        <x-per-page-select :per-page="$perPage" />
+                        @if ($orders->hasPages())
+                            <div>{{ $orders->links() }}</div>
+                        @endif
+                    </div>
                 </div>
             </div>
 

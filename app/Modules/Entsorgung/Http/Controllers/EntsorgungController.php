@@ -36,11 +36,12 @@ class EntsorgungController extends Controller
             });
         }
 
-        $eintraege = $query->paginate(50)->withQueryString();
+        $perPage = in_array((int) $request->get('per_page', 25), [25, 50, 100, 250]) ? (int) $request->get('per_page', 25) : 25;
+        $eintraege = $query->paginate($perPage)->withQueryString();
         $canEdit   = Auth::user()->hasModulePermission('entsorgung', 'edit');
         $canDelete = Auth::user()->hasModulePermission('entsorgung', 'delete');
 
-        return view('entsorgung::index', compact('eintraege', 'search', 'canEdit', 'canDelete'));
+        return view('entsorgung::index', compact('eintraege', 'search', 'canEdit', 'canDelete', 'perPage'));
     }
 
     public function create()

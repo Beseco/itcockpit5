@@ -202,9 +202,12 @@
                 </tbody>
             </table>
 
-            @if($users->hasPages())
-                <div class="px-4 py-3 border-t border-gray-200">{{ $users->links() }}</div>
-            @endif
+            <div class="px-4 py-3 border-t border-gray-200 flex items-center justify-between flex-wrap gap-2">
+                <x-per-page-select :per-page="$perPage" />
+                @if($users->hasPages())
+                    <div>{{ $users->links() }}</div>
+                @endif
+            </div>
         </div>
 
         {{-- Delete Modal --}}

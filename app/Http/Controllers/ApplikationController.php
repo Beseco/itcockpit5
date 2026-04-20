@@ -89,7 +89,8 @@ class ApplikationController extends Controller
         if ($filterAvailability !== '')    $query->where('availability', $filterAvailability);
         if ($filterOffeneRevision)         $query->whereNotNull('revision_date')->where('revision_date', '<=', now()->toDateString());
 
-        $apps = $query->paginate(25)->withQueryString();
+        $perPage = in_array((int) $request->get('per_page', 25), [25, 50, 100, 250]) ? (int) $request->get('per_page', 25) : 25;
+        $apps = $query->paginate($perPage)->withQueryString();
 
         $abteilungen         = Abteilung::orderBy('sort_order')->orderBy('name')->get();
         $adminUsers          = User::whereIn('id', Applikation::whereNotNull('admin_user_id')->pluck('admin_user_id'))
@@ -103,7 +104,8 @@ class ApplikationController extends Controller
             'filterOhneVerantwortlich',
             'filterConfidentiality', 'filterIntegrity', 'filterAvailability',
             'filterOffeneRevision',
-            'abteilungen', 'adminUsers', 'verantwortlichUsers'
+            'abteilungen', 'adminUsers', 'verantwortlichUsers',
+            'perPage'
         ));
     }
 

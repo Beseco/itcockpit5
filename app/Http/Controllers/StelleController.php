@@ -13,16 +13,18 @@ class StelleController extends Controller
 {
     public function __construct(private AuditLogger $auditLogger) {}
 
-    public function index()
+    public function index(Request $request)
     {
         $this->authorize('base.stellen.view');
 
+        $perPage = in_array((int) $request->get('per_page', 25), [25, 50, 100, 250]) ? (int) $request->get('per_page', 25) : 25;
+
         $stellen = Stelle::with(['stellenbeschreibung', 'gruppe', 'stelleninhaber'])
             ->orderBy('stellennummer')
-            ->paginate(25)
+            ->paginate($perPage)
             ->withQueryString();
 
-        return view('stellen.index', compact('stellen'));
+        return view('stellen.index', compact('stellen', 'perPage'));
     }
 
     public function create()

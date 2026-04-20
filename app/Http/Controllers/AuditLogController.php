@@ -52,9 +52,10 @@ class AuditLogController extends Controller
             ->orderBy('name')
             ->get();
 
-        $logs = $query->orderBy('created_at', 'desc')->paginate(20);
+        $perPage = in_array((int) $request->get('per_page', 25), [25, 50, 100, 250]) ? (int) $request->get('per_page', 25) : 25;
+        $logs = $query->orderBy('created_at', 'desc')->paginate($perPage)->withQueryString();
 
-        return view('audit-logs.index', compact('logs', 'modules', 'users'));
+        return view('audit-logs.index', compact('logs', 'modules', 'users', 'perPage'));
     }
 
     /**
