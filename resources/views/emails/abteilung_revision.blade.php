@@ -31,6 +31,10 @@
                                     Guten Tag,
                                 @endif
                             </p>
+                            @php $apps = $abteilung->applikationen()->orderBy('name')->get(); @endphp
+
+                            @if($apps->count())
+                            {{-- Abteilung hat Applikationen --}}
                             <p style="margin:0 0 16px;line-height:1.7;color:#374151;">
                                 die IT-Abteilung bittet Sie, die aktuell erfasste Software-Liste
                                 für <strong>{{ $abteilung->anzeigename }}</strong> zu überprüfen.
@@ -41,6 +45,21 @@
                             <p style="margin:0 0 20px;line-height:1.7;color:#374151;">
                                 Klicken Sie bitte auf den folgenden Button, um die erfassten Applikationen Ihrer Abteilung einzusehen und Rückmeldungen oder Änderungswünsche direkt an die IT zu übermitteln. Sie können auch bisher nicht erfasste Software vorschlagen.
                             </p>
+                            @else
+                            {{-- Abteilung hat keine Applikationen --}}
+                            <p style="margin:0 0 16px;line-height:1.7;color:#374151;">
+                                für den Bereich <strong>{{ $abteilung->anzeigename }}</strong> sind aktuell
+                                <strong>keine Applikationen</strong> im Verzeichnis der IuK hinterlegt.
+                                @if($abteilung->revision_date)
+                                    Das Revisionsdatum ist der <strong>{{ $abteilung->revision_date->format('d.m.Y') }}</strong>.
+                                @endif
+                            </p>
+                            <p style="margin:0 0 20px;line-height:1.7;color:#374151;">
+                                Sollten in Ihrer Abteilung Applikationen oder Software eingesetzt werden,
+                                bitten wir Sie, diese über den folgenden Link zu melden, damit wir diese eintragen können.
+                                Andernfalls schließen Sie die Revision einfach ab, indem Sie bestätigen, dass keine neuen Apps hinzugekommen sind.
+                            </p>
+                            @endif
 
                             {{-- Button --}}
                             <table cellpadding="0" cellspacing="0" style="margin:0 auto 28px;">
@@ -48,14 +67,13 @@
                                     <td style="background:#4f46e5;border-radius:6px;text-align:center;">
                                         <a href="{{ $revisionUrl }}"
                                            style="display:inline-block;padding:14px 36px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;">
-                                            Softwareliste prüfen &rarr;
+                                            {{ $apps->count() ? 'Softwareliste prüfen →' : 'Software melden / Revision abschließen →' }}
                                         </a>
                                     </td>
                                 </tr>
                             </table>
 
-                            {{-- App-Vorschau --}}
-                            @php $apps = $abteilung->applikationen()->with(['adminUser'])->orderBy('name')->get(); @endphp
+                            {{-- App-Vorschau (nur wenn Apps vorhanden) --}}
                             @if($apps->count())
                             <table width="100%" cellpadding="0" cellspacing="0"
                                    style="border-collapse:collapse;border:1px solid #e5e7eb;border-radius:6px;margin:0 0 24px;overflow:hidden;">

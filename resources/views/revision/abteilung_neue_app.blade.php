@@ -55,22 +55,27 @@
                 + Weitere Software hinzufügen
             </button>
 
-            <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+            <div class="flex items-center justify-between gap-3 pt-4 border-t border-gray-100">
+                {{-- Skip: eigenes Formular ohne required-Felder --}}
+                <div>
+                    <button type="button"
+                            onclick="document.getElementById('skip-form').submit()"
+                            class="inline-flex items-center px-5 py-2 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 text-sm transition">
+                        Keine neuen Apps – Revision abschließen
+                    </button>
+                </div>
+
                 <button type="submit"
                         class="inline-flex items-center px-5 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 text-sm transition"
                         onclick="return validateApps()">
-                    Vorschläge senden &amp; Abschließen
+                    Vorschlag senden &amp; Abschließen
                 </button>
             </div>
         </form>
 
-        {{-- Skip-Formular außerhalb, kein required-Feld --}}
-        <form action="{{ route('abteilung-revision.neue-app.submit', $token) }}" method="POST" class="mt-4 text-center">
+        <form id="skip-form" action="{{ route('abteilung-revision.neue-app.submit', $token) }}" method="POST" class="hidden">
             @csrf
             <input type="hidden" name="skip" value="1">
-            <button type="submit" class="text-sm text-gray-500 hover:text-gray-700 underline">
-                Keine neuen Apps – Revision abschließen
-            </button>
         </form>
     </div>
 
