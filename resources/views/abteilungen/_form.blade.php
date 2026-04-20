@@ -42,4 +42,49 @@
 
     </div>
 
+    {{-- Trennlinie --}}
+    <div class="border-t border-gray-200 pt-4">
+        <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Verantwortliche &amp; Revision</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+            <div>
+                <x-input-label for="vorgesetzter_ad_user_id" value="Vorgesetzter (aus AD)" />
+                <select id="vorgesetzter_ad_user_id" name="vorgesetzter_ad_user_id"
+                        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                    <option value="">— kein Vorgesetzter —</option>
+                    @foreach($adUsers as $u)
+                        <option value="{{ $u->id }}"
+                            {{ old('vorgesetzter_ad_user_id', $abteilung->vorgesetzter_ad_user_id ?? '') == $u->id ? 'selected' : '' }}>
+                            {{ $u->anzeigename }}{{ $u->email ? ' (' . $u->email . ')' : '' }}
+                        </option>
+                    @endforeach
+                </select>
+                <x-input-error :messages="$errors->get('vorgesetzter_ad_user_id')" class="mt-2" />
+            </div>
+
+            <div>
+                <x-input-label for="stellvertreter_ad_user_id" value="Stellvertreter (aus AD)" />
+                <select id="stellvertreter_ad_user_id" name="stellvertreter_ad_user_id"
+                        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                    <option value="">— kein Stellvertreter —</option>
+                    @foreach($adUsers as $u)
+                        <option value="{{ $u->id }}"
+                            {{ old('stellvertreter_ad_user_id', $abteilung->stellvertreter_ad_user_id ?? '') == $u->id ? 'selected' : '' }}>
+                            {{ $u->anzeigename }}{{ $u->email ? ' (' . $u->email . ')' : '' }}
+                        </option>
+                    @endforeach
+                </select>
+                <x-input-error :messages="$errors->get('stellvertreter_ad_user_id')" class="mt-2" />
+            </div>
+
+            <div>
+                <x-input-label for="revision_date" value="Revisionsdatum" />
+                <x-text-input id="revision_date" name="revision_date" type="date" class="mt-1 block w-full"
+                              value="{{ old('revision_date', isset($abteilung->revision_date) ? $abteilung->revision_date->format('Y-m-d') : '') }}" />
+                <x-input-error :messages="$errors->get('revision_date')" class="mt-2" />
+            </div>
+
+        </div>
+    </div>
+
 </div>

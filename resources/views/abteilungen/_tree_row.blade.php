@@ -12,6 +12,25 @@
                     {{ $abteilung->kurzzeichen }}
                 </span>
             @endif
+            @if($abteilung->revision_date)
+                <span class="ml-2 px-1.5 py-0.5 text-xs rounded
+                    {{ $abteilung->revision_date->isPast() ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-500' }}"
+                      title="Revisionsdatum">
+                    📅 {{ $abteilung->revision_date->format('d.m.Y') }}
+                </span>
+            @endif
+            <div class="flex flex-wrap gap-x-3 mt-0.5 text-xs text-gray-400">
+                @if($abteilung->vorgesetzter)
+                    <span title="Vorgesetzter">
+                        <span class="text-gray-300">▲</span> {{ $abteilung->vorgesetzter->anzeigename }}
+                    </span>
+                @endif
+                @if($abteilung->stellvertreter)
+                    <span title="Stellvertreter">
+                        <span class="text-gray-300">↳</span> {{ $abteilung->stellvertreter->anzeigename }}
+                    </span>
+                @endif
+            </div>
         </div>
     </div>
     <div class="inline-flex items-center gap-1">

@@ -7,6 +7,7 @@ use App\Http\Controllers\AufgabeController;
 use App\Http\Controllers\AufgabenExportController;
 use App\Http\Controllers\AufgabeZuweisungController;
 use App\Http\Controllers\AbteilungController;
+use App\Http\Controllers\AbteilungRevisionController;
 use App\Http\Controllers\GruppeController;
 use App\Http\Controllers\ReminderMailController;
 use App\Http\Controllers\AuditLogController;
@@ -31,6 +32,10 @@ use Illuminate\Support\Facades\Route;
 // Revisionsformular – kein Login erforderlich (tokenbasiert)
 Route::get('/revision/{token}',  [RevisionController::class, 'show'])->name('revision.show');
 Route::post('/revision/{token}', [RevisionController::class, 'submit'])->name('revision.submit');
+
+// Abteilungs-Revision – kein Login erforderlich (tokenbasiert)
+Route::get('/abteilung-revision/{token}',  [AbteilungRevisionController::class, 'show'])->name('abteilung-revision.show');
+Route::post('/abteilung-revision/{token}', [AbteilungRevisionController::class, 'submit'])->name('abteilung-revision.submit');
 
 // Offboarding – öffentliche Token-Routen (kein Login)
 Route::get('/offboarding/bestaetigung/{token}',           [\App\Modules\AdUsers\Http\Controllers\OffboardingController::class, 'confirmShow'])->name('offboarding.confirm');
@@ -105,6 +110,9 @@ Route::middleware('auth')->group(function () {
     Route::delete('/dienstleister-funktionen/{funktion}', [AnsprechpartnerFunktionController::class, 'destroy'])->name('dienstleister-funktionen.destroy');
 
     // Abteilungen / Sachgebiete
+    Route::post('/abteilungen/{abteilung}/revision-mail-test', [AbteilungController::class, 'sendRevisionMailTest'])
+        ->middleware('can:abteilungen.edit')
+        ->name('abteilungen.revision-mail-test');
     Route::resource('abteilungen', AbteilungController::class, [
         'parameters' => ['abteilungen' => 'abteilung'],
     ])->except(['show']);
