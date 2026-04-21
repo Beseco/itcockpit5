@@ -238,6 +238,131 @@
             </div>
             @endcan
 
+            {{-- CheckMK Host-Test --}}
+            @if($checkMkSettings->isConfigured())
+            @can('server.config')
+            <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden"
+                 x-data="{
+                    hostname: '',
+                    loading: false,
+                    result: null,
+                    async lookup() {
+                        if (!this.hostname.trim()) return;
+                        this.loading = true; this.result = null;
+                        const fd = new FormData();
+                        fd.append('hostname', this.hostname.trim());
+                        try {
+                            const r = await fetch('{{ route('server.settings.checkmk.test-host') }}', {
+                                method: 'POST',
+                                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' },
+                                body: fd,
+                            });
+                            this.result = await r.json();
+                        } catch(e) { this.result = { error: e.toString() }; }
+                        finally { this.loading = false; }
+                    }
+                 }">
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
+                    <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">CheckMK Host testen</h3>
+                    <p class="text-xs text-gray-400 mt-0.5">Prüfen ob und welche Sensoren CheckMK für einen bestimmten Host liefert</p>
+                </div>
+                <div class="p-6 space-y-4">
+
+                    {{-- Eingabe --}}
+                    <div class="flex gap-2 items-end">
+                        <div class="flex-1">
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Hostname in CheckMK</label>
+                            <input type="text" x-model="hostname"
+                                   @keydown.enter.prevent="lookup()"
+                                   placeholder="z.B. srv-dc01 oder srv-dc01.lra.lan"
+                                   class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                        </div>
+                        <button @click="lookup()" :disabled="loading || !hostname.trim()"
+                                class="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-md hover:bg-indigo-700 disabled:opacity-50 whitespace-nowrap">
+                            <span x-show="loading">
+                                <svg class="inline animate-spin h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                                </svg>
+                                Suche…
+                            </span>
+                            <span x-show="!loading">Host abfragen</span>
+                        </button>
+                    </div>
+
+                    {{-- Fehler --}}
+                    <div x-show="result && result.error" x-cloak
+                         class="bg-red-50 border border-red-200 rounded-md px-4 py-3 text-sm text-red-700">
+                        <strong>Fehler:</strong> <span x-text="result && result.error"></span>
+                    </div>
+
+                    {{-- Ergebnis --}}
+                    <template x-if="result && !result.error">
+                        <div class="space-y-3">
+
+                            {{-- Host-Status --}}
+                            <div class="flex items-center gap-3 py-2 border-b border-gray-100">
+                                <span class="text-sm font-medium text-gray-600 w-36 shrink-0">Erreichbarkeit</span>
+                                <span class="text-xs font-bold px-2.5 py-0.5 rounded-full"
+                                      :class="{
+                                          'bg-green-100 text-green-700': result.state === 0,
+                                          'bg-red-100 text-red-700':    result.state === 1 || result.state === 2,
+                                          'bg-gray-100 text-gray-500':  result.state == null
+                                      }"
+                                      x-text="result.state_label || '—'"></span>
+                            </div>
+
+                            {{-- Services --}}
+                            <template x-if="result.services && result.services.length > 0">
+                                <div>
+                                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2"
+                                       x-text="'Gefundene Sensoren (' + result.services.length + ')'"></p>
+                                    <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                        <table class="w-full text-sm">
+                                            <thead class="bg-gray-50">
+                                                <tr>
+                                                    <th class="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Service</th>
+                                                    <th class="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide w-24">Status</th>
+                                                    <th class="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Details</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <template x-for="svc in result.services" :key="svc.name">
+                                                    <tr class="border-t border-gray-100">
+                                                        <td class="px-4 py-2.5 font-medium text-gray-800" x-text="svc.name"></td>
+                                                        <td class="px-4 py-2.5">
+                                                            <span class="text-xs font-bold px-2 py-0.5 rounded-full"
+                                                                  :class="{
+                                                                      'bg-green-100 text-green-700':   svc.state === 0,
+                                                                      'bg-yellow-100 text-yellow-700': svc.state === 1,
+                                                                      'bg-red-100 text-red-700':       svc.state === 2,
+                                                                      'bg-gray-100 text-gray-500':     svc.state === 3 || svc.state == null
+                                                                  }"
+                                                                  x-text="svc.state_label"></span>
+                                                        </td>
+                                                        <td class="px-4 py-2.5 text-gray-600 text-xs" x-text="svc.plugin_output || '—'"></td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+            	            </template>
+
+                            <template x-if="result.services && result.services.length === 0">
+                                <div class="bg-yellow-50 border border-yellow-200 rounded-md px-4 py-3 text-sm text-yellow-800">
+                                    Host wurde gefunden, aber keine relevanten Services (CPU, RAM, Disk, Uptime) zurückgegeben.
+                                    Prüfen Sie ob der Hostname in CheckMK korrekt eingetragen ist und die Services existieren.
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+
+                </div>
+            </div>
+            @endcan
+            @endif
+
             {{-- Erweiterbare Optionen --}}
             @foreach ($options as $category => $categoryOptions)
                 @php

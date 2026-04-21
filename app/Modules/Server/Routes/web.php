@@ -16,6 +16,7 @@ Route::middleware(['auth', 'module.permission:server,config'])->group(function (
     Route::patch('/settings/sync-ous/{ou}/toggle',       [ServerSettingsController::class, 'toggleOu'])->name('settings.sync-ous.toggle');
     Route::put('/settings/checkmk',                      [CheckMkController::class, 'update'])->name('settings.checkmk.update');
     Route::post('/settings/checkmk/test',                [CheckMkController::class, 'test'])->name('settings.checkmk.test');
+    Route::post('/settings/checkmk/test-host',           [CheckMkController::class, 'testHost'])->name('settings.checkmk.test-host');
 });
 
 Route::middleware(['auth', 'module.permission:server,view'])->group(function () {

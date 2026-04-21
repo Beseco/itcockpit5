@@ -23,6 +23,18 @@ class CheckMkController extends Controller
         return response()->json($checkMk->getHostData($hostname));
     }
 
+    /** AJAX: Host-Lookup – gibt Monitoring-Daten für einen frei eingegebenen Hostnamen zurück */
+    public function testHost(Request $request, CheckMkService $checkMk): JsonResponse
+    {
+        $request->validate(['hostname' => ['required', 'string', 'max:255']]);
+
+        if (! $checkMk->isConfigured()) {
+            return response()->json(['error' => 'CheckMK ist nicht konfiguriert oder deaktiviert.'], 503);
+        }
+
+        return response()->json($checkMk->getHostData(trim($request->hostname)));
+    }
+
     /** AJAX: Verbindungstest mit den aktuell gespeicherten oder eingegebenen Werten */
     public function test(Request $request): JsonResponse
     {
