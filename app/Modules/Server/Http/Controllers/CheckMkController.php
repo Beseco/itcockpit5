@@ -23,6 +23,51 @@ class CheckMkController extends Controller
         return response()->json($checkMk->getHostData($hostname));
     }
 
+    /** AJAX: Verbindungstest mit den aktuell gespeicherten oder eingegebenen Werten */
+    public function test(Request $request): JsonResponse
+    {
+        $request->validate([
+            'url'        => ['required', 'string'],
+            'site'       => ['required', 'string'],
+            'username'   => ['required', 'string'],
+            'secret'     => ['nullable', 'string'],
+            'verify_ssl' => ['nullable', 'boolean'],
+        ]);
+
+        $saved = CheckMkSettings::getSingleton();
+
+        $settings          = new CheckMkSettings();
+        $settings->url        = $request->url;
+        $settings->site       = $request->site;
+        $settings->username   = $request->username;
+        $settings->secret     = filled($request->secret) ? $request->secret : $saved->secret;
+        $settings->verify_ssl = $request->boolean('verify_ssl');
+        $settings->enabled    = true;
+
+        try {
+            $http = \Illuminate\Support\Facades\Http::withHeaders([
+                'Authorization' => "Bearer {$settings->username} {$settings->secret}",
+                'Accept'        => 'application/json',
+            ])->timeout(8);
+
+            if (! $settings->verify_ssl) {
+                $http = $http->withoutVerifying();
+            }
+
+            $base     = rtrim($settings->url, '/') . '/' . trim($settings->site, '/') . '/check_mk/api/1.0';
+            $response = $http->get($base . '/version');
+
+            if ($response->successful()) {
+                $version = $response->json('versions.checkmk') ?? $response->json('version') ?? '?';
+                return response()->json(['ok' => true, 'message' => "Verbindung erfolgreich – CheckMK Version: {$version}"]);
+            }
+
+            return response()->json(['ok' => false, 'message' => "HTTP {$response->status()}: " . ($response->json('title') ?? $response->body())]);
+        } catch (\Exception $e) {
+            return response()->json(['ok' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
     /** Einstellungen speichern */
     public function update(Request $request): RedirectResponse
     {

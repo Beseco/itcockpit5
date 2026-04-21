@@ -110,7 +110,27 @@
 
             {{-- CheckMK Integration --}}
             @can('server.config')
-            <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
+            <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden"
+                 x-data="{
+                    testing: false, testResult: null, testOk: null,
+                    async runTest() {
+                        this.testing = true; this.testResult = null;
+                        const form = document.getElementById('checkmk-settings-form');
+                        const data = new FormData(form);
+                        data.append('_method', 'POST');
+                        try {
+                            const r = await fetch('{{ route('server.settings.checkmk.test') }}', {
+                                method: 'POST',
+                                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' },
+                                body: data,
+                            });
+                            const j = await r.json();
+                            this.testOk = j.ok;
+                            this.testResult = j.message;
+                        } catch(e) { this.testOk = false; this.testResult = e.toString(); }
+                        finally { this.testing = false; }
+                    }
+                 }">
                 <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
                     <div>
                         <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">CheckMK Integration</h3>
@@ -122,8 +142,8 @@
                         <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Inaktiv</span>
                     @endif
                 </div>
-                <div class="p-6">
-                    <form method="POST" action="{{ route('server.settings.checkmk.update') }}" class="space-y-4">
+                <div class="p-6 space-y-5">
+                    <form id="checkmk-settings-form" method="POST" action="{{ route('server.settings.checkmk.update') }}" class="space-y-4">
                         @csrf
                         @method('PUT')
 
@@ -161,7 +181,10 @@
                             </div>
 
                             <div class="sm:col-span-2">
-                                <label class="block text-xs font-medium text-gray-600 mb-1">Automation-Secret</label>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">
+                                    Automation-Secret
+                                    <span x-data x-tooltip="Wo finde ich das Secret?" class="ml-1 text-gray-400 cursor-help">?</span>
+                                </label>
                                 <input type="password" name="secret"
                                        placeholder="{{ $checkMkSettings->secret ? '••••••••••••• (leer lassen = nicht ändern)' : 'Secret eintragen…' }}"
                                        autocomplete="new-password"
@@ -176,13 +199,41 @@
                             </div>
                         </div>
 
-                        <div class="pt-2 flex justify-end">
+                        {{-- Testergebnis --}}
+                        <div x-show="testResult !== null"
+                             :class="testOk ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'"
+                             class="border rounded-md px-4 py-3 text-sm flex items-start gap-2" x-cloak>
+                            <span x-text="testOk ? '✓' : '✗'" class="font-bold shrink-0"></span>
+                            <span x-text="testResult"></span>
+                        </div>
+
+                        <div class="pt-2 flex items-center justify-between">
+                            <button type="button" @click="runTest()" :disabled="testing"
+                                    class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 text-xs font-semibold rounded-md hover:bg-gray-50 disabled:opacity-50">
+                                <svg x-show="testing" class="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                                </svg>
+                                <span x-text="testing ? 'Teste…' : 'Verbindung testen'"></span>
+                            </button>
                             <button type="submit"
                                     class="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-md hover:bg-indigo-700">
                                 Einstellungen speichern
                             </button>
                         </div>
                     </form>
+
+                    {{-- Hinweis: Automation Secret --}}
+                    <div class="border border-blue-100 bg-blue-50 rounded-lg p-4 text-xs text-blue-800 space-y-1">
+                        <p class="font-semibold text-blue-900">Wo finde ich das Automation-Secret?</p>
+                        <ol class="list-decimal list-inside space-y-0.5 text-blue-700">
+                            <li>In CheckMK: <strong>Setup → Users</strong> öffnen</li>
+                            <li>Benutzer <strong>„automation"</strong> anklicken (oder einen eigenen Automation-User anlegen)</li>
+                            <li>Im Benutzer-Formular nach unten scrollen: Abschnitt <strong>„Automation Secret"</strong></li>
+                            <li>Das Secret kopieren oder über <strong>„Generate new secret"</strong> neu erzeugen</li>
+                        </ol>
+                        <p class="text-blue-600 mt-1">Der Automation-User benötigt mindestens die Rolle <strong>„Operator"</strong> oder Lesezugriff auf die gewünschten Hosts.</p>
+                    </div>
                 </div>
             </div>
             @endcan
