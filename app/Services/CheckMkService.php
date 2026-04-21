@@ -1,0 +1,132 @@
+<?php
+
+namespace App\Services;
+
+use App\Modules\Server\Models\CheckMkSettings;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+
+class CheckMkService
+{
+    private CheckMkSettings $cfg;
+
+    public function __construct()
+    {
+        $this->cfg = CheckMkSettings::getSingleton();
+    }
+
+    public function isConfigured(): bool
+    {
+        return $this->cfg->isConfigured();
+    }
+
+    /**
+     * Holt alle relevanten Monitoring-Daten für einen Host.
+     * Rückgabe: ['state' => int, 'state_label' => string, 'services' => [...]]
+     *           oder ['error' => string]
+     */
+    public function getHostData(string $hostname): array
+    {
+        try {
+            $hostState = $this->fetchHostState($hostname);
+            $services  = $this->fetchServices($hostname);
+
+            return [
+                'hostname'    => $hostname,
+                'state'       => $hostState['state'] ?? null,
+                'state_label' => $this->hostStateLabel($hostState['state'] ?? null),
+                'services'    => $services,
+            ];
+        } catch (\Exception $e) {
+            Log::warning("CheckMK Fehler für Host '{$hostname}': " . $e->getMessage());
+            return ['error' => $e->getMessage()];
+        }
+    }
+
+    // ─── Private ─────────────────────────────────────────────────────────────
+
+    private function fetchHostState(string $hostname): array
+    {
+        $response = $this->get('/domain-types/host/collections/all', [
+            'query'   => json_encode(['op' => '=', 'left' => 'name', 'right' => $hostname]),
+            'columns' => ['state', 'plugin_output'],
+        ]);
+
+        return $response['value'][0]['extensions'] ?? [];
+    }
+
+    private function fetchServices(string $hostname): array
+    {
+        $response = $this->get('/domain-types/service/collections/all', [
+            'host_name' => $hostname,
+            'columns'   => ['display_name', 'state', 'plugin_output'],
+        ]);
+
+        $keywords = ['CPU', 'Memory', 'Speicher', 'Uptime', 'Filesystem', 'Disk', 'Ping', 'PING'];
+
+        return collect($response['value'] ?? [])
+            ->filter(function ($s) use ($keywords) {
+                $name = $s['extensions']['display_name'] ?? '';
+                foreach ($keywords as $kw) {
+                    if (stripos($name, $kw) !== false) return true;
+                }
+                return false;
+            })
+            ->map(fn($s) => [
+                'name'          => $s['extensions']['display_name'] ?? '—',
+                'state'         => $s['extensions']['state'] ?? null,
+                'state_label'   => $this->serviceStateLabel($s['extensions']['state'] ?? null),
+                'plugin_output' => $this->stripPerfData($s['extensions']['plugin_output'] ?? ''),
+            ])
+            ->sortBy('name')
+            ->values()
+            ->toArray();
+    }
+
+    private function get(string $path, array $query = []): array
+    {
+        $http = Http::withHeaders([
+            'Authorization' => "Bearer {$this->cfg->username} {$this->cfg->secret}",
+            'Accept'        => 'application/json',
+        ])->timeout(10);
+
+        if (! $this->cfg->verify_ssl) {
+            $http = $http->withoutVerifying();
+        }
+
+        $response = $http->get($this->cfg->apiBase() . $path, $query);
+
+        if (! $response->successful()) {
+            throw new \RuntimeException("CheckMK API {$response->status()}: " . $response->body());
+        }
+
+        return $response->json();
+    }
+
+    private function hostStateLabel(?int $state): string
+    {
+        return match ($state) {
+            0       => 'Erreichbar (UP)',
+            1       => 'Nicht erreichbar (DOWN)',
+            2       => 'Unerreichbar (UNREACHABLE)',
+            default => 'Unbekannt',
+        };
+    }
+
+    private function serviceStateLabel(?int $state): string
+    {
+        return match ($state) {
+            0       => 'OK',
+            1       => 'WARNING',
+            2       => 'CRITICAL',
+            3       => 'UNKNOWN',
+            default => '—',
+        };
+    }
+
+    /** Entfernt Perf-Data-Anhang aus CheckMK plugin_output */
+    private function stripPerfData(string $output): string
+    {
+        return trim(explode('|', $output)[0]);
+    }
+}

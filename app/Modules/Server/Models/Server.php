@@ -16,7 +16,7 @@ class Server extends Model
     protected $table = 'servers';
 
     protected $fillable = [
-        'name', 'dns_hostname', 'ip_address', 'operating_system', 'os_version',
+        'name', 'dns_hostname', 'checkmk_alias', 'ip_address', 'operating_system', 'os_version',
         'description', 'bemerkungen', 'doc_url', 'revision_date',
         'status', 'type',
         'os_type_id', 'role_id', 'backup_level_id', 'patch_ring_id',

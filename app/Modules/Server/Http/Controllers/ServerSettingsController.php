@@ -2,6 +2,7 @@
 
 namespace App\Modules\Server\Http\Controllers;
 
+use App\Modules\Server\Models\CheckMkSettings;
 use App\Modules\Server\Models\Server;
 use App\Modules\Server\Models\ServerOption;
 use App\Modules\Server\Models\ServerSyncOu;
@@ -13,13 +14,14 @@ class ServerSettingsController extends Controller
 {
     public function index()
     {
-        $options  = collect(ServerOption::CATEGORIES)->mapWithKeys(
+        $options         = collect(ServerOption::CATEGORIES)->mapWithKeys(
             fn ($cat) => [$cat => ServerOption::category($cat)->get()]
         );
-        $lastSync = Server::whereNotNull('last_sync_at')->max('last_sync_at');
-        $syncOus  = ServerSyncOu::orderBy('sort_order')->get();
+        $lastSync        = Server::whereNotNull('last_sync_at')->max('last_sync_at');
+        $syncOus         = ServerSyncOu::orderBy('sort_order')->get();
+        $checkMkSettings = CheckMkSettings::getSingleton();
 
-        return view('server::settings.index', compact('options', 'lastSync', 'syncOus'));
+        return view('server::settings.index', compact('options', 'lastSync', 'syncOus', 'checkMkSettings'));
     }
 
     public function storeOption(Request $request)

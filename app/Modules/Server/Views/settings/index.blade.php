@@ -108,6 +108,85 @@
                 </div>
             @endcan
 
+            {{-- CheckMK Integration --}}
+            @can('server.config')
+            <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">CheckMK Integration</h3>
+                        <p class="text-xs text-gray-400 mt-0.5">Ping, CPU, RAM, Festplatte, Uptime direkt in der Server-Detailansicht</p>
+                    </div>
+                    @if($checkMkSettings->isConfigured())
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Aktiv</span>
+                    @else
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Inaktiv</span>
+                    @endif
+                </div>
+                <div class="p-6">
+                    <form method="POST" action="{{ route('server.settings.checkmk.update') }}" class="space-y-4">
+                        @csrf
+                        @method('PUT')
+
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" id="cmk_enabled" name="enabled" value="1"
+                                   @checked(old('enabled', $checkMkSettings->enabled))
+                                   class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <label for="cmk_enabled" class="text-sm font-medium text-gray-700">CheckMK-Integration aktivieren</label>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-medium text-gray-600 mb-1">CheckMK URL <span class="text-red-500">*</span></label>
+                                <input type="url" name="url"
+                                       value="{{ old('url', $checkMkSettings->url) }}"
+                                       placeholder="https://checkmk.example.com"
+                                       class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                <p class="text-xs text-gray-400 mt-0.5">Basis-URL des CheckMK-Servers (ohne Site-Pfad)</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Site-Name <span class="text-red-500">*</span></label>
+                                <input type="text" name="site"
+                                       value="{{ old('site', $checkMkSettings->site) }}"
+                                       placeholder="z.B. mysite"
+                                       class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Automation-User <span class="text-red-500">*</span></label>
+                                <input type="text" name="username"
+                                       value="{{ old('username', $checkMkSettings->username) }}"
+                                       placeholder="automation"
+                                       class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                            </div>
+
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Automation-Secret</label>
+                                <input type="password" name="secret"
+                                       placeholder="{{ $checkMkSettings->secret ? '••••••••••••• (leer lassen = nicht ändern)' : 'Secret eintragen…' }}"
+                                       autocomplete="new-password"
+                                       class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                            </div>
+
+                            <div class="sm:col-span-2 flex items-center gap-3">
+                                <input type="checkbox" id="cmk_verify_ssl" name="verify_ssl" value="1"
+                                       @checked(old('verify_ssl', $checkMkSettings->verify_ssl))
+                                       class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                <label for="cmk_verify_ssl" class="text-sm text-gray-700">SSL-Zertifikat verifizieren</label>
+                            </div>
+                        </div>
+
+                        <div class="pt-2 flex justify-end">
+                            <button type="submit"
+                                    class="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-md hover:bg-indigo-700">
+                                Einstellungen speichern
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            @endcan
+
             {{-- Erweiterbare Optionen --}}
             @foreach ($options as $category => $categoryOptions)
                 @php

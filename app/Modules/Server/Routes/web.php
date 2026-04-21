@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Server\Http\Controllers\CheckMkController;
 use App\Modules\Server\Http\Controllers\ServerController;
 use App\Modules\Server\Http\Controllers\ServerSettingsController;
 use Illuminate\Support\Facades\Route;
@@ -13,6 +14,11 @@ Route::middleware(['auth', 'module.permission:server,config'])->group(function (
     Route::post('/settings/sync-ous',                    [ServerSettingsController::class, 'storeOu'])->name('settings.sync-ous.store');
     Route::delete('/settings/sync-ous/{ou}',             [ServerSettingsController::class, 'destroyOu'])->name('settings.sync-ous.destroy');
     Route::patch('/settings/sync-ous/{ou}/toggle',       [ServerSettingsController::class, 'toggleOu'])->name('settings.sync-ous.toggle');
+    Route::put('/settings/checkmk',                      [CheckMkController::class, 'update'])->name('settings.checkmk.update');
+});
+
+Route::middleware(['auth', 'module.permission:server,view'])->group(function () {
+    Route::get('/{server}/checkmk-data', [CheckMkController::class, 'hostData'])->name('checkmk.data');
 });
 
 Route::middleware(['auth', 'module.permission:server,sync'])->group(function () {

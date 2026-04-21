@@ -83,6 +83,94 @@
                 </div>
             </div>
 
+            {{-- CheckMK Monitoring --}}
+            @if(\App\Modules\Server\Models\CheckMkSettings::getSingleton()->isConfigured())
+            <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden"
+                 x-data="checkmkCard('{{ route('server.checkmk.data', $server) }}')"
+                 x-init="load()">
+
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                    <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">CheckMK Monitoring</h3>
+                    <div class="flex items-center gap-3">
+                        <span x-show="loaded && !error" class="text-xs text-gray-400"
+                              x-text="'Host: ' + (data.hostname || '—')"></span>
+                        <button @click="load()" :disabled="loading"
+                                class="text-xs text-indigo-500 hover:text-indigo-700 disabled:opacity-40">
+                            ↺ Aktualisieren
+                        </button>
+                    </div>
+                </div>
+
+                <div class="p-6">
+                    {{-- Ladezustand --}}
+                    <div x-show="loading" class="flex items-center gap-2 text-sm text-gray-400">
+                        <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                        </svg>
+                        Daten werden geladen…
+                    </div>
+
+                    {{-- Fehler --}}
+                    <div x-show="error && !loading" class="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2"
+                         x-text="error"></div>
+
+                    {{-- Daten --}}
+                    <div x-show="loaded && !error && !loading" x-cloak class="space-y-4">
+
+                        {{-- Host-Status (Ping) --}}
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm font-medium text-gray-500 w-32 shrink-0">Erreichbarkeit</span>
+                            <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                                  :class="{
+                                      'bg-green-100 text-green-700': data.state === 0,
+                                      'bg-red-100 text-red-700':    data.state === 1 || data.state === 2,
+                                      'bg-gray-100 text-gray-500':  data.state === null || data.state === undefined
+                                  }"
+                                  x-text="data.state_label || '—'"></span>
+                        </div>
+
+                        {{-- Services --}}
+                        <template x-if="data.services && data.services.length > 0">
+                            <div class="border border-gray-200 rounded-lg overflow-hidden">
+                                <table class="w-full text-sm">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th class="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Service</th>
+                                            <th class="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide w-24">Status</th>
+                                            <th class="text-left px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide">Details</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="svc in data.services" :key="svc.name">
+                                            <tr class="border-t border-gray-100">
+                                                <td class="px-4 py-2.5 font-medium text-gray-800" x-text="svc.name"></td>
+                                                <td class="px-4 py-2.5">
+                                                    <span class="text-xs font-bold px-2 py-0.5 rounded-full"
+                                                          :class="{
+                                                              'bg-green-100 text-green-700':  svc.state === 0,
+                                                              'bg-yellow-100 text-yellow-700': svc.state === 1,
+                                                              'bg-red-100 text-red-700':      svc.state === 2,
+                                                              'bg-gray-100 text-gray-500':    svc.state === 3 || svc.state === null
+                                                          }"
+                                                          x-text="svc.state_label"></span>
+                                                </td>
+                                                <td class="px-4 py-2.5 text-gray-600 text-xs" x-text="svc.plugin_output || '—'"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </template>
+
+                        <template x-if="data.services && data.services.length === 0">
+                            <p class="text-sm text-gray-400">Keine relevanten Services (CPU, RAM, Disk, Uptime) in CheckMK gefunden.</p>
+                        </template>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             {{-- Klassifizierung --}}
             <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
@@ -227,3 +315,30 @@
         </div>
     </div>
 </x-app-layout>
+
+@push('scripts')
+<script>
+function checkmkCard(url) {
+    return {
+        url,
+        loading: false,
+        loaded: false,
+        error: null,
+        data: {},
+        load() {
+            this.loading = true;
+            this.error = null;
+            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(r => r.ok ? r.json() : r.json().then(j => Promise.reject(j.error || 'Fehler ' + r.status)))
+                .then(json => {
+                    if (json.error) { this.error = json.error; }
+                    else { this.data = json; }
+                    this.loaded = true;
+                })
+                .catch(err => { this.error = String(err); this.loaded = true; })
+                .finally(() => { this.loading = false; });
+        }
+    };
+}
+</script>
+@endpush

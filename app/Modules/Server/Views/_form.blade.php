@@ -25,6 +25,17 @@
                 <x-input-error :messages="$errors->get('dns_hostname')" class="mt-1" />
             </div>
 
+            @if(\App\Modules\Server\Models\CheckMkSettings::getSingleton()->enabled)
+            <div>
+                <x-input-label for="checkmk_alias" value="CheckMK Hostname (optional)" />
+                <x-text-input id="checkmk_alias" name="checkmk_alias" type="text" class="mt-1 block w-full"
+                              placeholder="Leer = DNS-Hostname wird verwendet"
+                              value="{{ old('checkmk_alias', $server?->checkmk_alias) }}" />
+                <p class="mt-1 text-xs text-gray-400">Nur ausfüllen wenn der Hostname in CheckMK vom DNS-Hostname abweicht.</p>
+                <x-input-error :messages="$errors->get('checkmk_alias')" class="mt-1" />
+            </div>
+            @endif
+
             <div>
                 <x-input-label for="ip_address" value="IP-Adresse" />
                 <x-text-input id="ip_address" name="ip_address" type="text" class="mt-1 block w-full"
