@@ -251,6 +251,7 @@ class ServerController extends Controller
         return $request->validate([
             'name'             => ['required', 'string', 'max:255'],
             'dns_hostname'     => ['nullable', 'string', 'max:255'],
+            'checkmk_alias'    => ['nullable', 'string', 'max:255'],
             'ip_address'       => ['nullable', 'string', 'max:45'],
             'operating_system' => ['nullable', 'string', 'max:255'],
             'os_version'       => ['nullable', 'string', 'max:100'],
