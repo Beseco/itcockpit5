@@ -105,6 +105,18 @@
                             })
                             .catch(err => { this.error = String(err); this.loaded = true; })
                             .finally(() => { this.loading = false; });
+                    },
+                    isStorage(name) {
+                        return /filesystem|disk/i.test(name);
+                    },
+                    usagePercent(output) {
+                        const m = output.match(/(\d+(?:\.\d+)?)\s*%/);
+                        return m ? parseFloat(m[1]) : null;
+                    },
+                    barColor(pct) {
+                        if (pct >= 90) return 'bg-red-500';
+                        if (pct >= 80) return 'bg-yellow-400';
+                        return 'bg-green-500';
                     }
                 };
             }
@@ -179,7 +191,30 @@
                                                           }"
                                                           x-text="svc.state_label"></span>
                                                 </td>
-                                                <td class="px-4 py-2.5 text-gray-600 text-xs" x-text="svc.plugin_output || '—'"></td>
+                                                <td class="px-4 py-2.5 text-gray-600 text-xs">
+                                                    <template x-if="isStorage(svc.name) && usagePercent(svc.plugin_output) !== null">
+                                                        <div class="space-y-1">
+                                                            <div class="flex items-center gap-2">
+                                                                <div class="flex-1 bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                                                                    <div class="h-2.5 rounded-full transition-all"
+                                                                         :class="barColor(usagePercent(svc.plugin_output))"
+                                                                         :style="'width:' + Math.min(usagePercent(svc.plugin_output), 100) + '%'"></div>
+                                                                </div>
+                                                                <span class="text-xs font-semibold w-10 text-right shrink-0"
+                                                                      :class="{
+                                                                          'text-red-600':    usagePercent(svc.plugin_output) >= 90,
+                                                                          'text-yellow-600': usagePercent(svc.plugin_output) >= 80 && usagePercent(svc.plugin_output) < 90,
+                                                                          'text-green-600':  usagePercent(svc.plugin_output) < 80
+                                                                      }"
+                                                                      x-text="usagePercent(svc.plugin_output).toFixed(1) + '%'"></span>
+                                                            </div>
+                                                            <div x-text="svc.plugin_output || '—'" class="text-gray-500 text-xs leading-tight"></div>
+                                                        </div>
+                                                    </template>
+                                                    <template x-if="!isStorage(svc.name) || usagePercent(svc.plugin_output) === null">
+                                                        <span x-text="svc.plugin_output || '—'"></span>
+                                                    </template>
+                                                </td>
                                             </tr>
                                         </template>
                                     </tbody>

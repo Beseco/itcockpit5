@@ -64,10 +64,14 @@ class CheckMkService
         ]);
 
         $keywords = ['CPU', 'Memory', 'Speicher', 'Uptime', 'Filesystem', 'Disk', 'Ping', 'PING'];
+        $exclude  = ['DotNet', '.NET'];
 
         return collect($response['value'] ?? [])
-            ->filter(function ($s) use ($keywords) {
+            ->filter(function ($s) use ($keywords, $exclude) {
                 $name = $s['extensions']['display_name'] ?? '';
+                foreach ($exclude as $ex) {
+                    if (stripos($name, $ex) !== false) return false;
+                }
                 foreach ($keywords as $kw) {
                     if (stripos($name, $kw) !== false) return true;
                 }
