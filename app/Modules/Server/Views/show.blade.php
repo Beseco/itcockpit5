@@ -85,6 +85,30 @@
 
             {{-- CheckMK Monitoring --}}
             @if(\App\Modules\Server\Models\CheckMkSettings::getSingleton()->isConfigured())
+            <script>
+            function checkmkCard(url) {
+                return {
+                    url,
+                    loading: false,
+                    loaded: false,
+                    error: null,
+                    data: {},
+                    load() {
+                        this.loading = true;
+                        this.error = null;
+                        fetch(this.url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                            .then(r => r.ok ? r.json() : r.json().then(j => Promise.reject(j.error || 'HTTP ' + r.status)))
+                            .then(json => {
+                                if (json.error) { this.error = json.error; }
+                                else { this.data = json; }
+                                this.loaded = true;
+                            })
+                            .catch(err => { this.error = String(err); this.loaded = true; })
+                            .finally(() => { this.loading = false; });
+                    }
+                };
+            }
+            </script>
             <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden"
                  x-data="checkmkCard('{{ route('server.checkmk.data', $server) }}')"
                  x-init="load()">
@@ -316,29 +340,3 @@
     </div>
 </x-app-layout>
 
-@push('scripts')
-<script>
-function checkmkCard(url) {
-    return {
-        url,
-        loading: false,
-        loaded: false,
-        error: null,
-        data: {},
-        load() {
-            this.loading = true;
-            this.error = null;
-            fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-                .then(r => r.ok ? r.json() : r.json().then(j => Promise.reject(j.error || 'Fehler ' + r.status)))
-                .then(json => {
-                    if (json.error) { this.error = json.error; }
-                    else { this.data = json; }
-                    this.loaded = true;
-                })
-                .catch(err => { this.error = String(err); this.loaded = true; })
-                .finally(() => { this.loading = false; });
-        }
-    };
-}
-</script>
-@endpush
