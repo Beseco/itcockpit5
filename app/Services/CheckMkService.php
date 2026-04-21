@@ -94,13 +94,36 @@ class CheckMkService
             $http = $http->withoutVerifying();
         }
 
-        $response = $http->get($this->cfg->apiBase() . $path, $query);
+        // CheckMK erwartet wiederholte Parameter ohne Brackets:
+        // columns=state&columns=plugin_output statt columns[0]=state&columns[1]=plugin_output
+        $url = $this->cfg->apiBase() . $path;
+        if ($query) {
+            $url .= '?' . $this->buildQuery($query);
+        }
+
+        $response = $http->get($url);
 
         if (! $response->successful()) {
             throw new \RuntimeException("CheckMK API {$response->status()}: " . $response->body());
         }
 
         return $response->json();
+    }
+
+    /** Baut Query-String mit wiederholten Schlüsseln statt Array-Brackets */
+    private function buildQuery(array $params): string
+    {
+        $parts = [];
+        foreach ($params as $key => $value) {
+            if (is_array($value)) {
+                foreach ($value as $v) {
+                    $parts[] = urlencode((string) $key) . '=' . urlencode((string) $v);
+                }
+            } else {
+                $parts[] = urlencode((string) $key) . '=' . urlencode((string) $value);
+            }
+        }
+        return implode('&', $parts);
     }
 
     private function hostStateLabel(?int $state): string
