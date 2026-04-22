@@ -109,7 +109,7 @@
                                         </span>
                                     </td>
                                     <td class="px-4 py-3 text-right font-medium">{{ number_format($pos->amount, 2, ',', '.') }}</td>
-                                    <td class="px-4 py-3 text-gray-600">{{ $pos->start_year ?? '&ndash;' }} &ndash; {{ $pos->end_year ?? '&ndash;' }}</td>
+                                    <td class="px-4 py-3 text-gray-600">{{ $pos->start_year ?? '–' }} – {{ $pos->end_year ?? '–' }}</td>
                                     <td class="px-4 py-3 text-gray-600">{{ $pos->is_recurring ? 'Ja' : 'Nein' }}</td>
                                     @if($canWrite)
                                         <td class="px-4 py-3 whitespace-nowrap">
