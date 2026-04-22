@@ -22,6 +22,16 @@
                 <div class="mb-4 px-4 py-3 bg-red-100 text-red-800 rounded">{{ session('error') }}</div>
             @endif
 
+            {{-- Suche --}}
+            <div class="bg-white shadow rounded-lg p-3 mb-4 flex items-center gap-3">
+                <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/>
+                </svg>
+                <input type="text" id="by-search" placeholder="Jahr oder Status suchen…"
+                       class="flex-1 border-0 text-sm focus:ring-0 outline-none text-gray-700 placeholder-gray-400">
+                <span id="by-search-count" class="text-xs text-gray-400 hidden"></span>
+            </div>
+
             <div class="bg-white shadow rounded-lg overflow-hidden">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
@@ -34,7 +44,7 @@
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         @forelse($budgetYears as $by)
-                        <tr>
+                        <tr data-search="{{ $by->year }} {{ $by->status }}"
                             <td class="px-6 py-4 text-sm font-semibold text-gray-900">{{ $by->year }}</td>
                             <td class="px-6 py-4">
                                 <span class="px-2 py-1 text-xs rounded-full
@@ -67,6 +77,26 @@
 
         </div>
     </div>
+
+    <script>
+        document.getElementById('by-search').addEventListener('input', function () {
+            const term = this.value.toLowerCase();
+            const rows = document.querySelectorAll('tbody tr[data-search]');
+            let visible = 0;
+            rows.forEach(function (row) {
+                const show = !term || row.dataset.search.toLowerCase().includes(term);
+                row.style.display = show ? '' : 'none';
+                if (show) visible++;
+            });
+            const counter = document.getElementById('by-search-count');
+            if (term) {
+                counter.textContent = visible + ' Treffer';
+                counter.classList.remove('hidden');
+            } else {
+                counter.classList.add('hidden');
+            }
+        });
+    </script>
 
     {{-- Modal: Neues Haushaltsjahr --}}
     <div id="modal-create" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
