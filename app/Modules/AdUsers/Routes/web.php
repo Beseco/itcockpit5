@@ -6,6 +6,7 @@ use App\Modules\AdUsers\Http\Controllers\OffboardingController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'module.permission:adusers,view'])->group(function () {
+    Route::get('/help', fn() => view('adusers::help'))->name('help');
     Route::get('/',               [AdUserController::class, 'index'])->name('index');
     Route::get('/show/{user}',    [AdUserController::class, 'show'])->name('show');
     Route::delete('/{user}',      [AdUserController::class, 'destroy'])->name('destroy');

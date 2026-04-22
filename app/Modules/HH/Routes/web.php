@@ -22,6 +22,9 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::middleware(['auth', 'can:hh.view'])->group(function () {
+    // Hilfe
+    Route::get('/help', fn() => view('hh::help'))->name('help');
+
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
     Route::get('/dashboard/{budgetYear}', [DashboardController::class, 'show'])->name('dashboard.show');

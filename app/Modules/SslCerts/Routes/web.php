@@ -22,6 +22,7 @@ Route::middleware(['auth', 'module.permission:sslcerts,delete'])->group(function
 });
 
 Route::middleware(['auth', 'module.permission:sslcerts,view'])->group(function () {
+    Route::get('/help', fn() => view('sslcerts::help'))->name('help');
     Route::get('/',         [SslCertsController::class, 'index'])->name('index');
     Route::get('/{cert}',   [SslCertsController::class, 'show'])->name('show');
     Route::get('/{cert}/download/{type}', [SslCertsController::class, 'download'])->name('download');

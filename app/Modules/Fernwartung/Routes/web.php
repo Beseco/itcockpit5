@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'module.permission:fernwartung,view'])->group(function () {
 
+    Route::get('/help', fn() => view('fernwartung::help'))->name('help');
     Route::get('/',           [FernwartungController::class, 'index'])->name('index');
     Route::get('/create',     [FernwartungController::class, 'create'])->name('create');
     Route::post('/',          [FernwartungController::class, 'store'])->name('store');

@@ -39,6 +39,7 @@ Route::middleware(['auth', 'module.permission:server,create'])->group(function (
 });
 
 Route::middleware(['auth', 'module.permission:server,view'])->group(function () {
+    Route::get('/help', fn() => view('server::help'))->name('help');
     Route::get('/',        [ServerController::class, 'index'])->name('index');
 });
 

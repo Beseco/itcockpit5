@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 
 // Nur Lesezugriff
 Route::middleware(['auth', 'module.permission:entsorgung,view'])->group(function () {
+    Route::get('/help', fn() => view('entsorgung::help'))->name('help');
     Route::get('/', [EntsorgungController::class, 'index'])->name('index');
 });
 

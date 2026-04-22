@@ -5,6 +5,7 @@ use App\Modules\Tickets\Http\Controllers\TicketsSettingsController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'module.permission:tickets,view'])->group(function () {
+    Route::get('/help', fn() => view('tickets::help'))->name('help');
     Route::get('/', [TicketsController::class, 'index'])->name('index');
     Route::get('/debug', [TicketsController::class, 'debug'])->name('debug');
 });

@@ -7,6 +7,7 @@ use App\Modules\Calendar\Http\Controllers\IcsController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'module.permission:calendar,view'])->group(function () {
+    Route::get('/help', fn() => view('calendar::help'))->name('help');
     Route::get('/', [CalendarController::class, 'index'])->name('index');
     Route::get('/events', [EventApiController::class, 'events'])->name('events');
     Route::post('/events', [EventController::class, 'store'])->name('events.store');
