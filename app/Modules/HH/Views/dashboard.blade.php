@@ -46,12 +46,26 @@
             @if(session('success'))<div class="rounded bg-green-100 px-4 py-3 text-green-800">{{ session('success') }}</div>@endif
             @if(session('error'))<div class="rounded bg-red-100 px-4 py-3 text-red-800">{{ session('error') }}</div>@endif
 
-            {{-- Suche --}}
-            <div class="bg-white shadow rounded-lg p-3 flex items-center gap-3">
+            {{-- Jahresübergreifende Positionssuche --}}
+            <form method="GET" action="{{ route('hh.dashboard.search', $budgetYear) }}"
+                  class="bg-white shadow rounded-lg p-3 flex items-center gap-3">
                 <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/>
                 </svg>
-                <input type="text" id="acc-search" placeholder="Sachkonto suchen (Nummer oder Name)…"
+                <input type="text" name="q" placeholder="Position suchen (z.B. WLAN, Baramundi, Microsoft)…"
+                       class="flex-1 border-0 text-sm focus:ring-0 outline-none text-gray-700 placeholder-gray-400">
+                <button type="submit"
+                        class="px-3 py-1 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700 transition whitespace-nowrap">
+                    Suchen
+                </button>
+            </form>
+
+            {{-- Sachkonto-Suche (Live) --}}
+            <div class="bg-white shadow rounded-lg p-3 flex items-center gap-3">
+                <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h18M3 8h18M3 12h12"/>
+                </svg>
+                <input type="text" id="acc-search" placeholder="Sachkonto filtern (Nummer oder Name)…"
                        class="flex-1 border-0 text-sm focus:ring-0 outline-none text-gray-700 placeholder-gray-400">
                 <span id="acc-search-count" class="text-xs text-gray-400 hidden whitespace-nowrap"></span>
             </div>

@@ -120,6 +120,30 @@ class DashboardController extends Controller
         ));
     }
 
+    public function search(Request $request, BudgetYear $budgetYear): View
+    {
+        $q = trim($request->input('q', ''));
+        $budgetYear->load('versions');
+        $activeVersion = $budgetYear->versions->firstWhere('is_active', true);
+        $allBudgetYears = BudgetYear::orderByDesc('year')->get();
+
+        $positions = collect();
+        if ($activeVersion && $q !== '') {
+            $positions = BudgetPosition::where('budget_year_version_id', $activeVersion->id)
+                ->where(function ($qb) use ($q) {
+                    $qb->where('project_name', 'like', "%{$q}%")
+                       ->orWhere('description', 'like', "%{$q}%");
+                })
+                ->with(['costCenter', 'account'])
+                ->orderBy('project_name')
+                ->get()
+                ->filter(fn($p) => $this->authService->canAccessCostCenter($request->user(), $p->costCenter, 'Audit_Zugang'))
+                ->values();
+        }
+
+        return view('hh::search', compact('budgetYear', 'allBudgetYears', 'positions', 'q', 'activeVersion'));
+    }
+
     public function accountPositions(Request $request, BudgetYear $budgetYear, CostCenter $costCenter, Account $account): View
     {
         $budgetYear->load('versions');

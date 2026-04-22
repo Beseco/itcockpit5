@@ -25,6 +25,7 @@ Route::middleware(['auth', 'can:hh.view'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
     Route::get('/dashboard/{budgetYear}', [DashboardController::class, 'show'])->name('dashboard.show');
+    Route::get('/dashboard/{budgetYear}/search', [DashboardController::class, 'search'])->name('dashboard.search');
     Route::get('/dashboard/{budgetYear}/cost-center/{costCenter}/account/{account}', [DashboardController::class, 'accountPositions'])->name('dashboard.account-positions');
 
     // Budget Years
