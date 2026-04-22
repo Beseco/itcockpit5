@@ -89,8 +89,8 @@
                 <div class="bg-white shadow rounded-lg overflow-hidden">
                     <div class="px-6 py-3 border-b border-gray-200 flex items-center justify-between">
                         <span class="text-sm text-gray-600">
-                            <strong>{{ $positions->count() }}</strong> Treffer für
-                            <span class="font-medium text-indigo-700">„{{ $q }}"</span>
+                            <strong>{{ $positions->count() }}</strong> Treffer
+                            @if($q) für <span class="font-medium text-indigo-700">„{{ $q }}"</span>@endif
                             in {{ $budgetYear->year }}
                         </span>
                         <span class="text-sm font-semibold text-gray-800">
@@ -98,18 +98,16 @@
                         </span>
                     </div>
                     @php
-                        $sortParams = request()->except(['sort','dir']);
-                        $sortLink = fn(string $field) =>
-                            route('hh.dashboard.search', $budgetYear) . '?' . http_build_query(
-                                array_merge($sortParams, [
-                                    'sort' => $field,
-                                    'dir'  => ($sortField === $field && $sortDir === 'asc') ? 'desc' : 'asc',
-                                ])
-                            );
-                        $sortIcon = fn(string $field) =>
-                            $sortField === $field
-                                ? ($sortDir === 'asc' ? ' ↑' : ' ↓')
-                                : '';
+                        $sortBase   = route('hh.dashboard.search', $budgetYear);
+                        $sortParams = request()->except(['sort', 'dir']);
+                        function hhSortUrl($base, $params, $field, $currentField, $currentDir) {
+                            $dir = ($currentField === $field && $currentDir === 'asc') ? 'desc' : 'asc';
+                            return $base . '?' . http_build_query(array_merge($params, ['sort' => $field, 'dir' => $dir]));
+                        }
+                        function hhSortIcon($field, $currentField, $currentDir) {
+                            if ($field !== $currentField) return '';
+                            return $currentDir === 'asc' ? ' ↑' : ' ↓';
+                        }
                     @endphp
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200 text-sm">
@@ -118,23 +116,23 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kostenstelle</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sachkonto</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        <a href="{{ $sortLink('project_name') }}" class="hover:text-indigo-600">
-                                            Name{!! $sortIcon('project_name') !!}
+                                        <a href="{{ hhSortUrl($sortBase, $sortParams, 'project_name', $sortField, $sortDir) }}" class="hover:text-indigo-600">
+                                            Name{!! hhSortIcon('project_name', $sortField, $sortDir) !!}
                                         </a>
                                     </th>
                                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                                        <a href="{{ $sortLink('amount') }}" class="hover:text-indigo-600">
-                                            Betrag (€){!! $sortIcon('amount') !!}
+                                        <a href="{{ hhSortUrl($sortBase, $sortParams, 'amount', $sortField, $sortDir) }}" class="hover:text-indigo-600">
+                                            Betrag (€){!! hhSortIcon('amount', $sortField, $sortDir) !!}
                                         </a>
                                     </th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        <a href="{{ $sortLink('priority') }}" class="hover:text-indigo-600">
-                                            Priorität{!! $sortIcon('priority') !!}
+                                        <a href="{{ hhSortUrl($sortBase, $sortParams, 'priority', $sortField, $sortDir) }}" class="hover:text-indigo-600">
+                                            Priorität{!! hhSortIcon('priority', $sortField, $sortDir) !!}
                                         </a>
                                     </th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                                        <a href="{{ $sortLink('status') }}" class="hover:text-indigo-600">
-                                            Status{!! $sortIcon('status') !!}
+                                        <a href="{{ hhSortUrl($sortBase, $sortParams, 'status', $sortField, $sortDir) }}" class="hover:text-indigo-600">
+                                            Status{!! hhSortIcon('status', $sortField, $sortDir) !!}
                                         </a>
                                     </th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Wiederk.</th>
