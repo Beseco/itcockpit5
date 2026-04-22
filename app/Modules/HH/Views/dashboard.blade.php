@@ -72,8 +72,16 @@
                 </div>
             @else
                 <div class="bg-white shadow rounded-lg overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h3 class="text-base font-semibold text-gray-800">Sachkonten &ndash; {{ $selectedCostCenter->number }} {{ $selectedCostCenter->name }}</h3>
+                    <div class="px-6 py-4 border-b border-gray-200 flex items-center gap-4">
+                        <h3 class="text-base font-semibold text-gray-800 flex-1">Sachkonten &ndash; {{ $selectedCostCenter->number }} {{ $selectedCostCenter->name }}</h3>
+                        <div class="flex items-center gap-2 text-sm">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/>
+                            </svg>
+                            <input type="text" id="acc-search" placeholder="Sachkonto suchen…"
+                                   class="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-indigo-500 focus:border-indigo-500 w-48">
+                            <span id="acc-search-count" class="text-xs text-gray-400 hidden whitespace-nowrap"></span>
+                        </div>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200 text-sm">
@@ -88,7 +96,7 @@
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @forelse($accountsWithTotals as $row)
-                                    <tr class="hover:bg-gray-50">
+                                    <tr class="hover:bg-gray-50" data-search="{{ $row['account']->number }} {{ $row['account']->name }}">
                                         <td class="px-6 py-3 font-mono">
                                             <a href="{{ route('hh.dashboard.account-positions', [$budgetYear, $selectedCostCenter, $row['account']]) }}" class="text-blue-700 hover:underline">
                                                 {{ $row['account']->number }} {{ $row['account']->name }}
@@ -118,6 +126,27 @@
     </div>
 
     <script>
+        var accSearchInput = document.getElementById('acc-search');
+        if (accSearchInput) {
+            accSearchInput.addEventListener('input', function () {
+                var term = this.value.toLowerCase();
+                var rows = document.querySelectorAll('tbody tr[data-search]');
+                var visible = 0;
+                rows.forEach(function (row) {
+                    var show = !term || row.dataset.search.toLowerCase().includes(term);
+                    row.style.display = show ? '' : 'none';
+                    if (show) visible++;
+                });
+                var counter = document.getElementById('acc-search-count');
+                if (term) {
+                    counter.textContent = visible + ' Treffer';
+                    counter.classList.remove('hidden');
+                } else {
+                    counter.classList.add('hidden');
+                }
+            });
+        }
+
         function submitYearForm(yearId) {
             var ccEl = document.querySelector('[name="cost_center_id"]');
             var ccId = ccEl ? ccEl.value : '';
