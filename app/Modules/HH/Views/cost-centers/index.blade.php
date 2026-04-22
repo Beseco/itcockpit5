@@ -129,6 +129,7 @@
                                class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                     </div>
                     <div class="mb-4 flex items-center">
+                        <input type="hidden" name="is_active" value="0">
                         <input type="checkbox" name="is_active" value="1" id="edit-cc-is-active"
                                class="h-4 w-4 rounded border-gray-300 text-blue-600">
                         <label for="edit-cc-is-active" class="ml-2 text-sm text-gray-700">Aktiv</label>

@@ -157,6 +157,7 @@
                         </select>
                     </div>
                     <div class="flex items-center gap-2">
+                        <input type="hidden" name="is_active" value="0">
                         <input type="checkbox" name="is_active" id="account-edit-active" value="1"
                                class="rounded border-gray-300">
                         <label for="account-edit-active" class="text-sm text-gray-700">Aktiv</label>
