@@ -182,10 +182,20 @@ class DashboardController extends Controller
                 ->orderBy('project_name')
                 ->get();
         }
+        $sortField = in_array($request->input('sort'), ['project_name', 'amount', 'priority', 'status'])
+            ? $request->input('sort') : 'project_name';
+        $sortDir = $request->input('dir') === 'desc' ? 'desc' : 'asc';
+
+        if ($positions->isNotEmpty()) {
+            $positions = $sortDir === 'asc'
+                ? $positions->sortBy($sortField)->values()
+                : $positions->sortByDesc($sortField)->values();
+        }
+
         $canWrite = $this->authService->isLeiter($request->user());
         return view('hh::dashboard-account-positions', compact(
             'budgetYear', 'costCenter', 'account', 'activeVersion',
-            'positions', 'allAccounts', 'canWrite'
+            'positions', 'allAccounts', 'canWrite', 'sortField', 'sortDir'
         ));
     }
 }

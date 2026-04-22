@@ -48,13 +48,42 @@
             <div class="bg-white shadow rounded-lg overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200 text-sm">
+                        @php
+                            $apBase   = url()->current();
+                            $apParams = request()->except(['sort', 'dir']);
+                            function apSortUrl($base, $params, $field, $cur, $dir) {
+                                return $base . '?' . http_build_query(array_merge($params, [
+                                    'sort' => $field,
+                                    'dir'  => ($cur === $field && $dir === 'asc') ? 'desc' : 'asc',
+                                ]));
+                            }
+                            function apSortIcon($field, $cur, $dir) {
+                                return $field === $cur ? ($dir === 'asc' ? ' ↑' : ' ↓') : '';
+                            }
+                        @endphp
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Projektname</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Prioritaet</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                    <a href="{{ apSortUrl($apBase, $apParams, 'project_name', $sortField, $sortDir) }}" class="hover:text-indigo-600">
+                                        Projektname{!! apSortIcon('project_name', $sortField, $sortDir) !!}
+                                    </a>
+                                </th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                    <a href="{{ apSortUrl($apBase, $apParams, 'priority', $sortField, $sortDir) }}" class="hover:text-indigo-600">
+                                        Priorität{!! apSortIcon('priority', $sortField, $sortDir) !!}
+                                    </a>
+                                </th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kategorie</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Betrag (&euro;)</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                    <a href="{{ apSortUrl($apBase, $apParams, 'status', $sortField, $sortDir) }}" class="hover:text-indigo-600">
+                                        Status{!! apSortIcon('status', $sortField, $sortDir) !!}
+                                    </a>
+                                </th>
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                                    <a href="{{ apSortUrl($apBase, $apParams, 'amount', $sortField, $sortDir) }}" class="hover:text-indigo-600">
+                                        Betrag (&euro;){!! apSortIcon('amount', $sortField, $sortDir) !!}
+                                    </a>
+                                </th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Laufzeit</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Wiederk.</th>
                                 @if($canWrite)
