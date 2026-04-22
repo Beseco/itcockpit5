@@ -14,7 +14,7 @@ class SslCertificate extends Model
     protected $table = 'ssl_certificates';
 
     protected $fillable = [
-        'name', 'description', 'responsible_user_id', 'doc_url',
+        'name', 'description', 'responsible_user_id', 'doc_url', 'urls',
         'subject_cn', 'subject_o', 'subject_ou',
         'issuer_cn', 'issuer_o', 'serial_number',
         'valid_from', 'valid_to', 'san',
@@ -27,6 +27,7 @@ class SslCertificate extends Model
         'valid_from'         => 'datetime',
         'valid_to'           => 'datetime',
         'san'                => 'array',
+        'urls'               => 'array',
         'notified_30_at'     => 'datetime',
         'notified_14_at'     => 'datetime',
         'notified_daily_at'  => 'datetime',

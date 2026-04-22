@@ -63,6 +63,8 @@ class SslCertsController extends Controller
             'description'         => ['nullable', 'string'],
             'responsible_user_id' => ['nullable', 'integer', 'exists:users,id'],
             'doc_url'             => ['nullable', 'url', 'max:500'],
+            'urls'                => ['nullable', 'array'],
+            'urls.*'              => ['url', 'max:500'],
             'servers'             => ['nullable', 'array'],
             'servers.*'           => ['integer', 'exists:servers,id'],
         ]);
@@ -72,6 +74,7 @@ class SslCertsController extends Controller
             'description'         => $request->input('description'),
             'responsible_user_id' => $request->input('responsible_user_id'),
             'doc_url'             => $request->input('doc_url'),
+            'urls'                => $request->input('urls') ?: null,
         ]);
 
         $cert->servers()->sync($request->input('servers', []));
@@ -255,6 +258,7 @@ class SslCertsController extends Controller
             'description'         => $request->input('description'),
             'responsible_user_id' => $request->input('responsible_user_id') ?: null,
             'doc_url'             => $request->input('doc_url'),
+            'urls'                => $request->input('urls') ?: null,
             'subject_cn'          => $subjectCn,
             'subject_o'           => $subjectO,
             'subject_ou'          => $subjectOu,

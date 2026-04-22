@@ -175,6 +175,64 @@
                 </div>
                 @endif
 
+                {{-- URLs --}}
+                <div x-data="{
+                        newUrl: '',
+                        urls: {{ json_encode(old('urls', $cert->urls ?? [])) }},
+                        error: '',
+                        add() {
+                            const u = this.newUrl.trim();
+                            if (!u) return;
+                            try { new URL(u); } catch(e) { this.error = 'Keine gültige URL.'; return; }
+                            if (!this.urls.includes(u)) this.urls.push(u);
+                            this.newUrl = '';
+                            this.error = '';
+                        },
+                        remove(i) { this.urls.splice(i, 1); }
+                    }">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">URLs</label>
+
+                    <template x-for="(u, i) in urls" :key="i">
+                        <input type="hidden" name="urls[]" :value="u">
+                    </template>
+
+                    <div class="flex flex-wrap gap-2 mb-2 min-h-[2rem]">
+                        <template x-for="(u, i) in urls" :key="i">
+                            <span class="inline-flex items-center gap-1 pl-2.5 pr-1 py-1 bg-sky-50 text-sky-700 text-xs rounded-md border border-sky-200 font-mono max-w-full">
+                                <svg class="w-3 h-3 text-sky-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                                </svg>
+                                <span x-text="u" class="truncate max-w-[300px]"></span>
+                                <button type="button" @click="remove(i)"
+                                        class="ml-0.5 text-sky-400 hover:text-sky-700 shrink-0">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            </span>
+                        </template>
+                        <span x-show="urls.length === 0" class="text-xs text-gray-400 self-center">Noch keine URL hinzugefügt</span>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <input type="url" x-model="newUrl"
+                               placeholder="https://example.com"
+                               @keydown.enter.prevent="add()"
+                               class="flex-1 rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <button type="button" @click="add()"
+                                class="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-md hover:bg-gray-200 border border-gray-300 shrink-0">
+                            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                            </svg>
+                            Hinzufügen
+                        </button>
+                    </div>
+                    <p x-show="error" x-text="error" class="text-xs text-red-500 mt-1"></p>
+                    @error('urls.*')
+                        <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
                 {{-- Dokumentations-Link --}}
                 <div>
                     <label for="doc_url" class="block text-sm font-medium text-gray-700 mb-1">Dokumentations-Link</label>

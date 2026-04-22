@@ -79,7 +79,7 @@
         </div>
 
         {{-- Zusatzinfos --}}
-        @if($cert->description || $cert->responsibleUser || $cert->doc_url || $cert->servers->isNotEmpty())
+        @if($cert->description || $cert->responsibleUser || $cert->doc_url || $cert->servers->isNotEmpty() || !empty($cert->urls))
         <div class="bg-white shadow rounded-lg overflow-hidden">
             <div class="px-5 py-3 bg-gray-50 border-b border-gray-100">
                 <h3 class="text-xs font-semibold text-gray-700 uppercase tracking-wide">Informationen</h3>
@@ -114,6 +114,26 @@
                                     <span class="text-gray-400 font-mono ml-1">{{ $server->dns_hostname }}</span>
                                 @endif
                             </span>
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
+                @if(!empty($cert->urls))
+                <div>
+                    <div class="text-xs text-gray-500 mb-1">URLs</div>
+                    <div class="flex flex-wrap gap-2 mt-1">
+                        @foreach($cert->urls as $url)
+                            <a href="{{ $url }}" target="_blank" rel="noopener noreferrer"
+                               class="inline-flex items-center gap-1 pl-2.5 pr-2 py-1 bg-sky-50 text-sky-700 text-xs rounded-md border border-sky-200 font-mono hover:bg-sky-100 max-w-full">
+                                <svg class="w-3 h-3 text-sky-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                                </svg>
+                                <span class="truncate max-w-[340px]">{{ $url }}</span>
+                                <svg class="w-3 h-3 text-sky-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                                </svg>
+                            </a>
                         @endforeach
                     </div>
                 </div>
