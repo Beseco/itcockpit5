@@ -102,7 +102,6 @@
                             <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Kategorie</th>
                             <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
                             <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Laufzeit</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Wiederkehrend</th>
                             @if($canWrite)
                                 <th class="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Aktionen</th>
                             @endif
@@ -125,10 +124,12 @@
                                 <td class="px-4 py-3 text-sm text-gray-900">{{ $pos->category }}</td>
                                 <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{{ $pos->status }}</td>
                                 <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
-                                    {{ $pos->start_year ?? '–' }} – {{ $pos->end_year ?? '–' }}
-                                </td>
-                                <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
-                                    {{ $pos->is_recurring ? 'Ja' : 'Nein' }}
+                                    @if($pos->is_recurring)
+                                        <span title="Wiederkehrend">↻</span>
+                                        {{ $pos->start_year ?? '–' }}@if($pos->end_year) – {{ $pos->end_year }}@endif
+                                    @else
+                                        {{ $pos->start_year ?? '–' }}
+                                    @endif
                                 </td>
                                 @if($canWrite)
                                     <td class="whitespace-nowrap px-4 py-3 text-sm">
@@ -173,12 +174,14 @@
 
     @if($canWrite)
         {{-- Create Modal --}}
-        <div id="modal-create-pos" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div id="modal-create-pos" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+             x-data="{ recurring: false }">
             <div class="w-full max-w-2xl rounded bg-white p-6 shadow-lg overflow-y-auto max-h-screen">
                 <h3 class="mb-4 text-lg font-semibold">Neue Position</h3>
                 <form method="POST" action="{{ route('hh.positions.store') }}">
                     @csrf
                     <input type="hidden" name="budget_year_version_id" value="{{ $version->id }}">
+                    <input type="hidden" name="is_recurring" :value="recurring ? '1' : '0'">
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
@@ -216,7 +219,7 @@
                             <select name="priority" required
                                     class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                 <option value="hoch">hoch</option>
-                                <option value="mittel">mittel</option>
+                                <option value="mittel" selected>mittel</option>
                                 <option value="niedrig">niedrig</option>
                             </select>
                         </div>
@@ -238,21 +241,29 @@
                                 <option value="gestrichen">gestrichen</option>
                             </select>
                         </div>
+
+                        {{-- Laufzeit: Startjahr + Wiederkehrend-Toggle + Endjahr --}}
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Startjahr</label>
                             <input type="number" name="start_year"
+                                   value="{{ $version->budgetYear->year }}"
                                    class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Endjahr</label>
+                        <div class="flex flex-col justify-end">
+                            <button type="button" @click="recurring = !recurring"
+                                    :class="recurring ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300'"
+                                    class="mt-1 inline-flex items-center gap-1.5 px-3 py-2 rounded border text-sm font-medium transition-colors">
+                                <span>↻</span>
+                                <span x-text="recurring ? 'Wiederkehrend' : 'Einmalig'"></span>
+                            </button>
+                        </div>
+                        <div x-show="recurring" x-cloak>
+                            <label class="block text-sm font-medium text-gray-700">Bis Jahr <span class="text-gray-400 font-normal">(optional)</span></label>
                             <input type="number" name="end_year"
+                                   placeholder="unbegrenzt"
                                    class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         </div>
-                        <div class="col-span-2 flex items-center">
-                            <input type="checkbox" name="is_recurring" value="1" id="create-is-recurring"
-                                   class="h-4 w-4 rounded border-gray-300 text-blue-600">
-                            <label for="create-is-recurring" class="ml-2 text-sm text-gray-700">Wiederkehrend</label>
-                        </div>
+
                         <div class="col-span-2">
                             <label class="block text-sm font-medium text-gray-700">Beschreibung</label>
                             <textarea name="description" rows="3"
@@ -276,13 +287,33 @@
         </div>
 
         {{-- Edit Modal --}}
-        <div id="modal-edit-pos" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div id="modal-edit-pos"
+             class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+             x-data="{ recurring: false }"
+             @open-edit-pos.window="
+                 recurring = !!$event.detail.is_recurring;
+                 $nextTick(() => {
+                     document.getElementById('edit-pos-version-id').value   = $event.detail.budget_year_version_id;
+                     document.getElementById('edit-pos-cost-center').value  = $event.detail.cost_center_id;
+                     document.getElementById('edit-pos-account').value      = $event.detail.account_id;
+                     document.getElementById('edit-pos-project-name').value = $event.detail.project_name;
+                     document.getElementById('edit-pos-amount').value       = $event.detail.amount;
+                     document.getElementById('edit-pos-priority').value     = $event.detail.priority;
+                     document.getElementById('edit-pos-category').value     = $event.detail.category;
+                     document.getElementById('edit-pos-status').value       = $event.detail.status;
+                     document.getElementById('edit-pos-start-year').value   = $event.detail.start_year ?? '';
+                     document.getElementById('edit-pos-end-year').value     = $event.detail.end_year ?? '';
+                     document.getElementById('edit-pos-description').value  = $event.detail.description ?? '';
+                     document.getElementById('form-edit-pos').action        = '{{ url('hh/positions') }}/' + $event.detail.id;
+                 });
+             ">
             <div class="w-full max-w-2xl rounded bg-white p-6 shadow-lg overflow-y-auto max-h-screen">
                 <h3 class="mb-4 text-lg font-semibold">Position bearbeiten</h3>
                 <form id="form-edit-pos" method="POST" action="">
                     @csrf
                     @method('PUT')
                     <input type="hidden" name="budget_year_version_id" id="edit-pos-version-id">
+                    <input type="hidden" name="is_recurring" :value="recurring ? '1' : '0'">
 
                     <div class="grid grid-cols-2 gap-4">
                         <div>
@@ -342,21 +373,28 @@
                                 <option value="gestrichen">gestrichen</option>
                             </select>
                         </div>
+
+                        {{-- Laufzeit: Startjahr + Wiederkehrend-Toggle + Endjahr --}}
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Startjahr</label>
                             <input type="number" name="start_year" id="edit-pos-start-year"
                                    class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Endjahr</label>
+                        <div class="flex flex-col justify-end">
+                            <button type="button" @click="recurring = !recurring"
+                                    :class="recurring ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300'"
+                                    class="mt-1 inline-flex items-center gap-1.5 px-3 py-2 rounded border text-sm font-medium transition-colors">
+                                <span>↻</span>
+                                <span x-text="recurring ? 'Wiederkehrend' : 'Einmalig'"></span>
+                            </button>
+                        </div>
+                        <div x-show="recurring" x-cloak>
+                            <label class="block text-sm font-medium text-gray-700">Bis Jahr <span class="text-gray-400 font-normal">(optional)</span></label>
                             <input type="number" name="end_year" id="edit-pos-end-year"
+                                   placeholder="unbegrenzt"
                                    class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         </div>
-                        <div class="col-span-2 flex items-center">
-                            <input type="checkbox" name="is_recurring" value="1" id="edit-pos-is-recurring"
-                                   class="h-4 w-4 rounded border-gray-300 text-blue-600">
-                            <label for="edit-pos-is-recurring" class="ml-2 text-sm text-gray-700">Wiederkehrend</label>
-                        </div>
+
                         <div class="col-span-2">
                             <label class="block text-sm font-medium text-gray-700">Beschreibung</label>
                             <textarea name="description" id="edit-pos-description" rows="3"
@@ -381,19 +419,7 @@
 
         <script>
             function openEditPosition(data) {
-                document.getElementById('edit-pos-version-id').value    = data.budget_year_version_id;
-                document.getElementById('edit-pos-cost-center').value   = data.cost_center_id;
-                document.getElementById('edit-pos-account').value       = data.account_id;
-                document.getElementById('edit-pos-project-name').value  = data.project_name;
-                document.getElementById('edit-pos-amount').value        = data.amount;
-                document.getElementById('edit-pos-priority').value      = data.priority;
-                document.getElementById('edit-pos-category').value      = data.category;
-                document.getElementById('edit-pos-status').value        = data.status;
-                document.getElementById('edit-pos-start-year').value    = data.start_year ?? '';
-                document.getElementById('edit-pos-end-year').value      = data.end_year ?? '';
-                document.getElementById('edit-pos-is-recurring').checked = !!data.is_recurring;
-                document.getElementById('edit-pos-description').value   = data.description ?? '';
-                document.getElementById('form-edit-pos').action         = '{{ url('hh/positions') }}/' + data.id;
+                window.dispatchEvent(new CustomEvent('open-edit-pos', { detail: data }));
                 document.getElementById('modal-edit-pos').classList.remove('hidden');
             }
         </script>
