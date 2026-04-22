@@ -59,8 +59,9 @@ class BudgetPositionController extends Controller
         }
 
         $isLeiter  = $this->authService->isLeiter($user);
-        $canWrite  = $isLeiter;
-        $canDelete = $isLeiter;
+        $isLocked  = in_array($version->budgetYear->status ?? '', ['approved', 'archiviert']);
+        $canWrite  = $isLeiter && !$isLocked;
+        $canDelete = $isLeiter && !$isLocked;
         $filters   = $request->only(['q', 'cost_center_id', 'account_id', 'status', 'priority']);
 
         return view('hh::positions.index', compact('version', 'positions', 'canWrite', 'canDelete', 'filters'));

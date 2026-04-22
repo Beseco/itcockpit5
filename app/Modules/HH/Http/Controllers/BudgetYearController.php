@@ -90,7 +90,7 @@ class BudgetYearController extends Controller
 
         $validated = $request->validate([
             'year'   => ['required', 'integer', 'digits:4', Rule::unique('hh_budget_years', 'year')->ignore($budgetYear->id)],
-            'status' => ['required', 'in:draft,preliminary,approved'],
+            'status' => ['required', 'in:draft,preliminary,approved,archiviert'],
         ]);
 
         $budgetYear->update([

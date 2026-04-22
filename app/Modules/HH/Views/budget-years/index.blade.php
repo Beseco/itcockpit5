@@ -50,8 +50,13 @@
                             <td class="px-6 py-4 text-sm font-semibold text-gray-900">{{ $by->year }}</td>
                             <td class="px-6 py-4">
                                 <span class="px-2 py-1 text-xs rounded-full
-                                    {{ $by->status === 'approved' ? 'bg-green-100 text-green-800' : ($by->status === 'preliminary' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800') }}">
-                                    {{ match($by->status) { 'draft' => 'Entwurf', 'preliminary' => 'Vorläufig', 'approved' => 'Genehmigt', default => $by->status } }}
+                                    {{ match($by->status) {
+                                        'approved'   => 'bg-green-100 text-green-800',
+                                        'preliminary'=> 'bg-yellow-100 text-yellow-800',
+                                        'archiviert' => 'bg-slate-100 text-slate-500',
+                                        default      => 'bg-gray-100 text-gray-800'
+                                    } }}">
+                                    {{ match($by->status) { 'draft' => 'Entwurf', 'preliminary' => 'Vorläufig', 'approved' => 'Genehmigt', 'archiviert' => 'Archiviert', default => $by->status } }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-600">{{ $by->versions->count() }}</td>
@@ -169,6 +174,7 @@
                         <option value="draft">Entwurf</option>
                         <option value="preliminary">Vorläufig</option>
                         <option value="approved">Genehmigt</option>
+                        <option value="archiviert">Archiviert</option>
                     </select>
                 </div>
                 <div class="flex justify-end gap-3">
