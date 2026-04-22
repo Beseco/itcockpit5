@@ -78,13 +78,8 @@
                                     <button type="button"
                                             onclick="openEditYear({{ $by->id }}, {{ $by->year }}, '{{ $by->status }}')"
                                             class="text-blue-600 hover:underline">Bearbeiten</button>
-                                    <form method="POST" action="{{ route('hh.budget-years.destroy', $by) }}"
-                                          class="inline"
-                                          onsubmit="return confirm('Haushaltsjahr {{ $by->year }} wirklich löschen? Dies ist nur möglich wenn keine Positionen vorhanden sind.')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-red-600 hover:underline">Löschen</button>
-                                    </form>
+                                    <a href="{{ route('hh.budget-years.confirm-delete', $by) }}"
+                                       class="text-red-600 hover:underline">Löschen</a>
                                 @endif
                             </td>
                         </tr>

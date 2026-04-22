@@ -209,6 +209,31 @@ class BudgetYearService
     }
 
     /**
+     * Force-delete a BudgetYear together with all its versions and positions.
+     * Self-referential origin_position_id links are nulled first to avoid FK violations.
+     */
+    public function forceDelete(BudgetYear $budgetYear, User $actor): void
+    {
+        $year = $budgetYear->year;
+        $id   = $budgetYear->id;
+
+        DB::transaction(function () use ($budgetYear) {
+            BudgetPosition::whereHas('budgetYearVersion', function ($q) use ($budgetYear) {
+                $q->where('budget_year_id', $budgetYear->id);
+            })->update(['origin_position_id' => null]);
+
+            BudgetPosition::whereHas('budgetYearVersion', function ($q) use ($budgetYear) {
+                $q->where('budget_year_id', $budgetYear->id);
+            })->delete();
+
+            $budgetYear->versions()->delete();
+            $budgetYear->delete();
+        });
+
+        $this->auditService->log($actor, 'BudgetYear', $id, 'deleted', $year, null);
+    }
+
+    /**
      * Transition a BudgetYear to a new status.
      *
      * Only `draft → preliminary` and `preliminary → approved` are allowed.

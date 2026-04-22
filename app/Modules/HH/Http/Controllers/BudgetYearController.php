@@ -102,26 +102,37 @@ class BudgetYearController extends Controller
             ->with('success', "Haushaltsjahr {$validated['year']} wurde gespeichert.");
     }
 
+    public function confirmDelete(Request $request, BudgetYear $budgetYear): View
+    {
+        if (! $this->authService->isLeiter($request->user())) {
+            abort(403);
+        }
+
+        $positionCount = BudgetPosition::whereHas('budgetYearVersion', function ($q) use ($budgetYear) {
+            $q->where('budget_year_id', $budgetYear->id);
+        })->count();
+
+        $versionCount = $budgetYear->versions()->count();
+
+        return view('hh::budget-years.confirm-delete', compact('budgetYear', 'positionCount', 'versionCount'));
+    }
+
     public function destroy(Request $request, BudgetYear $budgetYear): RedirectResponse
     {
         if (! $this->authService->isLeiter($request->user())) {
             return back()->with('error', 'Zugriff verweigert.');
         }
 
-        $hasPositions = BudgetPosition::whereHas('budgetYearVersion', function ($q) use ($budgetYear) {
-            $q->where('budget_year_id', $budgetYear->id);
-        })->exists();
-
-        if ($hasPositions) {
-            return back()->with('error', "Haushaltsjahr {$budgetYear->year} kann nicht gelöscht werden – es enthält noch Positionen.");
+        if ($request->input('confirmation') !== 'LÖSCHEN') {
+            return back()->with('error', 'Bitte das Wort „LÖSCHEN" eingeben, um fortzufahren.');
         }
 
         $year = $budgetYear->year;
-        $budgetYear->versions()->delete();
-        $budgetYear->delete();
+
+        $this->budgetYearService->forceDelete($budgetYear, $request->user());
 
         return redirect()->route('hh.budget-years.index')
-            ->with('success', "Haushaltsjahr {$year} wurde gelöscht.");
+            ->with('success', "Haushaltsjahr {$year} und alle zugehörigen Positionen wurden gelöscht.");
     }
 
     /**

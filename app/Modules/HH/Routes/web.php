@@ -33,6 +33,7 @@ Route::middleware(['auth', 'can:hh.view'])->group(function () {
     Route::post('/budget-years', [BudgetYearController::class, 'store'])->name('budget-years.store');
     Route::get('/budget-years/{budgetYear}', [BudgetYearController::class, 'show'])->name('budget-years.show');
     Route::put('/budget-years/{budgetYear}', [BudgetYearController::class, 'update'])->name('budget-years.update');
+    Route::get('/budget-years/{budgetYear}/confirm-delete', [BudgetYearController::class, 'confirmDelete'])->name('budget-years.confirm-delete');
     Route::delete('/budget-years/{budgetYear}', [BudgetYearController::class, 'destroy'])->name('budget-years.destroy');
     Route::post('/budget-years/{budgetYear}/transition', [BudgetYearController::class, 'transition'])->name('budget-years.transition');
     Route::post('/budget-years/{budgetYear}/carry-over-recurring', [BudgetYearController::class, 'carryOverRecurring'])->name('budget-years.carry-over-recurring');
