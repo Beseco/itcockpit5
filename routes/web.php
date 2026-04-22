@@ -130,6 +130,7 @@ Route::middleware('auth')->group(function () {
     ])->except(['show']);
 
     // Applikationen
+    Route::get('/applikationen/help', fn() => view('applikationen.help'))->name('applikationen.help');
     Route::get('/applikationen/export/xlsx', [ApplikationExportController::class, 'xlsx'])->name('applikationen.export.xlsx');
     Route::get('/applikationen/export/pdf',  [ApplikationExportController::class, 'pdf'])->name('applikationen.export.pdf');
 
