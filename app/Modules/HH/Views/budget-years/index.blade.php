@@ -65,20 +65,8 @@
                                 <a href="{{ route('hh.budget-years.export.pdf', $by) }}"
                                    class="text-red-600 hover:underline">PDF</a>
                                 @if($isLeiter)
-                                    @php
-                                        $nextStatus = match($by->status) { 'draft' => 'preliminary', 'preliminary' => 'approved', default => null };
-                                        $nextLabel  = match($by->status) { 'draft' => 'Vorläufig', 'preliminary' => 'Genehmigt', default => null };
-                                    @endphp
-                                    @if($nextStatus)
-                                        <form method="POST" action="{{ route('hh.budget-years.transition', $by) }}" class="inline"
-                                              onsubmit="return confirm('Haushaltsjahr {{ $by->year }} auf „{{ $nextLabel }}" setzen?')">
-                                            @csrf
-                                            <input type="hidden" name="status" value="{{ $nextStatus }}">
-                                            <button type="submit" class="text-purple-600 hover:underline">→ {{ $nextLabel }}</button>
-                                        </form>
-                                    @endif
                                     <button type="button"
-                                            onclick="openEditYear({{ $by->id }}, {{ $by->year }})"
+                                            onclick="openEditYear({{ $by->id }}, {{ $by->year }}, '{{ $by->status }}')"
                                             class="text-blue-600 hover:underline">Bearbeiten</button>
                                     <form method="POST" action="{{ route('hh.budget-years.destroy', $by) }}"
                                           class="inline"
@@ -123,8 +111,9 @@
             }
         });
 
-        function openEditYear(id, year) {
+        function openEditYear(id, year, status) {
             document.getElementById('edit-year-input').value = year;
+            document.getElementById('edit-status-select').value = status;
             document.getElementById('form-edit-year').action =
                 '{{ url('hh/budget-years') }}/' + id;
             document.getElementById('modal-edit').classList.remove('hidden');
@@ -172,6 +161,15 @@
                     <input type="number" name="year" id="edit-year-input" min="2020" max="2099"
                            class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                            required>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select name="status" id="edit-status-select"
+                            class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="draft">Entwurf</option>
+                        <option value="preliminary">Vorläufig</option>
+                        <option value="approved">Genehmigt</option>
+                    </select>
                 </div>
                 <div class="flex justify-end gap-3">
                     <button type="button"

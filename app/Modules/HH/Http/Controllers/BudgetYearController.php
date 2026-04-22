@@ -89,13 +89,17 @@ class BudgetYearController extends Controller
         }
 
         $validated = $request->validate([
-            'year' => ['required', 'integer', 'digits:4', Rule::unique('hh_budget_years', 'year')->ignore($budgetYear->id)],
+            'year'   => ['required', 'integer', 'digits:4', Rule::unique('hh_budget_years', 'year')->ignore($budgetYear->id)],
+            'status' => ['required', 'in:draft,preliminary,approved'],
         ]);
 
-        $budgetYear->update(['year' => $validated['year']]);
+        $budgetYear->update([
+            'year'   => $validated['year'],
+            'status' => $validated['status'],
+        ]);
 
         return redirect()->route('hh.budget-years.index')
-            ->with('success', "Haushaltsjahr wurde auf {$validated['year']} geändert.");
+            ->with('success', "Haushaltsjahr {$validated['year']} wurde gespeichert.");
     }
 
     public function destroy(Request $request, BudgetYear $budgetYear): RedirectResponse
