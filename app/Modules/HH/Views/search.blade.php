@@ -23,27 +23,63 @@
 
             {{-- Suchformular --}}
             <form method="GET" action="{{ route('hh.dashboard.search', $budgetYear) }}"
-                  class="bg-white shadow rounded-lg p-4 flex items-center gap-3">
-                <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/>
-                </svg>
-                <input type="text" id="q-input" name="q" value="{{ $q }}"
-                       placeholder="Position suchen (z.B. WLAN, Baramundi, Microsoft)…"
-                       autofocus
-                       class="flex-1 border-0 text-sm focus:ring-0 outline-none text-gray-700 placeholder-gray-400">
-                <button type="submit"
-                        class="px-4 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded hover:bg-indigo-700 transition">
-                    Suchen
-                </button>
-                @if($q)
-                    <a href="{{ route('hh.dashboard.search', $budgetYear) }}"
-                       class="text-sm text-gray-400 hover:text-gray-600">✕</a>
-                @endif
+                  class="bg-white shadow rounded-lg p-4 space-y-3">
+                <div class="flex items-center gap-3">
+                    <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/>
+                    </svg>
+                    <input type="text" id="q-input" name="q" value="{{ $q }}"
+                           placeholder="Name oder Beschreibung (z.B. WLAN, Baramundi)…"
+                           autofocus
+                           class="flex-1 border border-gray-300 rounded px-3 py-1.5 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Priorität</label>
+                        <select name="priority" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">Alle</option>
+                            @foreach(['hoch','mittel','niedrig'] as $p)
+                                <option value="{{ $p }}" {{ $priority === $p ? 'selected' : '' }}>{{ ucfirst($p) }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Status</label>
+                        <select name="status" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">Alle</option>
+                            @foreach(['geplant','angepasst','gestrichen'] as $s)
+                                <option value="{{ $s }}" {{ $status === $s ? 'selected' : '' }}>{{ ucfirst($s) }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Betrag von (€)</label>
+                        <input type="number" name="amount_min" value="{{ $amountMin }}" min="0" step="0.01"
+                               placeholder="0"
+                               class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Betrag bis (€)</label>
+                        <input type="number" name="amount_max" value="{{ $amountMax }}" min="0" step="0.01"
+                               placeholder="unbegrenzt"
+                               class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button type="submit"
+                            class="px-5 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded hover:bg-indigo-700 transition">
+                        Suchen
+                    </button>
+                    @if($hasFilter)
+                        <a href="{{ route('hh.dashboard.search', $budgetYear) }}"
+                           class="text-sm text-gray-400 hover:text-gray-600">Filter zurücksetzen</a>
+                    @endif
+                </div>
             </form>
 
-            @if($q === '')
+            @if(!$hasFilter)
                 <div class="bg-blue-50 border border-blue-200 rounded-lg px-6 py-4 text-blue-700 text-sm">
-                    Suchbegriff eingeben um Positionen in Haushaltsjahr {{ $budgetYear->year }} zu finden.
+                    Filter ausfüllen um Positionen in Haushaltsjahr {{ $budgetYear->year }} zu finden.
                 </div>
             @elseif($positions->isEmpty())
                 <div class="bg-gray-50 border border-gray-200 rounded-lg px-6 py-4 text-gray-600 text-sm">
