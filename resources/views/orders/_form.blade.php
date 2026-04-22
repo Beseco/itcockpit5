@@ -178,6 +178,51 @@
         <x-input-error :messages="$errors->get('account_code_id')" class="mt-2" />
     </div>
 
+    {{-- HH-Projekt (optional, dynamisch geladen) --}}
+    <div class="sm:col-span-2"
+         x-data="{
+             positions: [],
+             loading: false,
+             selectedId: '{{ old('hh_budget_position_id', $order->hh_budget_position_id ?? '') }}',
+             apiUrl: '{{ route('hh.api.positions-for-order') }}',
+             async loadPositions() {
+                 const year    = document.getElementById('budget_year')?.value;
+                 const ccId    = document.getElementById('cost_center_id')?.value;
+                 const accId   = document.getElementById('account_code_id')?.value;
+                 if (!year || !ccId || !accId) { this.positions = []; return; }
+                 this.loading = true;
+                 try {
+                     const r = await fetch(this.apiUrl + '?budget_year=' + year + '&cost_center_id=' + ccId + '&account_code_id=' + accId);
+                     this.positions = await r.json();
+                 } finally { this.loading = false; }
+             }
+         }"
+         x-init="
+             loadPositions();
+             ['budget_year','cost_center_id','account_code_id'].forEach(id => {
+                 document.getElementById(id)?.addEventListener('change', () => { selectedId = ''; loadPositions(); });
+             });
+         "
+    >
+        <x-input-label for="hh_budget_position_id" value="HH-Projekt (optional)" />
+        <div class="mt-1 relative">
+            <select id="hh_budget_position_id" name="hh_budget_position_id"
+                    :disabled="loading || positions.length === 0"
+                    x-model="selectedId"
+                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm disabled:bg-gray-50 disabled:text-gray-400">
+                <option value="">– Kein Projekt verknüpfen –</option>
+                <template x-for="pos in positions" :key="pos.id">
+                    <option :value="pos.id" x-text="pos.label"></option>
+                </template>
+            </select>
+            <span x-show="loading" class="absolute right-8 top-2.5 text-xs text-gray-400">Lade…</span>
+            <span x-show="!loading && positions.length === 0" class="block mt-1 text-xs text-gray-400">
+                Kein passendes HH-Projekt – Kostenstelle, Sachkonto und Haushaltsjahr wählen.
+            </span>
+        </div>
+        <x-input-error :messages="$errors->get('hh_budget_position_id')" class="mt-2" />
+    </div>
+
     {{-- Bemerkungen --}}
     <div class="sm:col-span-2">
         <x-input-label for="bemerkungen" value="Bemerkungen" />

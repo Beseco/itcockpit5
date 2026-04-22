@@ -260,6 +260,9 @@
                                             @if ($order->quantity > 1)
                                                 <span class="text-gray-400 text-xs">({{ $order->quantity }}x)</span>
                                             @endif
+                                            @if($order->hhBudgetPosition)
+                                                <p class="text-xs text-indigo-600 mt-0.5">&#128196; {{ $order->hhBudgetPosition->project_name }}</p>
+                                            @endif
                                         </td>
                                         <td class="px-4 py-3 text-sm text-gray-500">
                                             {{ $order->vendor?->firmenname ?? '–' }}

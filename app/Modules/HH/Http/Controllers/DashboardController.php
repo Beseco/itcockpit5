@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use App\Modules\HH\Models\Account;
 use App\Modules\HH\Models\BudgetPosition;
 use App\Modules\HH\Models\BudgetYear;
+use App\Modules\HH\Models\BudgetYearVersion;
 use App\Modules\HH\Models\CostCenter;
 use App\Modules\HH\Services\AuthorizationService;
 use App\Modules\HH\Services\BudgetCalculationService;
@@ -141,6 +142,56 @@ class DashboardController extends Controller
             'selectedCostCenter', 'activeVersion', 'totals', 'accountsWithTotals', 'canWrite',
             'ccObligo', 'ccAvailable'
         ));
+    }
+
+    /**
+     * API: Gibt passende HH-Positionen für ein Bestellformular zurück.
+     * Verknüpfung: it_cost_centers.number = hh_cost_centers.number
+     *              it_account_codes.code   = hh_accounts.number
+     */
+    public function positionsForOrder(Request $request): JsonResponse
+    {
+        $budgetYear      = (int) $request->query('budget_year');
+        $itCostCenterId  = (int) $request->query('cost_center_id');
+        $itAccountCodeId = (int) $request->query('account_code_id');
+
+        if (! $budgetYear || ! $itCostCenterId || ! $itAccountCodeId) {
+            return response()->json([]);
+        }
+
+        $itCostCenter  = \App\Models\CostCenter::find($itCostCenterId);
+        $itAccountCode = \App\Models\AccountCode::find($itAccountCodeId);
+
+        if (! $itCostCenter || ! $itAccountCode) {
+            return response()->json([]);
+        }
+
+        $hhCostCenter = CostCenter::where('number', $itCostCenter->number)->first();
+        $hhAccount    = Account::where('number', $itAccountCode->code)->first();
+
+        if (! $hhCostCenter || ! $hhAccount) {
+            return response()->json([]);
+        }
+
+        $activeVersion = \App\Modules\HH\Models\BudgetYearVersion::whereHas(
+            'budgetYear', fn ($q) => $q->where('year', $budgetYear)
+        )->where('is_active', true)->first();
+
+        if (! $activeVersion) {
+            return response()->json([]);
+        }
+
+        $positions = BudgetPosition::where('budget_year_version_id', $activeVersion->id)
+            ->where('cost_center_id', $hhCostCenter->id)
+            ->where('account_id', $hhAccount->id)
+            ->where('status', '!=', 'gestrichen')
+            ->orderBy('project_name')
+            ->get(['id', 'project_name', 'amount', 'priority', 'status']);
+
+        return response()->json($positions->map(fn ($p) => [
+            'id'    => $p->id,
+            'label' => $p->project_name . ' (' . number_format($p->amount, 0, ',', '.') . ' €)',
+        ]));
     }
 
     public function search(Request $request, BudgetYear $budgetYear): View

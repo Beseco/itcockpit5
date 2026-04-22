@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\User;
+use App\Modules\HH\Models\BudgetPosition;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -26,6 +27,7 @@ class Order extends Model
         'bemerkungen',
         'status_updated_at',
         'budget_year',
+        'hh_budget_position_id',
     ];
 
     protected $casts = [
@@ -33,7 +35,8 @@ class Order extends Model
         'order_date'        => 'date',
         'status'            => 'integer',
         'status_updated_at' => 'datetime',
-        'budget_year'       => 'integer',
+        'budget_year'            => 'integer',
+        'hh_budget_position_id'  => 'integer',
     ];
 
     public const STATUS_LABELS = [
@@ -83,5 +86,10 @@ class Order extends Model
     public function history()
     {
         return $this->hasMany(OrderHistory::class, 'order_id');
+    }
+
+    public function hhBudgetPosition()
+    {
+        return $this->belongsTo(BudgetPosition::class, 'hh_budget_position_id');
     }
 }

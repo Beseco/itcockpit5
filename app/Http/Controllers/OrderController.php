@@ -45,7 +45,7 @@ class OrderController extends Controller
         $filterOwn      = $request->boolean('filter_own');
         $search         = trim($request->get('search', ''));
 
-        $query = Order::with(['vendor', 'costCenter', 'accountCode'])
+        $query = Order::with(['vendor', 'costCenter', 'accountCode', 'hhBudgetPosition'])
             ->where('budget_year', $filterBudgetYear)
             ->orderBy('order_date', 'desc');
 
@@ -253,7 +253,8 @@ class OrderController extends Controller
             'account_code_id' => ['required', 'integer', 'exists:it_account_codes,id'],
             'status'          => ['required', 'integer', 'between:1,6'],
             'bemerkungen'     => ['nullable', 'string'],
-            'budget_year'     => ['required', 'integer', 'between:' . ($currentYear - 1) . ',' . ($currentYear + 1)],
+            'budget_year'            => ['required', 'integer', 'between:' . ($currentYear - 1) . ',' . ($currentYear + 1)],
+            'hh_budget_position_id'  => ['nullable', 'integer', 'exists:hh_budget_positions,id'],
         ]);
 
         $validated['price_gross'] = (float) str_replace(',', '.', $validated['price_gross']);

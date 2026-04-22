@@ -67,4 +67,7 @@ Route::middleware(['auth', 'can:hh.view'])->group(function () {
     // Import
     Route::get('/import', [ImportController::class, 'index'])->name('import.index');
     Route::post('/import', [ImportController::class, 'store'])->name('import.store');
+
+    // API: Positionen für Bestellformular
+    Route::get('/api/positions-for-order', [DashboardController::class, 'positionsForOrder'])->name('api.positions-for-order');
 });
