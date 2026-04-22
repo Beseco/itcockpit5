@@ -57,8 +57,8 @@ class HookManager
             return;
         }
 
-        // Add module context to the item
-        $item['module'] = $module;
+        // Add module context to the item (preserve explicit 'module' key if already set)
+        $item['module'] = $item['module'] ?? $module;
 
         // Store sidebar item
         $this->sidebarItems->push($item);

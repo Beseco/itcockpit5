@@ -146,7 +146,7 @@
             @php
                 $iconKey  = $item['icon'] ?? 'default';
                 $iconPath = $heroiconPaths[$iconKey] ?? $heroiconPaths['default'];
-                $isActive = request()->routeIs($item['route']);
+                $isActive = request()->routeIs($item['route_active_pattern'] ?? $item['route']);
             @endphp
             <a href="{{ route($item['route']) }}"
                class="group flex items-center px-2 py-1 text-sm font-medium rounded-md {{ $isActive ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">

@@ -32,9 +32,10 @@ class HHServiceProvider extends ServiceProvider
 
         // Register sidebar navigation item
         $hookManager = app(HookManager::class);
-        $hookManager->registerSidebarItem('HH', [
+        $hookManager->registerSidebarItem('hh', [
             'label' => 'Haushaltsplanung',
             'route' => 'hh.dashboard.index',
+            'route_active_pattern' => 'hh.*',
             'icon' => 'heroicon-o-banknotes',
             'permission' => 'hh.view',
             'module' => 'hh',

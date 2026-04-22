@@ -8,6 +8,7 @@ use App\Modules\HH\Http\Controllers\BudgetYearVersionController;
 use App\Modules\HH\Http\Controllers\CostCenterController;
 use App\Modules\HH\Http\Controllers\DashboardController;
 use App\Modules\HH\Http\Controllers\ExportController;
+use App\Modules\HH\Http\Controllers\ImportController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -20,7 +21,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'can:hh.view'])->group(function () {
     // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
     Route::get('/dashboard/{budgetYear}', [DashboardController::class, 'show'])->name('dashboard.show');
@@ -59,4 +60,8 @@ Route::middleware('auth')->group(function () {
     // Export
     Route::get('/budget-years/{budgetYear}/export/excel', [ExportController::class, 'excel'])->name('budget-years.export.excel');
     Route::get('/budget-years/{budgetYear}/export/pdf', [ExportController::class, 'pdf'])->name('budget-years.export.pdf');
+
+    // Import
+    Route::get('/import', [ImportController::class, 'index'])->name('import.index');
+    Route::post('/import', [ImportController::class, 'store'])->name('import.store');
 });
