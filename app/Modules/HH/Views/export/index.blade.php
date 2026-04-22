@@ -5,6 +5,7 @@
         </h2>
     </x-slot>
 
+    @include('hh::partials.nav')
     <div class="py-8">
         <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white shadow rounded-lg p-8 space-y-6">

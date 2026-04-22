@@ -23,6 +23,7 @@
         </div>
     </x-slot>
 
+    @include('hh::partials.nav')
     <div class="py-6">
         <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
 
