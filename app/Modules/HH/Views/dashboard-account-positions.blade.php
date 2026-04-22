@@ -35,6 +35,16 @@
                 <div class="rounded bg-red-100 px-4 py-3 text-red-800">{{ session('error') }}</div>
             @endif
 
+            {{-- Live-Suche --}}
+            <div class="bg-white shadow rounded-lg p-3 mb-4 flex items-center gap-3">
+                <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/>
+                </svg>
+                <input type="text" id="pos-search" placeholder="Positionsname suchen…"
+                       class="flex-1 border-0 text-sm focus:ring-0 outline-none text-gray-700 placeholder-gray-400">
+                <span id="pos-search-count" class="text-xs text-gray-400 hidden"></span>
+            </div>
+
             <div class="bg-white shadow rounded-lg overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200 text-sm">
@@ -54,7 +64,7 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse($positions as $pos)
-                                <tr class="hover:bg-gray-50">
+                                <tr class="hover:bg-gray-50" data-name="{{ $pos->project_name }}">
                                     <td class="px-4 py-3">{{ $pos->project_name }}</td>
                                     <td class="px-4 py-3">
                                         <span class="px-2 py-0.5 rounded-full text-xs
@@ -266,6 +276,26 @@
     @endif
 
     <script>
+        // Live-Suche
+        document.getElementById('pos-search').addEventListener('input', function () {
+            const term = this.value.toLowerCase();
+            const rows = document.querySelectorAll('tbody tr[data-name]');
+            let visible = 0;
+            rows.forEach(function (row) {
+                const name = row.dataset.name.toLowerCase();
+                const show = !term || name.includes(term);
+                row.style.display = show ? '' : 'none';
+                if (show) visible++;
+            });
+            const counter = document.getElementById('pos-search-count');
+            if (term) {
+                counter.textContent = visible + ' Treffer';
+                counter.classList.remove('hidden');
+            } else {
+                counter.classList.add('hidden');
+            }
+        });
+
         function openEditPos(data) {
             document.getElementById('ep-version').value   = data.budget_year_version_id;
             document.getElementById('ep-cc').value        = data.cost_center_id;

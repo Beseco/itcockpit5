@@ -28,9 +28,29 @@ class BudgetPositionController extends Controller
     public function index(Request $request, BudgetYearVersion $version): JsonResponse|View
     {
         $user = $request->user();
-        $positions = $version->budgetPositions()
-            ->with(['costCenter', 'account'])
-            ->get()
+
+        $query = $version->budgetPositions()->with(['costCenter', 'account']);
+
+        if ($q = $request->input('q')) {
+            $query->where(function ($qb) use ($q) {
+                $qb->where('project_name', 'like', "%{$q}%")
+                   ->orWhere('description', 'like', "%{$q}%");
+            });
+        }
+        if ($ccId = $request->input('cost_center_id')) {
+            $query->where('cost_center_id', $ccId);
+        }
+        if ($accId = $request->input('account_id')) {
+            $query->where('account_id', $accId);
+        }
+        if ($status = $request->input('status')) {
+            $query->where('status', $status);
+        }
+        if ($priority = $request->input('priority')) {
+            $query->where('priority', $priority);
+        }
+
+        $positions = $query->get()
             ->filter(fn(BudgetPosition $p) => $this->authService->canAccessCostCenter($user, $p->costCenter, 'Audit_Zugang'))
             ->values();
 
@@ -38,10 +58,12 @@ class BudgetPositionController extends Controller
             return response()->json($positions);
         }
 
-        $isLeiter = $this->authService->isLeiter($user);
-        $canWrite = $isLeiter;
+        $isLeiter  = $this->authService->isLeiter($user);
+        $canWrite  = $isLeiter;
         $canDelete = $isLeiter;
-        return view('hh::positions.index', compact('version', 'positions', 'canWrite', 'canDelete'));
+        $filters   = $request->only(['q', 'cost_center_id', 'account_id', 'status', 'priority']);
+
+        return view('hh::positions.index', compact('version', 'positions', 'canWrite', 'canDelete', 'filters'));
     }
 
     public function store(Request $request): JsonResponse|RedirectResponse

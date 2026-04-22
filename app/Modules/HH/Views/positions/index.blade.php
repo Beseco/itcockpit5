@@ -39,6 +39,57 @@
                 </div>
             @endif
 
+            {{-- Filter --}}
+            <form method="GET" action="{{ route('hh.versions.positions.index', $version) }}"
+                  class="bg-white shadow sm:rounded-lg p-4 mb-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                    <input type="text" name="q" value="{{ $filters['q'] ?? '' }}"
+                           placeholder="Suche (Name, Beschreibung)…"
+                           class="rounded border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500 col-span-1 lg:col-span-2">
+                    <select name="cost_center_id" class="rounded border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">Alle Kostenstellen</option>
+                        @foreach($allCostCenters as $cc)
+                            <option value="{{ $cc->id }}" {{ ($filters['cost_center_id'] ?? '') == $cc->id ? 'selected' : '' }}>
+                                {{ $cc->number }} {{ $cc->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <select name="account_id" class="rounded border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <option value="">Alle Sachkonten</option>
+                        @foreach($allAccounts as $acc)
+                            <option value="{{ $acc->id }}" {{ ($filters['account_id'] ?? '') == $acc->id ? 'selected' : '' }}>
+                                {{ $acc->number }} {{ $acc->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <div class="flex gap-2">
+                        <select name="status" class="flex-1 rounded border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">Alle Status</option>
+                            @foreach(['geplant','angepasst','gestrichen'] as $s)
+                                <option value="{{ $s }}" {{ ($filters['status'] ?? '') === $s ? 'selected' : '' }}>{{ $s }}</option>
+                            @endforeach
+                        </select>
+                        <select name="priority" class="flex-1 rounded border-gray-300 text-sm shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">Alle Prio</option>
+                            @foreach(['hoch','mittel','niedrig'] as $p)
+                                <option value="{{ $p }}" {{ ($filters['priority'] ?? '') === $p ? 'selected' : '' }}>{{ $p }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="mt-3 flex items-center gap-3">
+                    <button type="submit"
+                            class="px-4 py-1.5 bg-indigo-600 text-white text-sm font-medium rounded hover:bg-indigo-700 transition">
+                        Filtern
+                    </button>
+                    @if(array_filter($filters ?? []))
+                        <a href="{{ route('hh.versions.positions.index', $version) }}"
+                           class="text-sm text-gray-500 hover:text-gray-700">Filter zurücksetzen</a>
+                        <span class="text-xs text-indigo-600 font-medium">{{ $positions->count() }} Treffer</span>
+                    @endif
+                </div>
+            </form>
+
             <div class="overflow-x-auto bg-white shadow sm:rounded-lg">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
