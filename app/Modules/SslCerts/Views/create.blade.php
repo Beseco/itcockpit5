@@ -15,7 +15,7 @@
     <div class="py-6 max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
 
         <div class="bg-white shadow rounded-lg overflow-hidden"
-             x-data="{ mode: '{{ old('upload_type', 'p12') }}', loading: false, showPin: false }">
+             x-data="{ mode: '{{ old('upload_type', 'p12') }}', loading: false, showPin: false, nameAutoFilled: false }">
 
             {{-- Tab-Auswahl --}}
             <div class="flex border-b border-gray-100">
@@ -33,12 +33,20 @@
                         class="flex-1 px-6 py-3 text-sm font-medium text-center transition-colors">
                     PEM / Key-Datei
                 </button>
+                <button type="button" @click="mode = 'url'"
+                        :class="mode === 'url'
+                            ? 'border-b-2 border-indigo-500 text-indigo-600 bg-white'
+                            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'"
+                        class="flex-1 px-6 py-3 text-sm font-medium text-center transition-colors">
+                    Von URL
+                </button>
             </div>
 
             {{-- Beschreibung --}}
             <div class="px-6 py-3 bg-gray-50 border-b border-gray-100 text-xs text-gray-500">
                 <span x-show="mode === 'p12'">P12-Zertifikat mit Transport-PIN hochladen. PIN und P12-Datei werden nicht gespeichert.</span>
                 <span x-show="mode === 'pem'" x-cloak>PEM-Zertifikat und optionalen Private Key hochladen. Key wird verschlüsselt gespeichert.</span>
+                <span x-show="mode === 'url'" x-cloak>HTTPS-URL eingeben – das Serverzertifikat wird direkt abgerufen und gespeichert.</span>
             </div>
 
             <form action="{{ route('sslcerts.store') }}" method="POST" enctype="multipart/form-data"
@@ -52,8 +60,10 @@
                         Bezeichnung <span class="text-red-500">*</span>
                     </label>
                     <input type="text" name="name" id="name"
+                           x-ref="nameInput"
                            value="{{ old('name') }}"
                            placeholder="z.B. Webserver example.com"
+                           @input="nameAutoFilled = false"
                            class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500"
                            required>
                     @error('name')
@@ -238,6 +248,33 @@
 
                 </div>
 
+                {{-- URL-Feld --}}
+                <div x-show="mode === 'url'" x-cloak class="space-y-5">
+                    <div>
+                        <label for="cert_url" class="block text-sm font-medium text-gray-700 mb-1">
+                            HTTPS-URL <span class="text-red-500">*</span>
+                        </label>
+                        <input type="url" name="cert_url" id="cert_url"
+                               value="{{ old('cert_url') }}"
+                               placeholder="https://example.com"
+                               :required="mode === 'url'"
+                               @input="
+                                   const h = (() => { try { return new URL($event.target.value).hostname; } catch(e) { return ''; } })();
+                                   if (h && ($refs.nameInput.value === '' || nameAutoFilled)) {
+                                       $refs.nameInput.value = h;
+                                       nameAutoFilled = true;
+                                   }
+                               "
+                               class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                        <p class="text-xs text-gray-400 mt-1">
+                            Das Zertifikat wird direkt vom Server abgerufen. Es wird kein Private Key gespeichert.
+                        </p>
+                        @error('cert_url')
+                            <p class="text-xs text-red-500 mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
+
                 {{-- PEM-Felder --}}
                 <div x-show="mode === 'pem'" x-cloak class="space-y-5">
 
@@ -275,7 +312,7 @@
 
                 </div>
 
-                @if($errors->any() && !$errors->has('name') && !$errors->has('p12_file') && !$errors->has('p12_pin') && !$errors->has('pem_cert') && !$errors->has('pem_key'))
+                @if($errors->any() && !$errors->has('name') && !$errors->has('p12_file') && !$errors->has('p12_pin') && !$errors->has('pem_cert') && !$errors->has('pem_key') && !$errors->has('cert_url'))
                     <div class="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700">
                         {{ $errors->first() }}
                     </div>

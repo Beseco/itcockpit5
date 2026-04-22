@@ -27,11 +27,15 @@ class SslCertsController extends Controller
     {
         $request->validate([
             'name'        => ['required', 'string', 'max:255'],
-            'upload_type' => ['required', 'in:p12,pem'],
+            'upload_type' => ['required', 'in:p12,pem,url'],
         ]);
 
         if ($request->input('upload_type') === 'p12') {
             return $this->storeFromP12($request);
+        }
+
+        if ($request->input('upload_type') === 'url') {
+            return $this->storeFromUrl($request);
         }
 
         return $this->storeFromPem($request);
@@ -107,6 +111,63 @@ class SslCertsController extends Controller
     }
 
     // ─── Private helpers ──────────────────────────────────────────────────────
+
+    private function storeFromUrl(Request $request)
+    {
+        $request->validate([
+            'cert_url' => ['required', 'url', 'max:500'],
+        ]);
+
+        $url  = $request->input('cert_url');
+        $host = parse_url($url, PHP_URL_HOST);
+        $port = parse_url($url, PHP_URL_PORT) ?? 443;
+
+        if (!$host) {
+            return back()->withInput()
+                ->withErrors(['cert_url' => 'Ungültige URL – kein Hostname erkannt.']);
+        }
+
+        $context = stream_context_create([
+            'ssl' => [
+                'capture_peer_cert' => true,
+                'verify_peer'       => false,
+                'verify_peer_name'  => false,
+                'SNI_enabled'       => true,
+                'peer_name'         => $host,
+            ],
+        ]);
+
+        $socket = @stream_socket_client(
+            "ssl://{$host}:{$port}",
+            $errno, $errstr, 10,
+            STREAM_CLIENT_CONNECT,
+            $context
+        );
+
+        if (!$socket) {
+            return back()->withInput()
+                ->withErrors(['cert_url' => "Verbindung zu {$host}:{$port} fehlgeschlagen: {$errstr}"]);
+        }
+
+        $params = stream_context_get_params($socket);
+        fclose($socket);
+
+        $certResource = $params['options']['ssl']['peer_certificate'] ?? null;
+
+        if (!$certResource) {
+            return back()->withInput()
+                ->withErrors(['cert_url' => 'Es konnte kein Zertifikat von der URL abgerufen werden.']);
+        }
+
+        openssl_x509_export($certResource, $certPem);
+
+        if (!$certPem) {
+            return back()->withInput()
+                ->withErrors(['cert_url' => 'Das Zertifikat konnte nicht exportiert werden.']);
+        }
+
+        return $this->saveCertificate($request, $certPem, null);
+    }
 
     private function storeFromP12(Request $request)
     {
