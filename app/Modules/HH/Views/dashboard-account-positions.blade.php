@@ -116,7 +116,6 @@
                                     </a>
                                 </th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Laufzeit</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Wiederk.</th>
                                 @if($canWrite)
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aktionen</th>
                                 @endif
@@ -140,8 +139,14 @@
                                         </span>
                                     </td>
                                     <td class="px-4 py-3 text-right font-medium">{{ number_format($pos->amount, 0, ',', '.') }}</td>
-                                    <td class="px-4 py-3 text-gray-600">{{ $pos->start_year ?? '–' }} – {{ $pos->end_year ?? '–' }}</td>
-                                    <td class="px-4 py-3 text-gray-600">{{ $pos->is_recurring ? 'Ja' : 'Nein' }}</td>
+                                    <td class="px-4 py-3 text-gray-600">
+                                        @if($pos->is_recurring)
+                                            <span title="Wiederkehrend">↻</span>
+                                            {{ $pos->start_year ?? '–' }}@if($pos->end_year) – {{ $pos->end_year }}@endif
+                                        @else
+                                            {{ $pos->start_year ?? '–' }}
+                                        @endif
+                                    </td>
                                     @if($canWrite)
                                         <td class="px-4 py-3 whitespace-nowrap">
                                             <button onclick="openEditPos({{ json_encode([
@@ -171,7 +176,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="{{ $canWrite ? 8 : 7 }}" class="px-4 py-6 text-center text-gray-500">
+                                    <td colspan="{{ $canWrite ? 7 : 6 }}" class="px-4 py-6 text-center text-gray-500">
                                         Keine Positionen vorhanden.
                                     </td>
                                 </tr>
@@ -184,7 +189,7 @@
                                     <td class="px-4 py-3 text-right font-semibold text-gray-900">
                                         {{ number_format($positions->sum('amount'), 0, ',', '.') }} &euro;
                                     </td>
-                                    <td colspan="{{ $canWrite ? 3 : 2 }}"></td>
+                                    <td colspan="{{ $canWrite ? 2 : 1 }}"></td>
                                 </tr>
                             </tfoot>
                         @endif
@@ -197,7 +202,8 @@
 
     @if($canWrite && $versionId)
         {{-- Create Modal --}}
-        <div id="modal-create-pos" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div id="modal-create-pos" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+             x-data="{ recurring: false }">
             <div class="w-full max-w-2xl rounded bg-white p-6 shadow-lg overflow-y-auto max-h-screen">
                 <h3 class="mb-4 text-lg font-semibold">Neue Position</h3>
                 <form method="POST" action="{{ route('hh.positions.store') }}">
@@ -206,6 +212,7 @@
                     <input type="hidden" name="budget_year_version_id" value="{{ $versionId }}">
                     <input type="hidden" name="cost_center_id" value="{{ $costCenter->id }}">
                     <input type="hidden" name="account_id" value="{{ $account->id }}">
+                    <input type="hidden" name="is_recurring" :value="recurring ? '1' : '0'">
                     <div class="grid grid-cols-2 gap-4">
                         <div class="col-span-2">
                             <label class="block text-sm font-medium text-gray-700">Projektname</label>
@@ -216,7 +223,7 @@
                             <input type="number" name="amount" step="0.01" min="0.01" required class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Prioritaet</label>
+                            <label class="block text-sm font-medium text-gray-700">Priorität</label>
                             <select name="priority" required class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                 <option value="hoch">hoch</option>
                                 <option value="mittel" selected>mittel</option>
@@ -241,15 +248,19 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700">Startjahr</label>
-                            <input type="number" name="start_year" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <input type="number" name="start_year" value="{{ $budgetYear->year }}" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Endjahr</label>
-                            <input type="number" name="end_year" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <div class="flex flex-col justify-end">
+                            <button type="button" @click="recurring = !recurring"
+                                    :class="recurring ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300'"
+                                    class="mt-1 inline-flex items-center gap-1.5 px-3 py-2 rounded border text-sm font-medium transition-colors">
+                                <span>↻</span>
+                                <span x-text="recurring ? 'Wiederkehrend' : 'Einmalig'"></span>
+                            </button>
                         </div>
-                        <div class="col-span-2 flex items-center gap-2">
-                            <input type="checkbox" name="is_recurring" value="1" id="cr-recurring" class="rounded border-gray-300">
-                            <label for="cr-recurring" class="text-sm text-gray-700">Wiederkehrend</label>
+                        <div x-show="recurring" x-cloak>
+                            <label class="block text-sm font-medium text-gray-700">Bis Jahr <span class="text-gray-400 font-normal">(optional)</span></label>
+                            <input type="number" name="end_year" placeholder="unbegrenzt" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         </div>
                         <div class="col-span-2">
                             <label class="block text-sm font-medium text-gray-700">Beschreibung</label>
@@ -266,7 +277,26 @@
         </div>
 
         {{-- Edit Modal --}}
-        <div id="modal-edit-pos" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div id="modal-edit-pos" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+             x-data="{ recurring: false }"
+             @open-edit-pos.window="
+                 recurring = !!$event.detail.is_recurring;
+                 $nextTick(() => {
+                     document.getElementById('ep-version').value   = $event.detail.budget_year_version_id;
+                     document.getElementById('ep-cc').value        = $event.detail.cost_center_id;
+                     document.getElementById('ep-account').value   = $event.detail.account_id;
+                     document.getElementById('ep-name').value      = $event.detail.project_name;
+                     document.getElementById('ep-amount').value    = $event.detail.amount;
+                     document.getElementById('ep-priority').value  = $event.detail.priority;
+                     document.getElementById('ep-category').value  = $event.detail.category;
+                     document.getElementById('ep-status').value    = $event.detail.status;
+                     document.getElementById('ep-start').value     = $event.detail.start_year ?? '';
+                     document.getElementById('ep-end').value       = $event.detail.end_year ?? '';
+                     document.getElementById('ep-desc').value      = $event.detail.description ?? '';
+                     var base = '{{ rtrim(route("hh.positions.update", ["position" => "__ID__"]), "/") }}'.replace('__ID__', $event.detail.id);
+                     document.getElementById('form-edit-pos').action = base;
+                 });
+             ">
             <div class="w-full max-w-2xl rounded bg-white p-6 shadow-lg overflow-y-auto max-h-screen">
                 <h3 class="mb-4 text-lg font-semibold">Position bearbeiten</h3>
                 <form id="form-edit-pos" method="POST" action="">
@@ -275,6 +305,7 @@
                     <input type="hidden" name="budget_year_version_id" id="ep-version">
                     <input type="hidden" name="cost_center_id" id="ep-cc">
                     <input type="hidden" name="account_id" id="ep-account">
+                    <input type="hidden" name="is_recurring" :value="recurring ? '1' : '0'">
                     <div class="grid grid-cols-2 gap-4">
                         <div class="col-span-2">
                             <label class="block text-sm font-medium text-gray-700">Projektname</label>
@@ -285,7 +316,7 @@
                             <input type="number" name="amount" id="ep-amount" step="0.01" min="0.01" required class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700">Prioritaet</label>
+                            <label class="block text-sm font-medium text-gray-700">Priorität</label>
                             <select name="priority" id="ep-priority" required class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                                 <option value="hoch">hoch</option>
                                 <option value="mittel">mittel</option>
@@ -312,13 +343,17 @@
                             <label class="block text-sm font-medium text-gray-700">Startjahr</label>
                             <input type="number" name="start_year" id="ep-start" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Endjahr</label>
-                            <input type="number" name="end_year" id="ep-end" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <div class="flex flex-col justify-end">
+                            <button type="button" @click="recurring = !recurring"
+                                    :class="recurring ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300'"
+                                    class="mt-1 inline-flex items-center gap-1.5 px-3 py-2 rounded border text-sm font-medium transition-colors">
+                                <span>↻</span>
+                                <span x-text="recurring ? 'Wiederkehrend' : 'Einmalig'"></span>
+                            </button>
                         </div>
-                        <div class="col-span-2 flex items-center gap-2">
-                            <input type="checkbox" name="is_recurring" value="1" id="ep-recurring" class="rounded border-gray-300">
-                            <label for="ep-recurring" class="text-sm text-gray-700">Wiederkehrend</label>
+                        <div x-show="recurring" x-cloak>
+                            <label class="block text-sm font-medium text-gray-700">Bis Jahr <span class="text-gray-400 font-normal">(optional)</span></label>
+                            <input type="number" name="end_year" id="ep-end" placeholder="unbegrenzt" class="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
                         </div>
                         <div class="col-span-2">
                             <label class="block text-sm font-medium text-gray-700">Beschreibung</label>
@@ -336,7 +371,6 @@
     @endif
 
     <script>
-        // Live-Suche
         document.getElementById('pos-search').addEventListener('input', function () {
             const term = this.value.toLowerCase();
             const rows = document.querySelectorAll('tbody tr[data-name]');
@@ -357,20 +391,7 @@
         });
 
         function openEditPos(data) {
-            document.getElementById('ep-version').value   = data.budget_year_version_id;
-            document.getElementById('ep-cc').value        = data.cost_center_id;
-            document.getElementById('ep-account').value   = data.account_id;
-            document.getElementById('ep-name').value      = data.project_name;
-            document.getElementById('ep-amount').value    = data.amount;
-            document.getElementById('ep-priority').value  = data.priority;
-            document.getElementById('ep-category').value  = data.category;
-            document.getElementById('ep-status').value    = data.status;
-            document.getElementById('ep-start').value     = data.start_year ?? '';
-            document.getElementById('ep-end').value       = data.end_year ?? '';
-            document.getElementById('ep-recurring').checked = !!data.is_recurring;
-            document.getElementById('ep-desc').value      = data.description ?? '';
-            var posBase = '{{ rtrim(route("hh.positions.update", ["position" => "__ID__"]), "/") }}'.replace('__ID__', data.id);
-            document.getElementById('form-edit-pos').action = posBase;
+            window.dispatchEvent(new CustomEvent('open-edit-pos', { detail: data }));
             document.getElementById('modal-edit-pos').classList.remove('hidden');
         }
     </script>
