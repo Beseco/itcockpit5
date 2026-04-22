@@ -65,6 +65,18 @@
                                 <a href="{{ route('hh.budget-years.export.pdf', $by) }}"
                                    class="text-red-600 hover:underline">PDF</a>
                                 @if($isLeiter)
+                                    @php
+                                        $nextStatus = match($by->status) { 'draft' => 'preliminary', 'preliminary' => 'approved', default => null };
+                                        $nextLabel  = match($by->status) { 'draft' => 'Vorläufig', 'preliminary' => 'Genehmigt', default => null };
+                                    @endphp
+                                    @if($nextStatus)
+                                        <form method="POST" action="{{ route('hh.budget-years.transition', $by) }}" class="inline"
+                                              onsubmit="return confirm('Haushaltsjahr {{ $by->year }} auf „{{ $nextLabel }}" setzen?')">
+                                            @csrf
+                                            <input type="hidden" name="status" value="{{ $nextStatus }}">
+                                            <button type="submit" class="text-purple-600 hover:underline">→ {{ $nextLabel }}</button>
+                                        </form>
+                                    @endif
                                     <button type="button"
                                             onclick="openEditYear({{ $by->id }}, {{ $by->year }})"
                                             class="text-blue-600 hover:underline">Bearbeiten</button>

@@ -12,6 +12,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Illuminate\Validation\ValidationException;
 
 class BudgetYearController extends Controller
 {
@@ -122,10 +123,13 @@ class BudgetYearController extends Controller
     /**
      * Transition a budget year to a new status (Leiter only).
      */
-    public function transition(Request $request, BudgetYear $budgetYear): JsonResponse
+    public function transition(Request $request, BudgetYear $budgetYear): JsonResponse|RedirectResponse
     {
         if (! $this->authService->isLeiter($request->user())) {
-            return response()->json(['message' => 'Zugriff verweigert. Nur Leiter dürfen den Status ändern.'], 403);
+            if ($this->isApi($request)) {
+                return response()->json(['message' => 'Zugriff verweigert. Nur Leiter dürfen den Status ändern.'], 403);
+            }
+            return back()->with('error', 'Zugriff verweigert.');
         }
 
         $validated = $request->validate([
@@ -135,9 +139,20 @@ class BudgetYearController extends Controller
         try {
             $this->budgetYearService->transitionStatus($budgetYear, $validated['status'], $request->user());
         } catch (\InvalidArgumentException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
+            if ($this->isApi($request)) {
+                return response()->json(['message' => $e->getMessage()], 422);
+            }
+            return back()->with('error', $e->getMessage());
         }
 
-        return response()->json($budgetYear->fresh()->load('versions'));
+        if ($this->isApi($request)) {
+            return response()->json($budgetYear->fresh()->load('versions'));
+        }
+
+        $labels = ['preliminary' => 'Vorläufig', 'approved' => 'Genehmigt'];
+        $label  = $labels[$validated['status']] ?? $validated['status'];
+
+        return redirect()->route('hh.budget-years.index')
+            ->with('success', "Haushaltsjahr {$budgetYear->year} wurde auf „{$label}" gesetzt.");
     }
 }
