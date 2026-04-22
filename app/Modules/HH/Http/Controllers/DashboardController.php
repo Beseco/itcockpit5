@@ -8,6 +8,7 @@ use App\Modules\HH\Models\BudgetYear;
 use App\Modules\HH\Models\CostCenter;
 use App\Modules\HH\Services\AuthorizationService;
 use App\Modules\HH\Services\BudgetCalculationService;
+use App\Modules\HH\Services\OrderBudgetService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,6 +25,7 @@ class DashboardController extends Controller
     public function __construct(
         private BudgetCalculationService $calculationService,
         private AuthorizationService $authService,
+        private OrderBudgetService $orderBudgetService,
     ) {}
 
     private function isApi(Request $request): bool
@@ -92,14 +94,25 @@ class DashboardController extends Controller
             : 0.0;
 
         $accountsWithTotals = collect();
+        $ccObligo           = 0.0;
         if ($activeVersion && $selectedCostCenter) {
-            $accountsWithTotals = $allAccounts->map(function (Account $acc) use ($activeVersion, $selectedCostCenter) {
+            $ccObligo = $this->orderBudgetService->getObligoForCostCenter($budgetYear->year, $selectedCostCenter);
+            $accountsWithTotals = $allAccounts->map(function (Account $acc) use ($activeVersion, $selectedCostCenter, $budgetYear) {
                 $positions = BudgetPosition::where('budget_year_version_id', $activeVersion->id)
                     ->where('cost_center_id', $selectedCostCenter->id)
                     ->where('account_id', $acc->id)
                     ->with(['costCenter', 'account'])
                     ->get();
-                return ['account' => $acc, 'total' => (float) $positions->sum('amount'), 'count' => $positions->count(), 'positions' => $positions];
+                $planned = (float) $positions->sum('amount');
+                $obligo  = $this->orderBudgetService->getObligoForAccount($budgetYear->year, $selectedCostCenter, $acc);
+                return [
+                    'account'   => $acc,
+                    'total'     => $planned,
+                    'obligo'    => $obligo,
+                    'available' => $planned - $obligo,
+                    'count'     => $positions->count(),
+                    'positions' => $positions,
+                ];
             });
         }
 
@@ -121,9 +134,12 @@ class DashboardController extends Controller
             Cookie::queue(self::COOKIE_CC, $selectedCostCenter->id, $minutes, '/', null, false, false);
         }
 
+        $ccAvailable = ($totals['total'] ?? 0) - $ccObligo;
+
         return view('hh::dashboard', compact(
             'budgetYear', 'allBudgetYears', 'allCostCenters', 'allAccounts',
-            'selectedCostCenter', 'activeVersion', 'totals', 'accountsWithTotals', 'canWrite'
+            'selectedCostCenter', 'activeVersion', 'totals', 'accountsWithTotals', 'canWrite',
+            'ccObligo', 'ccAvailable'
         ));
     }
 
@@ -199,10 +215,15 @@ class DashboardController extends Controller
                 : $positions->sortByDesc($sortField)->values();
         }
 
-        $canWrite = $this->authService->isLeiter($request->user());
+        $canWrite      = $this->authService->isLeiter($request->user());
+        $plannedTotal  = (float) $positions->sum('amount');
+        $obligo        = $this->orderBudgetService->getObligoForAccount($budgetYear->year, $costCenter, $account);
+        $availableBudget = $plannedTotal - $obligo;
+
         return view('hh::dashboard-account-positions', compact(
             'budgetYear', 'costCenter', 'account', 'activeVersion',
-            'positions', 'allAccounts', 'canWrite', 'sortField', 'sortDir'
+            'positions', 'allAccounts', 'canWrite', 'sortField', 'sortDir',
+            'plannedTotal', 'obligo', 'availableBudget'
         ));
     }
 }

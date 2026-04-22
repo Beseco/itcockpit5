@@ -7,18 +7,17 @@ use App\Models\CostCenter;
 use App\Models\Dienstleister;
 use App\Models\Order;
 use App\Models\OrderHistory;
+use App\Modules\HH\Services\OrderBudgetService;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class OrderController extends Controller
 {
-    protected AuditLogger $auditLogger;
-
-    public function __construct(AuditLogger $auditLogger)
-    {
-        $this->auditLogger = $auditLogger;
-    }
+    public function __construct(
+        protected AuditLogger $auditLogger,
+        protected OrderBudgetService $orderBudgetService,
+    ) {}
 
     /**
      * Listenansicht + Dashboard (Obligo, KST-Summen, optional KST-Detail)
@@ -27,10 +26,15 @@ class OrderController extends Controller
     {
         $this->authorize('orders.view');
 
-        $obligo = Order::where('status', '!=', 6)->sum('price_gross');
+        $filterBudgetYear = (int) $request->get('budget_year', now()->year);
+
+        $obligo = Order::where('status', '!=', 6)
+            ->when($filterBudgetYear, fn ($q) => $q->where('budget_year', $filterBudgetYear))
+            ->sum('price_gross');
 
         $kstSummen = Order::join('it_cost_centers', 'it_orders.cost_center_id', '=', 'it_cost_centers.id')
             ->where('it_orders.status', '!=', 6)
+            ->where('it_orders.budget_year', $filterBudgetYear)
             ->selectRaw('it_cost_centers.id, it_cost_centers.number, it_cost_centers.description, SUM(it_orders.price_gross) as summe')
             ->groupBy('it_cost_centers.id', 'it_cost_centers.number', 'it_cost_centers.description')
             ->get();
@@ -42,6 +46,7 @@ class OrderController extends Controller
         $search         = trim($request->get('search', ''));
 
         $query = Order::with(['vendor', 'costCenter', 'accountCode'])
+            ->where('budget_year', $filterBudgetYear)
             ->orderBy('order_date', 'desc');
 
         if ($filterStatus === 'nicht_angeordnet') {
@@ -69,9 +74,10 @@ class OrderController extends Controller
         $perPage = in_array((int) $request->get('per_page', 25), [25, 50, 100, 250]) ? (int) $request->get('per_page', 25) : 25;
         $orders = $query->paginate($perPage)->withQueryString();
 
-        $kstDetails   = null;
-        $kstAccounts  = [];
-        $costCenterId = (int) $request->get('cost_center_id', 0);
+        $kstDetails    = null;
+        $kstAccounts   = [];
+        $hhBudgetData  = [];
+        $costCenterId  = (int) $request->get('cost_center_id', 0);
 
         if ($costCenterId > 0) {
             $kstDetails = CostCenter::find($costCenterId);
@@ -80,16 +86,22 @@ class OrderController extends Controller
                 $kstAccounts = Order::join('it_account_codes', 'it_orders.account_code_id', '=', 'it_account_codes.id')
                     ->selectRaw('it_account_codes.id, it_account_codes.code, it_account_codes.description, SUM(it_orders.price_gross) as summe')
                     ->where('it_orders.cost_center_id', $costCenterId)
+                    ->where('it_orders.budget_year', $filterBudgetYear)
+                    ->where('it_orders.status', '!=', 6)
                     ->groupBy('it_account_codes.id', 'it_account_codes.code', 'it_account_codes.description')
                     ->orderBy('it_account_codes.code')
                     ->get();
+
+                $hhBudgetData = $this->orderBudgetService->getHhBudgetForOrderCostCenter($filterBudgetYear, $kstDetails);
             }
         }
 
+        $availableBudgetYears = [now()->year - 1, now()->year, now()->year + 1];
+
         return view('orders.index', compact(
-            'obligo', 'kstSummen', 'orders', 'kstDetails', 'kstAccounts',
+            'obligo', 'kstSummen', 'orders', 'kstDetails', 'kstAccounts', 'hhBudgetData',
             'filterStatus', 'filterDateFrom', 'filterDateTo', 'filterOwn', 'search',
-            'perPage'
+            'perPage', 'filterBudgetYear', 'availableBudgetYears'
         ));
     }
 
@@ -100,12 +112,17 @@ class OrderController extends Controller
     {
         $this->authorize('orders.create');
 
-        $vendors      = Dienstleister::orderBy('firmenname')->get();
-        $costCenters  = CostCenter::orderBy('number')->get();
-        $accountCodes = AccountCode::orderBy('code')->get();
-        $statusLabels = Order::STATUS_LABELS;
+        $vendors             = Dienstleister::orderBy('firmenname')->get();
+        $costCenters         = CostCenter::orderBy('number')->get();
+        $accountCodes        = AccountCode::orderBy('code')->get();
+        $statusLabels        = Order::STATUS_LABELS;
+        $availableBudgetYears = [now()->year - 1, now()->year, now()->year + 1];
+        $defaultBudgetYear   = now()->year;
 
-        return view('orders.create', compact('vendors', 'costCenters', 'accountCodes', 'statusLabels'));
+        return view('orders.create', compact(
+            'vendors', 'costCenters', 'accountCodes', 'statusLabels',
+            'availableBudgetYears', 'defaultBudgetYear'
+        ));
     }
 
     /**
@@ -124,9 +141,10 @@ class OrderController extends Controller
         $order = Order::create($validated);
 
         $this->auditLogger->log('Order', 'Bestellung erstellt', [
-            'order_id' => $order->id,
-            'subject'  => $order->subject,
-            'status'   => Order::STATUS_LABELS[$order->status] ?? $order->status,
+            'order_id'    => $order->id,
+            'subject'     => $order->subject,
+            'status'      => Order::STATUS_LABELS[$order->status] ?? $order->status,
+            'budget_year' => $order->budget_year,
         ]);
 
         return redirect()->route('orders.index')->with('success', 'Bestellung erfolgreich gespeichert.');
@@ -139,12 +157,17 @@ class OrderController extends Controller
     {
         $this->authorizeOrderAccess($order);
 
-        $vendors      = Dienstleister::orderBy('firmenname')->get();
-        $costCenters  = CostCenter::orderBy('number')->get();
-        $accountCodes = AccountCode::orderBy('code')->get();
-        $statusLabels = Order::STATUS_LABELS;
+        $vendors             = Dienstleister::orderBy('firmenname')->get();
+        $costCenters         = CostCenter::orderBy('number')->get();
+        $accountCodes        = AccountCode::orderBy('code')->get();
+        $statusLabels        = Order::STATUS_LABELS;
+        $availableBudgetYears = [now()->year - 1, now()->year, now()->year + 1];
+        $defaultBudgetYear   = $order->budget_year ?? now()->year;
 
-        return view('orders.edit', compact('order', 'vendors', 'costCenters', 'accountCodes', 'statusLabels'));
+        return view('orders.edit', compact(
+            'order', 'vendors', 'costCenters', 'accountCodes', 'statusLabels',
+            'availableBudgetYears', 'defaultBudgetYear'
+        ));
     }
 
     /**
@@ -156,11 +179,10 @@ class OrderController extends Controller
 
         $validated = $this->validateOrder($request);
 
-        // Audit-Log: Status-Änderung tracken
-        $oldStatus    = $order->status;
-        $newStatus    = (int) $validated['status'];
-        $oldLabel     = Order::STATUS_LABELS[$oldStatus] ?? (string) $oldStatus;
-        $newLabel     = Order::STATUS_LABELS[$newStatus] ?? (string) $newStatus;
+        $oldStatus = $order->status;
+        $newStatus = (int) $validated['status'];
+        $oldLabel  = Order::STATUS_LABELS[$oldStatus] ?? (string) $oldStatus;
+        $newLabel  = Order::STATUS_LABELS[$newStatus] ?? (string) $newStatus;
 
         if ($oldStatus !== $newStatus) {
             OrderHistory::create([
@@ -201,51 +223,26 @@ class OrderController extends Controller
         return redirect()->route('orders.index')->with('success', 'Bestellung erfolgreich gelöscht.');
     }
 
-    /**
-     * Prüft ob der User die Bestellung bearbeiten darf:
-     * - orders.edit → alle Bestellungen
-     * - orders.create + eigene Bestellung → nur eigene
-     */
     private function authorizeOrderAccess(Order $order): void
     {
         $user = Auth::user();
-
-        if ($user->hasModulePermission('orders', 'edit')) {
-            return;
-        }
-
-        if ($user->hasModulePermission('orders', 'create') && $order->isOwnedBy($user->id)) {
-            return;
-        }
-
+        if ($user->hasModulePermission('orders', 'edit')) return;
+        if ($user->hasModulePermission('orders', 'create') && $order->isOwnedBy($user->id)) return;
         abort(403);
     }
 
-    /**
-     * Prüft ob der User die Bestellung löschen darf:
-     * - orders.delete → alle Bestellungen
-     * - orders.create + eigene Bestellung → nur eigene
-     */
     private function authorizeOrderDelete(Order $order): void
     {
         $user = Auth::user();
-
-        if ($user->hasModulePermission('orders', 'delete')) {
-            return;
-        }
-
-        if ($user->hasModulePermission('orders', 'create') && $order->isOwnedBy($user->id)) {
-            return;
-        }
-
+        if ($user->hasModulePermission('orders', 'delete')) return;
+        if ($user->hasModulePermission('orders', 'create') && $order->isOwnedBy($user->id)) return;
         abort(403);
     }
 
-    /**
-     * Gemeinsame Validierungslogik
-     */
     private function validateOrder(Request $request): array
     {
+        $currentYear = now()->year;
+
         $validated = $request->validate([
             'subject'         => ['required', 'string', 'max:255'],
             'quantity'        => ['required', 'integer', 'min:1'],
@@ -256,9 +253,9 @@ class OrderController extends Controller
             'account_code_id' => ['required', 'integer', 'exists:it_account_codes,id'],
             'status'          => ['required', 'integer', 'between:1,6'],
             'bemerkungen'     => ['nullable', 'string'],
+            'budget_year'     => ['required', 'integer', 'between:' . ($currentYear - 1) . ',' . ($currentYear + 1)],
         ]);
 
-        // Komma → Punkt für Dezimalzahlen
         $validated['price_gross'] = (float) str_replace(',', '.', $validated['price_gross']);
 
         if (empty($validated['order_date'])) {

@@ -35,6 +35,37 @@
                 <div class="rounded bg-red-100 px-4 py-3 text-red-800">{{ session('error') }}</div>
             @endif
 
+            {{-- Budget-Summary --}}
+            @php
+                $summaryPct = $plannedTotal > 0 ? min(100, round(($obligo / $plannedTotal) * 100)) : 0;
+            @endphp
+            <div class="bg-white shadow rounded-lg p-5">
+                <div class="grid grid-cols-3 gap-4 mb-3">
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase tracking-wider">Geplant</p>
+                        <p class="mt-1 text-xl font-semibold text-gray-900">{{ number_format($plannedTotal, 0, ',', '.') }} &euro;</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase tracking-wider">Bestellt (Obligo)</p>
+                        <p class="mt-1 text-xl font-semibold text-orange-600">{{ number_format($obligo, 0, ',', '.') }} &euro;</p>
+                        <p class="text-xs text-gray-400">offene Bestellungen {{ $budgetYear->year }}</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase tracking-wider">Verfügbar</p>
+                        <p class="mt-1 text-xl font-semibold {{ $availableBudget < 0 ? 'text-red-600' : 'text-green-700' }}">
+                            {{ number_format($availableBudget, 0, ',', '.') }} &euro;
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="flex-1 bg-gray-200 rounded-full h-2">
+                        <div class="h-2 rounded-full {{ $summaryPct >= 100 ? 'bg-red-500' : ($summaryPct >= 75 ? 'bg-orange-400' : 'bg-green-500') }}"
+                             style="width: {{ $summaryPct }}%"></div>
+                    </div>
+                    <span class="text-sm text-gray-500 w-12 text-right">{{ $summaryPct }}%</span>
+                </div>
+            </div>
+
             {{-- Live-Suche --}}
             <div class="bg-white shadow rounded-lg p-3 mb-4 flex items-center gap-3">
                 <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -25,6 +25,7 @@ class Order extends Model
         'status',
         'bemerkungen',
         'status_updated_at',
+        'budget_year',
     ];
 
     protected $casts = [
@@ -32,6 +33,7 @@ class Order extends Model
         'order_date'        => 'date',
         'status'            => 'integer',
         'status_updated_at' => 'datetime',
+        'budget_year'       => 'integer',
     ];
 
     public const STATUS_LABELS = [

@@ -16,27 +16,38 @@
                 </div>
             @endif
 
+            {{-- Haushaltsjahr-Umschalter --}}
+            <div class="flex items-center gap-2 mb-4">
+                <span class="text-sm text-gray-500 font-medium">Haushaltsjahr:</span>
+                @foreach ($availableBudgetYears as $yr)
+                    <a href="{{ route('orders.index', array_merge(request()->except('budget_year', 'page'), ['budget_year' => $yr])) }}"
+                       class="px-3 py-1 rounded text-sm font-medium {{ $filterBudgetYear == $yr ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50' }}">
+                        {{ $yr }}
+                    </a>
+                @endforeach
+            </div>
+
             {{-- Dashboard: Obligo + KST-Summen --}}
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 {{-- Obligo-Box --}}
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-5 border-l-4 border-indigo-500">
-                    <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Obligo (offen)</p>
+                    <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Obligo {{ $filterBudgetYear }} (offen)</p>
                     <p class="mt-1 text-2xl font-bold text-gray-900">
-                        {{ number_format($obligo, 2, ',', '.') }} €
+                        {{ number_format($obligo, 0, ',', '.') }} €
                     </p>
                     <p class="text-xs text-gray-400 mt-1">alle Status außer „angeordnet"</p>
                 </div>
 
                 {{-- KST-Summen-Boxen --}}
                 @foreach ($kstSummen as $kst)
-                    <a href="{{ route('orders.index', ['cost_center_id' => $kst->id]) }}"
+                    <a href="{{ route('orders.index', ['cost_center_id' => $kst->id, 'budget_year' => $filterBudgetYear]) }}"
                        class="bg-white overflow-hidden shadow-sm sm:rounded-lg p-5 border-l-4 border-blue-400 hover:bg-blue-50 transition">
                         <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">KST {{ $kst->number }}</p>
                         <p class="mt-1 text-xl font-bold text-gray-900">
-                            {{ number_format($kst->summe, 2, ',', '.') }} €
+                            {{ number_format($kst->summe, 0, ',', '.') }} €
                         </p>
                         <p class="text-xs text-gray-400 mt-1 truncate">{{ $kst->description }}</p>
-                        <p class="text-xs text-indigo-400 mt-0.5">offene Bestellungen</p>
+                        <p class="text-xs text-indigo-400 mt-0.5">offene Bestellungen {{ $filterBudgetYear }}</p>
                     </a>
                 @endforeach
             </div>
@@ -48,17 +59,61 @@
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-lg font-semibold text-gray-800">
                                 KST {{ $kstDetails->number }} — {{ $kstDetails->description }}
+                                <span class="text-sm font-normal text-gray-500 ml-2">Haushaltsjahr {{ $filterBudgetYear }}</span>
                             </h3>
-                            <a href="{{ route('orders.index') }}" class="text-sm text-gray-400 hover:text-gray-600">
+                            <a href="{{ route('orders.index', ['budget_year' => $filterBudgetYear]) }}" class="text-sm text-gray-400 hover:text-gray-600">
                                 ✕ Schließen
                             </a>
                         </div>
+
+                        @if (!empty($hhBudgetData))
+                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">HH-Budget {{ $filterBudgetYear }}</p>
+                            <table class="min-w-full divide-y divide-gray-200 mb-6">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sachkonto</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bezeichnung</th>
+                                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Geplant</th>
+                                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Bestellt</th>
+                                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Verfügbar</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-32">Auslastung</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    @foreach ($hhBudgetData as $row)
+                                        @php $pct = $row['planned'] > 0 ? min(100, round(($row['obligo'] / $row['planned']) * 100)) : 0; @endphp
+                                        <tr>
+                                            <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $row['account_number'] }}</td>
+                                            <td class="px-4 py-3 text-sm text-gray-500">{{ $row['account_name'] }}</td>
+                                            <td class="px-4 py-3 text-sm text-gray-900 text-right">{{ number_format($row['planned'], 0, ',', '.') }} €</td>
+                                            <td class="px-4 py-3 text-sm text-right {{ $row['obligo'] > 0 ? 'text-orange-600 font-medium' : 'text-gray-400' }}">
+                                                {{ number_format($row['obligo'], 0, ',', '.') }} €
+                                            </td>
+                                            <td class="px-4 py-3 text-sm text-right font-semibold {{ $row['available'] < 0 ? 'text-red-600' : 'text-green-700' }}">
+                                                {{ number_format($row['available'], 0, ',', '.') }} €
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="flex-1 bg-gray-200 rounded-full h-2">
+                                                        <div class="h-2 rounded-full {{ $pct >= 100 ? 'bg-red-500' : ($pct >= 75 ? 'bg-orange-400' : 'bg-green-500') }}"
+                                                             style="width: {{ $pct }}%"></div>
+                                                    </div>
+                                                    <span class="text-xs text-gray-500 w-8">{{ $pct }}%</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                            <p class="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Offene Bestellungen</p>
+                        @endif
+
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sachkonto</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bezeichnung</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Summe</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Obligo</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -67,12 +122,12 @@
                                         <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ $acc->code }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-500">{{ $acc->description }}</td>
                                         <td class="px-4 py-3 text-sm text-gray-900 text-right font-semibold">
-                                            {{ number_format($acc->summe, 2, ',', '.') }} €
+                                            {{ number_format($acc->summe, 0, ',', '.') }} €
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="3" class="px-4 py-3 text-center text-gray-400">Keine Einträge.</td>
+                                        <td colspan="3" class="px-4 py-3 text-center text-gray-400">Keine offenen Bestellungen.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

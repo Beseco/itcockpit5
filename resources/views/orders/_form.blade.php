@@ -35,6 +35,23 @@
         <x-input-error :messages="$errors->get('order_date')" class="mt-2" />
     </div>
 
+    {{-- Haushaltsjahr --}}
+    <div>
+        <x-input-label for="budget_year" value="Haushaltsjahr *" />
+        <select id="budget_year" name="budget_year"
+                class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
+                required>
+            @foreach ($availableBudgetYears as $yr)
+                <option value="{{ $yr }}"
+                    {{ old('budget_year', $order->budget_year ?? $defaultBudgetYear) == $yr ? 'selected' : '' }}>
+                    {{ $yr }}
+                </option>
+            @endforeach
+        </select>
+        <p class="mt-1 text-xs text-gray-400">Nur {{ $availableBudgetYears[0] }}–{{ end($availableBudgetYears) }} möglich</p>
+        <x-input-error :messages="$errors->get('budget_year')" class="mt-2" />
+    </div>
+
     {{-- Status --}}
     <div>
         <x-input-label for="status" value="Status *" />

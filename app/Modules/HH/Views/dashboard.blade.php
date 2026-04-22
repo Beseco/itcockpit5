@@ -70,7 +70,8 @@
                 <span id="acc-search-count" class="text-xs text-gray-400 hidden whitespace-nowrap"></span>
             </div>
 
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            @php $share = $totals['investive_share'] ?? 0; @endphp
+            <div class="grid grid-cols-2 lg:grid-cols-3 gap-4">
                 <div class="bg-white rounded-lg shadow p-5">
                     <p class="text-xs text-gray-500 uppercase tracking-wider">Gesamtbudget @if($selectedCostCenter)<span class="normal-case font-normal text-gray-400">({{ $selectedCostCenter->number }})</span>@endif</p>
                     <p class="mt-1 text-2xl font-semibold text-gray-900">{{ number_format($totals['total'] ?? 0, 0, ',', '.') }} &euro;</p>
@@ -84,8 +85,18 @@
                     <p class="mt-1 text-2xl font-semibold text-indigo-700">{{ number_format($totals['konsumtiv'] ?? 0, 0, ',', '.') }} &euro;</p>
                 </div>
                 <div class="bg-white rounded-lg shadow p-5">
+                    <p class="text-xs text-gray-500 uppercase tracking-wider">Bestellt (Obligo)</p>
+                    <p class="mt-1 text-2xl font-semibold text-orange-600">{{ number_format($ccObligo, 0, ',', '.') }} &euro;</p>
+                    <p class="text-xs text-gray-400 mt-1">offene Bestellungen {{ $budgetYear->year }}</p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-5">
+                    <p class="text-xs text-gray-500 uppercase tracking-wider">Verfügbar</p>
+                    @php $avail = $ccAvailable; @endphp
+                    <p class="mt-1 text-2xl font-semibold {{ $avail < 0 ? 'text-red-600' : 'text-green-700' }}">{{ number_format($avail, 0, ',', '.') }} &euro;</p>
+                    <p class="text-xs text-gray-400 mt-1">Budget − Obligo</p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-5">
                     <p class="text-xs text-gray-500 uppercase tracking-wider">Anteil Investiv</p>
-                    @php $share = $totals['investive_share'] ?? 0; @endphp
                     <p class="mt-1 text-2xl font-semibold {{ $share > 80 ? 'text-red-600' : ($share > 50 ? 'text-yellow-600' : 'text-green-600') }}">{{ number_format($share, 1, ',', '.') }} %</p>
                 </div>
             </div>
@@ -105,13 +116,19 @@
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sachkonto</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Typ</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Positionen</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Summe (&euro;)</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Pos.</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Geplant (&euro;)</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Bestellt (&euro;)</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Verfügbar (&euro;)</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-28">Auslastung</th>
                                     <th class="px-6 py-3"></th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @forelse($accountsWithTotals as $row)
+                                    @php
+                                        $pct = $row['total'] > 0 ? min(100, round(($row['obligo'] / $row['total']) * 100)) : 0;
+                                    @endphp
                                     <tr class="hover:bg-gray-50" data-search="{{ $row['account']->number }} {{ $row['account']->name }}">
                                         <td class="px-6 py-3 font-mono">
                                             <a href="{{ route('hh.dashboard.account-positions', [$budgetYear, $selectedCostCenter, $row['account']]) }}" class="text-blue-700 hover:underline">
@@ -127,10 +144,27 @@
                                         <td class="px-6 py-3 text-right font-medium {{ $row['total'] > 0 ? 'text-gray-900' : 'text-gray-400' }}">
                                             {{ number_format($row['total'], 0, ',', '.') }}
                                         </td>
+                                        <td class="px-6 py-3 text-right {{ $row['obligo'] > 0 ? 'text-orange-600 font-medium' : 'text-gray-400' }}">
+                                            {{ number_format($row['obligo'], 0, ',', '.') }}
+                                        </td>
+                                        <td class="px-6 py-3 text-right font-semibold {{ $row['available'] < 0 ? 'text-red-600' : ($row['available'] > 0 ? 'text-green-700' : 'text-gray-400') }}">
+                                            {{ number_format($row['available'], 0, ',', '.') }}
+                                        </td>
+                                        <td class="px-6 py-3">
+                                            @if($row['total'] > 0)
+                                                <div class="flex items-center gap-1">
+                                                    <div class="flex-1 bg-gray-200 rounded-full h-1.5">
+                                                        <div class="h-1.5 rounded-full {{ $pct >= 100 ? 'bg-red-500' : ($pct >= 75 ? 'bg-orange-400' : 'bg-green-500') }}"
+                                                             style="width: {{ $pct }}%"></div>
+                                                    </div>
+                                                    <span class="text-xs text-gray-400 w-7 text-right">{{ $pct }}%</span>
+                                                </div>
+                                            @endif
+                                        </td>
                                         <td class="px-6 py-3 text-gray-400 text-xs">&#8250;</td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">Keine Sachkonten vorhanden.</td></tr>
+                                    <tr><td colspan="8" class="px-6 py-4 text-center text-gray-500">Keine Sachkonten vorhanden.</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
