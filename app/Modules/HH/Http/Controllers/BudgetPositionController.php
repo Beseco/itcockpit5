@@ -74,7 +74,8 @@ class BudgetPositionController extends Controller
         if ($this->isApi($request)) {
             return response()->json($position->load(['costCenter', 'account']), 201);
         }
-        return redirect()->route('hh.versions.positions.index', $position->budget_year_version_id)
+        $redirectTo = $request->input('_redirect_to');
+        return ($redirectTo ? redirect($redirectTo) : redirect()->route('hh.versions.positions.index', $position->budget_year_version_id))
             ->with('success', 'Position wurde angelegt.');
     }
 
@@ -108,7 +109,8 @@ class BudgetPositionController extends Controller
         if ($this->isApi($request)) {
             return response()->json($position->load(['costCenter', 'account']));
         }
-        return redirect()->route('hh.versions.positions.index', $position->budget_year_version_id)
+        $redirectTo = $request->input('_redirect_to');
+        return ($redirectTo ? redirect($redirectTo) : redirect()->route('hh.versions.positions.index', $position->budget_year_version_id))
             ->with('success', 'Position wurde aktualisiert.');
     }
 
@@ -129,7 +131,8 @@ class BudgetPositionController extends Controller
         if ($this->isApi($request)) {
             return response()->json(null, 204);
         }
-        return redirect()->route('hh.versions.positions.index', $versionId)
+        $redirectTo = $request->input('_redirect_to');
+        return ($redirectTo ? redirect($redirectTo) : redirect()->route('hh.versions.positions.index', $versionId))
             ->with('success', 'Position wurde gelöscht.');
     }
 }

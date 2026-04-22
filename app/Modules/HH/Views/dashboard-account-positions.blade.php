@@ -93,6 +93,7 @@
                                             <form method="POST" action="{{ route('hh.positions.destroy', $pos) }}"
                                                   class="inline" onsubmit="return confirm('Position wirklich loeschen?')">
                                                 @csrf @method('DELETE')
+                                                <input type="hidden" name="_redirect_to" value="{{ url()->current() }}">
                                                 <button type="submit" class="text-red-600 hover:underline">Loeschen</button>
                                             </form>
                                         </td>
@@ -131,6 +132,7 @@
                 <h3 class="mb-4 text-lg font-semibold">Neue Position</h3>
                 <form method="POST" action="{{ route('hh.positions.store') }}">
                     @csrf
+                    <input type="hidden" name="_redirect_to" value="{{ url()->current() }}">
                     <input type="hidden" name="budget_year_version_id" value="{{ $versionId }}">
                     <input type="hidden" name="cost_center_id" value="{{ $costCenter->id }}">
                     <input type="hidden" name="account_id" value="{{ $account->id }}">
@@ -199,6 +201,7 @@
                 <h3 class="mb-4 text-lg font-semibold">Position bearbeiten</h3>
                 <form id="form-edit-pos" method="POST" action="">
                     @csrf @method('PUT')
+                    <input type="hidden" name="_redirect_to" value="{{ url()->current() }}">
                     <input type="hidden" name="budget_year_version_id" id="ep-version">
                     <input type="hidden" name="cost_center_id" id="ep-cc">
                     <input type="hidden" name="account_id" id="ep-account">
