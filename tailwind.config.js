@@ -26,6 +26,9 @@ export default {
         'w-2', 'h-2',
         // Revisions-Fälligkeit (dynamisch per PHP-Bedingung)
         'border-l-red-400',
+        // Carry-over-Modal & Übertragungs-Button (HH)
+        'bg-teal-600', 'hover:bg-teal-700',
+        'text-teal-600', 'focus:ring-teal-500',
     ],
 
     plugins: [forms],
