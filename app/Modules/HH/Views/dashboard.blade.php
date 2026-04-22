@@ -46,6 +46,16 @@
             @if(session('success'))<div class="rounded bg-green-100 px-4 py-3 text-green-800">{{ session('success') }}</div>@endif
             @if(session('error'))<div class="rounded bg-red-100 px-4 py-3 text-red-800">{{ session('error') }}</div>@endif
 
+            {{-- Suche --}}
+            <div class="bg-white shadow rounded-lg p-3 flex items-center gap-3">
+                <svg class="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/>
+                </svg>
+                <input type="text" id="acc-search" placeholder="Sachkonto suchen (Nummer oder Name)…"
+                       class="flex-1 border-0 text-sm focus:ring-0 outline-none text-gray-700 placeholder-gray-400">
+                <span id="acc-search-count" class="text-xs text-gray-400 hidden whitespace-nowrap"></span>
+            </div>
+
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="bg-white rounded-lg shadow p-5">
                     <p class="text-xs text-gray-500 uppercase tracking-wider">Gesamtbudget</p>
@@ -72,16 +82,8 @@
                 </div>
             @else
                 <div class="bg-white shadow rounded-lg overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-200 flex items-center gap-4">
-                        <h3 class="text-base font-semibold text-gray-800 flex-1">Sachkonten &ndash; {{ $selectedCostCenter->number }} {{ $selectedCostCenter->name }}</h3>
-                        <div class="flex items-center gap-2 text-sm">
-                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/>
-                            </svg>
-                            <input type="text" id="acc-search" placeholder="Sachkonto suchen…"
-                                   class="border border-gray-300 rounded px-2 py-1 text-sm focus:ring-indigo-500 focus:border-indigo-500 w-48">
-                            <span id="acc-search-count" class="text-xs text-gray-400 hidden whitespace-nowrap"></span>
-                        </div>
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-base font-semibold text-gray-800">Sachkonten &ndash; {{ $selectedCostCenter->number }} {{ $selectedCostCenter->name }}</h3>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200 text-sm">
