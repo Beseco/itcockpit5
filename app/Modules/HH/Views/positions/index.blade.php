@@ -119,7 +119,7 @@
                                 </td>
                                 <td class="px-4 py-3 text-sm text-gray-900">{{ $pos->project_name }}</td>
                                 <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
-                                    {{ number_format($pos->amount, 2, ',', '.') }} €
+                                    {{ number_format($pos->amount, 0, ',', '.') }} €
                                 </td>
                                 <td class="whitespace-nowrap px-4 py-3 text-sm text-gray-900">{{ $pos->priority }}</td>
                                 <td class="px-4 py-3 text-sm text-gray-900">{{ $pos->category }}</td>

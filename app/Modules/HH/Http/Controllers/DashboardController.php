@@ -72,10 +72,8 @@ class DashboardController extends Controller
         $allCostCenters = CostCenter::where('is_active', true)->orderBy('number')->get();
         $allAccounts    = Account::orderBy('number')->get();
         $activeVersion  = $budgetYear->versions->firstWhere('is_active', true);
-        $totals = $this->calculationService->getTotals($budgetYear);
-        $totals['investive_share'] = $this->calculationService->getInvestiveShare($budgetYear);
 
-        // Kostenstelle: Query-Parameter → Cookie → Standard 143011
+        // Kostenstelle: Query-Parameter → Cookie → Standard 143011 (early resolve for totals)
         $selectedCostCenterId = $request->query('cost_center_id')
             ?? $request->cookie(self::COOKIE_CC)
             ?? CostCenter::where('number', self::DEFAULT_CC_NUMBER)->value('id');
@@ -83,6 +81,15 @@ class DashboardController extends Controller
         $selectedCostCenter = $selectedCostCenterId
             ? CostCenter::find($selectedCostCenterId)
             : null;
+
+        if ($selectedCostCenter) {
+            $totals = $this->calculationService->getTotalsForCostCenter($budgetYear, $selectedCostCenter);
+        } else {
+            $totals = $this->calculationService->getTotals($budgetYear);
+        }
+        $totals['investive_share'] = $totals['total'] > 0
+            ? ($totals['investiv'] / $totals['total']) * 100
+            : 0.0;
 
         $accountsWithTotals = collect();
         if ($activeVersion && $selectedCostCenter) {

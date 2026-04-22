@@ -80,6 +80,31 @@ class BudgetCalculationService
      *
      * Requirements: 7.4, 7.5
      */
+    public function getTotalsForCostCenter(BudgetYear $by, CostCenter $cc): array
+    {
+        $activeVersion = BudgetYearVersion::where('budget_year_id', $by->id)
+            ->where('is_active', true)
+            ->first();
+
+        if ($activeVersion === null) {
+            return ['total' => 0.0, 'investiv' => 0.0, 'konsumtiv' => 0.0];
+        }
+
+        $positions = BudgetPosition::where('budget_year_version_id', $activeVersion->id)
+            ->where('cost_center_id', $cc->id)
+            ->join('hh_accounts', 'hh_budget_positions.account_id', '=', 'hh_accounts.id')
+            ->selectRaw('SUM(hh_budget_positions.amount) as total')
+            ->selectRaw("SUM(CASE WHEN hh_accounts.type = 'investiv' THEN hh_budget_positions.amount ELSE 0 END) as investiv")
+            ->selectRaw("SUM(CASE WHEN hh_accounts.type = 'konsumtiv' THEN hh_budget_positions.amount ELSE 0 END) as konsumtiv")
+            ->first();
+
+        return [
+            'total'     => (float) ($positions->total ?? 0),
+            'investiv'  => (float) ($positions->investiv ?? 0),
+            'konsumtiv' => (float) ($positions->konsumtiv ?? 0),
+        ];
+    }
+
     public function getInvestiveShare(BudgetYear $by): float
     {
         $totals = $this->getTotals($by);

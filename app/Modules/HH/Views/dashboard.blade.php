@@ -72,16 +72,16 @@
 
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="bg-white rounded-lg shadow p-5">
-                    <p class="text-xs text-gray-500 uppercase tracking-wider">Gesamtbudget</p>
-                    <p class="mt-1 text-2xl font-semibold text-gray-900">{{ number_format($totals['total'] ?? 0, 2, ',', '.') }} &euro;</p>
+                    <p class="text-xs text-gray-500 uppercase tracking-wider">Gesamtbudget @if($selectedCostCenter)<span class="normal-case font-normal text-gray-400">({{ $selectedCostCenter->number }})</span>@endif</p>
+                    <p class="mt-1 text-2xl font-semibold text-gray-900">{{ number_format($totals['total'] ?? 0, 0, ',', '.') }} &euro;</p>
                 </div>
                 <div class="bg-white rounded-lg shadow p-5">
                     <p class="text-xs text-gray-500 uppercase tracking-wider">Investiv</p>
-                    <p class="mt-1 text-2xl font-semibold text-blue-700">{{ number_format($totals['investiv'] ?? 0, 2, ',', '.') }} &euro;</p>
+                    <p class="mt-1 text-2xl font-semibold text-blue-700">{{ number_format($totals['investiv'] ?? 0, 0, ',', '.') }} &euro;</p>
                 </div>
                 <div class="bg-white rounded-lg shadow p-5">
                     <p class="text-xs text-gray-500 uppercase tracking-wider">Konsumtiv</p>
-                    <p class="mt-1 text-2xl font-semibold text-indigo-700">{{ number_format($totals['konsumtiv'] ?? 0, 2, ',', '.') }} &euro;</p>
+                    <p class="mt-1 text-2xl font-semibold text-indigo-700">{{ number_format($totals['konsumtiv'] ?? 0, 0, ',', '.') }} &euro;</p>
                 </div>
                 <div class="bg-white rounded-lg shadow p-5">
                     <p class="text-xs text-gray-500 uppercase tracking-wider">Anteil Investiv</p>
@@ -125,7 +125,7 @@
                                         </td>
                                         <td class="px-6 py-3 text-right text-gray-600">{{ $row['count'] }}</td>
                                         <td class="px-6 py-3 text-right font-medium {{ $row['total'] > 0 ? 'text-gray-900' : 'text-gray-400' }}">
-                                            {{ number_format($row['total'], 2, ',', '.') }}
+                                            {{ number_format($row['total'], 0, ',', '.') }}
                                         </td>
                                         <td class="px-6 py-3 text-gray-400 text-xs">&#8250;</td>
                                     </tr>

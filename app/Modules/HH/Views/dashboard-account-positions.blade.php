@@ -108,7 +108,7 @@
                                             {{ $pos->status }}
                                         </span>
                                     </td>
-                                    <td class="px-4 py-3 text-right font-medium">{{ number_format($pos->amount, 2, ',', '.') }}</td>
+                                    <td class="px-4 py-3 text-right font-medium">{{ number_format($pos->amount, 0, ',', '.') }}</td>
                                     <td class="px-4 py-3 text-gray-600">{{ $pos->start_year ?? '–' }} – {{ $pos->end_year ?? '–' }}</td>
                                     <td class="px-4 py-3 text-gray-600">{{ $pos->is_recurring ? 'Ja' : 'Nein' }}</td>
                                     @if($canWrite)
@@ -151,7 +151,7 @@
                                 <tr>
                                     <td colspan="4" class="px-4 py-3 text-sm font-medium text-gray-700">Gesamt</td>
                                     <td class="px-4 py-3 text-right font-semibold text-gray-900">
-                                        {{ number_format($positions->sum('amount'), 2, ',', '.') }} &euro;
+                                        {{ number_format($positions->sum('amount'), 0, ',', '.') }} &euro;
                                     </td>
                                     <td colspan="{{ $canWrite ? 3 : 2 }}"></td>
                                 </tr>

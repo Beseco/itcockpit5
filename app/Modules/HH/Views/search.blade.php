@@ -94,7 +94,7 @@
                             in {{ $budgetYear->year }}
                         </span>
                         <span class="text-sm font-semibold text-gray-800">
-                            Gesamt: {{ number_format($positions->sum('amount'), 2, ',', '.') }} €
+                            Gesamt: {{ number_format($positions->sum('amount'), 0, ',', '.') }} €
                         </span>
                     </div>
                     @php
@@ -159,7 +159,7 @@
                                             @endif
                                         </td>
                                         <td class="px-4 py-3 text-right font-medium text-gray-900 whitespace-nowrap">
-                                            {{ number_format($pos->amount, 2, ',', '.') }}
+                                            {{ number_format($pos->amount, 0, ',', '.') }}
                                         </td>
                                         <td class="px-4 py-3 whitespace-nowrap">
                                             <span class="px-2 py-0.5 rounded-full text-xs
@@ -185,7 +185,7 @@
                                 <tr>
                                     <td colspan="3" class="px-4 py-3 text-sm font-medium text-gray-700">Gesamt</td>
                                     <td class="px-4 py-3 text-right font-semibold text-gray-900 whitespace-nowrap">
-                                        {{ number_format($positions->sum('amount'), 2, ',', '.') }} €
+                                        {{ number_format($positions->sum('amount'), 0, ',', '.') }} €
                                     </td>
                                     <td colspan="4"></td>
                                 </tr>
