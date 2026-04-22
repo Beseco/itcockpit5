@@ -153,6 +153,6 @@ class BudgetYearController extends Controller
         $label  = $labels[$validated['status']] ?? $validated['status'];
 
         return redirect()->route('hh.budget-years.index')
-            ->with('success', "Haushaltsjahr {$budgetYear->year} wurde auf „{$label}" gesetzt.");
+            ->with('success', "Haushaltsjahr {$budgetYear->year} wurde auf \"{$label}\" gesetzt.");
     }
 }
