@@ -4,10 +4,12 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 Haushaltsplanung – Haushaltsjahre
             </h2>
-            <button onclick="document.getElementById('modal-create').classList.remove('hidden')"
-                    class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded hover:bg-indigo-700 transition">
-                + Neues Haushaltsjahr
-            </button>
+            @if($isLeiter)
+                <button onclick="document.getElementById('modal-create').classList.remove('hidden')"
+                        class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded hover:bg-indigo-700 transition">
+                    + Neues Haushaltsjahr
+                </button>
+            @endif
         </div>
     </x-slot>
 
@@ -44,7 +46,7 @@
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         @forelse($budgetYears as $by)
-                        <tr data-search="{{ $by->year }} {{ $by->status }}"
+                        <tr data-search="{{ $by->year }} {{ $by->status }}">
                             <td class="px-6 py-4 text-sm font-semibold text-gray-900">{{ $by->year }}</td>
                             <td class="px-6 py-4">
                                 <span class="px-2 py-1 text-xs rounded-full
@@ -53,15 +55,27 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-sm text-gray-600">{{ $by->versions->count() }}</td>
-                            <td class="px-6 py-4 text-sm space-x-2">
+                            <td class="px-6 py-4 text-sm space-x-2 whitespace-nowrap">
                                 @if($by->versions->isNotEmpty())
-                                <a href="{{ route('hh.dashboard.show', $by) }}"
-                                   class="text-indigo-600 hover:underline">Dashboard</a>
+                                    <a href="{{ route('hh.dashboard.show', $by) }}"
+                                       class="text-indigo-600 hover:underline">Dashboard</a>
                                 @endif
                                 <a href="{{ route('hh.budget-years.export.excel', $by) }}"
                                    class="text-green-600 hover:underline">Excel</a>
                                 <a href="{{ route('hh.budget-years.export.pdf', $by) }}"
                                    class="text-red-600 hover:underline">PDF</a>
+                                @if($isLeiter)
+                                    <button type="button"
+                                            onclick="openEditYear({{ $by->id }}, {{ $by->year }})"
+                                            class="text-blue-600 hover:underline">Bearbeiten</button>
+                                    <form method="POST" action="{{ route('hh.budget-years.destroy', $by) }}"
+                                          class="inline"
+                                          onsubmit="return confirm('Haushaltsjahr {{ $by->year }} wirklich löschen? Dies ist nur möglich wenn keine Positionen vorhanden sind.')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-red-600 hover:underline">Löschen</button>
+                                    </form>
+                                @endif
                             </td>
                         </tr>
                         @empty
@@ -96,9 +110,17 @@
                 counter.classList.add('hidden');
             }
         });
+
+        function openEditYear(id, year) {
+            document.getElementById('edit-year-input').value = year;
+            document.getElementById('form-edit-year').action =
+                '{{ url('hh/budget-years') }}/' + id;
+            document.getElementById('modal-edit').classList.remove('hidden');
+        }
     </script>
 
     {{-- Modal: Neues Haushaltsjahr --}}
+    @if($isLeiter)
     <div id="modal-create" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
             <h3 class="text-lg font-semibold text-gray-800 mb-4">Neues Haushaltsjahr anlegen</h3>
@@ -125,5 +147,34 @@
             </form>
         </div>
     </div>
+
+    {{-- Modal: Haushaltsjahr bearbeiten --}}
+    <div id="modal-edit" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Haushaltsjahr bearbeiten</h3>
+            <form id="form-edit-year" method="POST" action="">
+                @csrf
+                @method('PUT')
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Jahr</label>
+                    <input type="number" name="year" id="edit-year-input" min="2020" max="2099"
+                           class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                           required>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button type="button"
+                            onclick="document.getElementById('modal-edit').classList.add('hidden')"
+                            class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">
+                        Abbrechen
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-indigo-600 text-white text-sm rounded hover:bg-indigo-700">
+                        Speichern
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    @endif
 
 </x-app-layout>

@@ -32,6 +32,8 @@ Route::middleware(['auth', 'can:hh.view'])->group(function () {
     Route::get('/budget-years', [BudgetYearController::class, 'index'])->name('budget-years.index');
     Route::post('/budget-years', [BudgetYearController::class, 'store'])->name('budget-years.store');
     Route::get('/budget-years/{budgetYear}', [BudgetYearController::class, 'show'])->name('budget-years.show');
+    Route::put('/budget-years/{budgetYear}', [BudgetYearController::class, 'update'])->name('budget-years.update');
+    Route::delete('/budget-years/{budgetYear}', [BudgetYearController::class, 'destroy'])->name('budget-years.destroy');
     Route::post('/budget-years/{budgetYear}/transition', [BudgetYearController::class, 'transition'])->name('budget-years.transition');
 
     // Budget Year Versions

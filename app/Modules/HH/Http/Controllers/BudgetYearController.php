@@ -3,12 +3,14 @@
 namespace App\Modules\HH\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\HH\Models\BudgetPosition;
 use App\Modules\HH\Models\BudgetYear;
 use App\Modules\HH\Services\AuthorizationService;
 use App\Modules\HH\Services\BudgetYearService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class BudgetYearController extends Controller
@@ -30,12 +32,13 @@ class BudgetYearController extends Controller
     public function index(Request $request): JsonResponse|View
     {
         $budgetYears = BudgetYear::with('versions')->orderBy('year')->get();
+        $isLeiter    = $this->authService->isLeiter($request->user());
 
         if ($this->isApi($request)) {
             return response()->json($budgetYears);
         }
 
-        return view('hh::budget-years.index', compact('budgetYears'));
+        return view('hh::budget-years.index', compact('budgetYears', 'isLeiter'));
     }
 
     /**
@@ -76,6 +79,44 @@ class BudgetYearController extends Controller
     public function show(BudgetYear $budgetYear): JsonResponse
     {
         return response()->json($budgetYear->load('versions'));
+    }
+
+    public function update(Request $request, BudgetYear $budgetYear): RedirectResponse
+    {
+        if (! $this->authService->isLeiter($request->user())) {
+            return back()->with('error', 'Zugriff verweigert.');
+        }
+
+        $validated = $request->validate([
+            'year' => ['required', 'integer', 'digits:4', Rule::unique('hh_budget_years', 'year')->ignore($budgetYear->id)],
+        ]);
+
+        $budgetYear->update(['year' => $validated['year']]);
+
+        return redirect()->route('hh.budget-years.index')
+            ->with('success', "Haushaltsjahr wurde auf {$validated['year']} geändert.");
+    }
+
+    public function destroy(Request $request, BudgetYear $budgetYear): RedirectResponse
+    {
+        if (! $this->authService->isLeiter($request->user())) {
+            return back()->with('error', 'Zugriff verweigert.');
+        }
+
+        $hasPositions = BudgetPosition::whereHas('budgetYearVersion', function ($q) use ($budgetYear) {
+            $q->where('budget_year_id', $budgetYear->id);
+        })->exists();
+
+        if ($hasPositions) {
+            return back()->with('error', "Haushaltsjahr {$budgetYear->year} kann nicht gelöscht werden – es enthält noch Positionen.");
+        }
+
+        $year = $budgetYear->year;
+        $budgetYear->versions()->delete();
+        $budgetYear->delete();
+
+        return redirect()->route('hh.budget-years.index')
+            ->with('success', "Haushaltsjahr {$year} wurde gelöscht.");
     }
 
     /**
