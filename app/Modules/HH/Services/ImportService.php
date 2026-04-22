@@ -22,12 +22,14 @@ class ImportService
      * Parse and import a CSV file into the given budget year.
      *
      * Returns a result array with keys:
-     *   imported  int    – number of positions successfully created
-     *   skipped   int    – number of rows skipped (zero-amount or blank name)
-     *   errors    array  – list of error strings for rows that failed
-     *   warnings  array  – non-fatal notices (e.g. new cost center / account auto-created)
+     *   imported      int    – number of positions successfully created
+     *   skipped       int    – number of rows skipped (zero-amount or blank name)
+     *   duplicates    int    – number of rows skipped as duplicate (only when $skipDuplicates = true)
+     *   errors        array  – list of error strings for rows that failed
+     *   warnings      array  – non-fatal notices (e.g. new cost center / account auto-created)
+     *   skipped_rows  array  – per-row detail: [row, name, reason]
      */
-    public function importCsv(UploadedFile $file, BudgetYear $budgetYear, User $actor): array
+    public function importCsv(UploadedFile $file, BudgetYear $budgetYear, User $actor, bool $skipDuplicates = false): array
     {
         $content = file_get_contents($file->getRealPath());
 
@@ -67,20 +69,24 @@ class ImportService
             return $this->result(0, 0, ['Keine aktive Version für dieses Haushaltsjahr gefunden.'], []);
         }
 
-        $imported = 0;
-        $skipped  = 0;
-        $errors   = [];
-        $warnings = [];
+        $imported    = 0;
+        $skipped     = 0;
+        $duplicates  = 0;
+        $errors      = [];
+        $warnings    = [];
+        $skippedRows = [];
 
         DB::transaction(function () use (
-            $lines, $colIndex, $budgetYear, $activeVersion, $actor,
-            &$imported, &$skipped, &$errors, &$warnings
+            $lines, $colIndex, $budgetYear, $activeVersion, $actor, $skipDuplicates,
+            &$imported, &$skipped, &$duplicates, &$errors, &$warnings, &$skippedRows
         ) {
             foreach ($lines as $lineNum => $line) {
-                $row = $this->parseCsvLine($line);
+                $csvRow  = $lineNum + 2; // +2: 1-based + header row
+                $row     = $this->parseCsvLine($line);
 
                 if (count($row) < 2) {
                     $skipped++;
+                    $skippedRows[] = ['row' => $csvRow, 'name' => '—', 'reason' => 'Zeile zu kurz / leer'];
                     continue;
                 }
 
@@ -94,27 +100,25 @@ class ImportService
                 $hhJahr           = $get('hhjahr');
                 $bruttoRaw        = $get('brutto');
 
-                // Skip rows without a position name
                 if ($projectName === '') {
                     $skipped++;
+                    $skippedRows[] = ['row' => $csvRow, 'name' => '—', 'reason' => 'Kein Name (Spalte "name" leer)'];
                     continue;
                 }
 
-                // Parse amount
                 $amount = $this->parseGermanAmount($bruttoRaw);
 
-                // Skip zero-amount rows silently (e.g. "- €" placeholders)
                 if ($amount == 0.0) {
                     $skipped++;
+                    $skippedRows[] = ['row' => $csvRow, 'name' => $projectName, 'reason' => 'Betrag ist 0 oder nicht lesbar ("' . $bruttoRaw . '")'];
                     continue;
                 }
 
-                // Determine recurring / start_year
                 $isRecurring = (mb_strtolower($hhJahr) === 'jährlich' || mb_strtolower($hhJahr) === 'jahrlich');
                 $startYear   = $isRecurring ? $budgetYear->year : (int) $hhJahr;
 
                 if (!$isRecurring && ($startYear < 2000 || $startYear > 2100)) {
-                    $errors[] = 'Zeile ' . ($lineNum + 2) . ' ("' . $projectName . '"): Ungültiges Jahr "' . $hhJahr . '".';
+                    $errors[] = 'Zeile ' . $csvRow . ' ("' . $projectName . '"): Ungültiges Jahr "' . $hhJahr . '".';
                     continue;
                 }
 
@@ -138,8 +142,23 @@ class ImportService
                 if ($account->wasRecentlyCreated) {
                     $warnings[] = "Sachkonto {$accountNumber} ({$accountName}) wurde neu angelegt als {$accountType}.";
                 } elseif ($account->name !== $accountName && $accountName !== '') {
-                    // Update name if it changed
                     $account->update(['name' => $accountName]);
+                }
+
+                // Duplicate check
+                if ($skipDuplicates) {
+                    $exists = BudgetPosition::where('budget_year_version_id', $activeVersion->id)
+                        ->where('cost_center_id', $costCenter->id)
+                        ->where('account_id', $account->id)
+                        ->whereRaw('LOWER(project_name) = ?', [mb_strtolower($projectName)])
+                        ->where('amount', $amount)
+                        ->exists();
+
+                    if ($exists) {
+                        $duplicates++;
+                        $skippedRows[] = ['row' => $csvRow, 'name' => $projectName, 'reason' => 'Duplikat – identische Position bereits vorhanden'];
+                        continue;
+                    }
                 }
 
                 BudgetPosition::create([
@@ -162,7 +181,7 @@ class ImportService
             }
         });
 
-        return $this->result($imported, $skipped, $errors, $warnings);
+        return $this->result($imported, $skipped, $duplicates, $errors, $warnings, $skippedRows);
     }
 
     /**
@@ -210,8 +229,8 @@ class ImportService
         return str_getcsv($line, ';', '"');
     }
 
-    private function result(int $imported, int $skipped, array $errors, array $warnings): array
+    private function result(int $imported, int $skipped, int $duplicates, array $errors, array $warnings, array $skippedRows): array
     {
-        return compact('imported', 'skipped', 'errors', 'warnings');
+        return compact('imported', 'skipped', 'duplicates', 'errors', 'warnings', 'skippedRows');
     }
 }

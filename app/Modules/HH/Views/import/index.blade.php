@@ -17,36 +17,84 @@
 
             {{-- Result box --}}
             @if(isset($result))
-                @if(empty($result['errors']) && $result['imported'] > 0)
-                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <h3 class="font-semibold text-green-800 mb-1">Import erfolgreich – Haushaltsjahr {{ $importedYear }}</h3>
-                        <ul class="text-sm text-green-700 space-y-0.5">
-                            <li>✓ {{ $result['imported'] }} Position(en) importiert</li>
-                            @if($result['skipped'] > 0)
-                                <li class="text-gray-500">↷ {{ $result['skipped'] }} Zeile(n) übersprungen (Betrag = 0 oder leer)</li>
-                            @endif
-                        </ul>
-                        @if(!empty($result['warnings']))
-                            <div class="mt-3 pt-3 border-t border-green-200">
-                                <p class="text-xs font-semibold text-green-700 mb-1">Hinweise:</p>
-                                <ul class="text-xs text-green-600 space-y-0.5">
-                                    @foreach($result['warnings'] as $w)
-                                        <li>ℹ {{ $w }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
+                @php
+                    $hasErrors  = !empty($result['errors']);
+                    $hasImports = $result['imported'] > 0;
+                    $boxColor   = $hasErrors && !$hasImports ? 'red' : ($hasErrors ? 'yellow' : 'green');
+                    $colors = [
+                        'green'  => ['box' => 'bg-green-50 border-green-200',  'title' => 'text-green-800',  'text' => 'text-green-700',  'div' => 'border-green-200',  'sub' => 'text-green-600'],
+                        'yellow' => ['box' => 'bg-yellow-50 border-yellow-200','title' => 'text-yellow-800', 'text' => 'text-yellow-700', 'div' => 'border-yellow-200', 'sub' => 'text-yellow-600'],
+                        'red'    => ['box' => 'bg-red-50 border-red-200',      'title' => 'text-red-800',    'text' => 'text-red-700',    'div' => 'border-red-200',    'sub' => 'text-red-600'],
+                    ];
+                    $c = $colors[$boxColor];
+                @endphp
+                <div class="border rounded-lg p-4 {{ $c['box'] }}">
+                    <h3 class="font-semibold mb-2 {{ $c['title'] }}">
+                        @if(!$hasErrors && $hasImports)
+                            Import erfolgreich – Haushaltsjahr {{ $importedYear }}
+                        @elseif($hasErrors && $hasImports)
+                            Import mit Fehlern abgeschlossen – Haushaltsjahr {{ $importedYear }}
+                        @else
+                            Import fehlgeschlagen
                         @endif
-                    </div>
-                @else
-                    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                        <h3 class="font-semibold text-red-800 mb-1">Import fehlgeschlagen</h3>
-                        <ul class="text-sm text-red-700 space-y-0.5">
-                            @foreach($result['errors'] as $e)
-                                <li>✗ {{ $e }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
+                    </h3>
+
+                    <ul class="text-sm space-y-0.5 {{ $c['text'] }}">
+                        @if($hasImports)
+                            <li>✓ {{ $result['imported'] }} Position(en) importiert</li>
+                        @endif
+                        @if(($result['skipped'] ?? 0) > 0)
+                            <li>↷ {{ $result['skipped'] }} Zeile(n) übersprungen</li>
+                        @endif
+                        @if(($result['duplicates'] ?? 0) > 0)
+                            <li>⊘ {{ $result['duplicates'] }} Duplikat(e) ignoriert</li>
+                        @endif
+                        @foreach($result['errors'] as $e)
+                            <li>✗ {{ $e }}</li>
+                        @endforeach
+                    </ul>
+
+                    {{-- Skipped row details --}}
+                    @if(!empty($result['skippedRows']))
+                        <details class="mt-3 pt-3 border-t {{ $c['div'] }}">
+                            <summary class="text-xs font-semibold cursor-pointer {{ $c['title'] }}">
+                                Übersprungene Zeilen anzeigen ({{ count($result['skippedRows']) }})
+                            </summary>
+                            <div class="mt-2 overflow-x-auto">
+                                <table class="text-xs w-full border-collapse">
+                                    <thead>
+                                        <tr>
+                                            <th class="text-left px-2 py-1 font-semibold {{ $c['title'] }}">Zeile</th>
+                                            <th class="text-left px-2 py-1 font-semibold {{ $c['title'] }}">Name</th>
+                                            <th class="text-left px-2 py-1 font-semibold {{ $c['title'] }}">Grund</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($result['skippedRows'] as $sr)
+                                            <tr class="border-t {{ $c['div'] }}">
+                                                <td class="px-2 py-1 font-mono {{ $c['sub'] }}">{{ $sr['row'] }}</td>
+                                                <td class="px-2 py-1 {{ $c['text'] }}">{{ $sr['name'] }}</td>
+                                                <td class="px-2 py-1 {{ $c['sub'] }}">{{ $sr['reason'] }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </details>
+                    @endif
+
+                    {{-- Warnings --}}
+                    @if(!empty($result['warnings']))
+                        <div class="mt-3 pt-3 border-t {{ $c['div'] }}">
+                            <p class="text-xs font-semibold {{ $c['title'] }} mb-1">Hinweise:</p>
+                            <ul class="text-xs space-y-0.5 {{ $c['sub'] }}">
+                                @foreach($result['warnings'] as $w)
+                                    <li>ℹ {{ $w }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+                </div>
             @endif
 
             {{-- Errors from validation --}}
@@ -100,6 +148,17 @@
                         </label>
                         <input type="file" name="csv_file" id="csv_file" accept=".csv,.txt"
                                class="block w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border border-gray-300 rounded-md p-1" />
+                    </div>
+
+                    {{-- Duplikatschutz --}}
+                    <div class="flex items-start gap-2">
+                        <input type="checkbox" name="skip_duplicates" id="skip_duplicates" value="1"
+                               {{ old('skip_duplicates') ? 'checked' : '' }}
+                               class="mt-0.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                        <label for="skip_duplicates" class="text-sm text-gray-700">
+                            Duplikate überspringen
+                            <span class="text-xs text-gray-400 block">Positionen mit identischem Name, Kostenstelle, Sachkonto und Betrag werden nicht erneut angelegt.</span>
+                        </label>
                     </div>
 
                     {{-- Submit --}}

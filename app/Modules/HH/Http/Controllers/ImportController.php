@@ -56,7 +56,8 @@ class ImportController extends Controller
         $result = $this->importService->importCsv(
             $request->file('csv_file'),
             $budgetYear,
-            $request->user()
+            $request->user(),
+            (bool) $request->boolean('skip_duplicates'),
         );
 
         $budgetYears = BudgetYear::orderByDesc('year')->get();
