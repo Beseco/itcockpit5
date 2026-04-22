@@ -70,6 +70,11 @@
                                 <a href="{{ route('hh.budget-years.export.pdf', $by) }}"
                                    class="text-red-600 hover:underline">PDF</a>
                                 @if($isLeiter)
+                                    @if($by->status === 'draft')
+                                        <button type="button"
+                                                onclick="openCarryOver({{ $by->id }}, {{ $by->year }})"
+                                                class="text-teal-600 hover:underline">↻ Übertragen</button>
+                                    @endif
                                     <button type="button"
                                             onclick="openEditYear({{ $by->id }}, {{ $by->year }}, '{{ $by->status }}')"
                                             class="text-blue-600 hover:underline">Bearbeiten</button>
@@ -191,6 +196,65 @@
             </form>
         </div>
     </div>
+    {{-- Modal: Wiederkehrende Positionen übertragen --}}
+    @if($isLeiter)
+    <div id="modal-carry-over" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
+            <h3 class="text-lg font-semibold text-gray-800 mb-1">Wiederkehrende Positionen übertragen</h3>
+            <p class="text-sm text-gray-500 mb-4">
+                Alle wiederkehrenden Positionen aus dem gewählten Quell-Jahr werden in
+                <strong id="carry-over-target-label"></strong> übernommen.
+                Bereits vorhandene Positionen werden übersprungen – der Vorgang kann mehrfach ausgeführt werden.
+            </p>
+            <form id="form-carry-over" method="POST" action="">
+                @csrf
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Quell-Haushaltsjahr</label>
+                    <select name="source_budget_year_id" id="carry-over-source"
+                            class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        @foreach($budgetYears as $by)
+                            <option value="{{ $by->id }}" data-target-id="0">
+                                {{ $by->year }}
+                                ({{ match($by->status) { 'draft'=>'Entwurf','preliminary'=>'Vorläufig','approved'=>'Genehmigt','archiviert'=>'Archiviert',default=>$by->status } }})
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button type="button"
+                            onclick="document.getElementById('modal-carry-over').classList.add('hidden')"
+                            class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">
+                        Abbrechen
+                    </button>
+                    <button type="submit"
+                            class="px-4 py-2 bg-teal-600 text-white text-sm rounded hover:bg-teal-700">
+                        Übertragen
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
     @endif
+
+    <script>
+        function openCarryOver(targetId, targetYear) {
+            document.getElementById('carry-over-target-label').textContent = 'HJ ' + targetYear;
+            document.getElementById('form-carry-over').action =
+                '{{ url('hh/budget-years') }}/' + targetId + '/carry-over-recurring';
+
+            // Entferne das Ziel-Jahr aus der Quell-Auswahl
+            const select = document.getElementById('carry-over-source');
+            Array.from(select.options).forEach(opt => {
+                opt.disabled = (parseInt(opt.value) === targetId);
+            });
+            // Wähle erste nicht-deaktivierte Option vor
+            const first = Array.from(select.options).find(o => !o.disabled);
+            if (first) select.value = first.value;
+
+            document.getElementById('modal-carry-over').classList.remove('hidden');
+        }
+    </script>
+
+@endif
 
 </x-app-layout>

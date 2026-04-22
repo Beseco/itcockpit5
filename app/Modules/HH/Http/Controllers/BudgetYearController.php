@@ -125,6 +125,42 @@ class BudgetYearController extends Controller
     }
 
     /**
+     * Copy recurring positions from another year into this draft year (Leiter only).
+     */
+    public function carryOverRecurring(Request $request, BudgetYear $budgetYear): RedirectResponse
+    {
+        if (!$this->authService->isLeiter($request->user())) {
+            return back()->with('error', 'Zugriff verweigert.');
+        }
+
+        if ($budgetYear->status !== 'draft') {
+            return back()->with('error', 'Wiederkehrende Positionen können nur in Haushaltsjahre im Status "Entwurf" übertragen werden.');
+        }
+
+        $validated = $request->validate([
+            'source_budget_year_id' => ['required', 'integer', 'exists:hh_budget_years,id'],
+        ]);
+
+        if ((int) $validated['source_budget_year_id'] === $budgetYear->id) {
+            return back()->with('error', 'Quell- und Ziel-Haushaltsjahr dürfen nicht identisch sein.');
+        }
+
+        $source = BudgetYear::findOrFail($validated['source_budget_year_id']);
+
+        try {
+            $count = $this->budgetYearService->carryOverRecurringPositions($source, $budgetYear, $request->user());
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        $msg = $count > 0
+            ? "{$count} wiederkehrende Position(en) aus {$source->year} in {$budgetYear->year} übertragen."
+            : "Keine neuen wiederkehrenden Positionen aus {$source->year} – alle bereits vorhanden.";
+
+        return redirect()->route('hh.budget-years.index')->with('success', $msg);
+    }
+
+    /**
      * Transition a budget year to a new status (Leiter only).
      */
     public function transition(Request $request, BudgetYear $budgetYear): JsonResponse|RedirectResponse

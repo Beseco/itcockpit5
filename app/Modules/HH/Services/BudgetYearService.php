@@ -142,6 +142,73 @@ class BudgetYearService
     }
 
     /**
+     * Copy all recurring positions from the active version of $source into the active version of $target.
+     * Skips positions that already exist (duplicate check: cost_center + account + project_name + amount).
+     *
+     * @return int number of positions actually created
+     * @throws \RuntimeException if either year has no active version
+     */
+    public function carryOverRecurringPositions(BudgetYear $source, BudgetYear $target, User $actor): int
+    {
+        $sourceVersion = BudgetYearVersion::where('budget_year_id', $source->id)
+            ->where('is_active', true)->first();
+        $targetVersion = BudgetYearVersion::where('budget_year_id', $target->id)
+            ->where('is_active', true)->first();
+
+        if (!$sourceVersion) {
+            throw new \RuntimeException("Keine aktive Version für Quell-Haushaltsjahr {$source->year}.");
+        }
+        if (!$targetVersion) {
+            throw new \RuntimeException("Keine aktive Version für Ziel-Haushaltsjahr {$target->year}.");
+        }
+
+        $recurringPositions = BudgetPosition::where('budget_year_version_id', $sourceVersion->id)
+            ->where('is_recurring', true)
+            ->get();
+
+        $carried = 0;
+
+        DB::transaction(function () use ($recurringPositions, $targetVersion, $actor, &$carried) {
+            foreach ($recurringPositions as $pos) {
+                $exists = BudgetPosition::where('budget_year_version_id', $targetVersion->id)
+                    ->where('cost_center_id', $pos->cost_center_id)
+                    ->where('account_id', $pos->account_id)
+                    ->whereRaw('LOWER(project_name) = LOWER(?)', [$pos->project_name])
+                    ->where('amount', $pos->amount)
+                    ->exists();
+
+                if ($exists) continue;
+
+                BudgetPosition::create([
+                    'budget_year_version_id' => $targetVersion->id,
+                    'cost_center_id'         => $pos->cost_center_id,
+                    'account_id'             => $pos->account_id,
+                    'project_name'           => $pos->project_name,
+                    'description'            => $pos->description,
+                    'amount'                 => $pos->amount,
+                    'start_year'             => $pos->start_year,
+                    'end_year'               => $pos->end_year,
+                    'is_recurring'           => true,
+                    'priority'               => $pos->priority,
+                    'category'               => $pos->category,
+                    'status'                 => 'geplant',
+                    'created_by'             => $actor->id,
+                ]);
+
+                $carried++;
+            }
+        });
+
+        $this->auditService->log(
+            $actor, 'BudgetYear', $target->id,
+            'carry_over_recurring', null,
+            "Quelle: {$source->year}, übertragen: {$carried}"
+        );
+
+        return $carried;
+    }
+
+    /**
      * Transition a BudgetYear to a new status.
      *
      * Only `draft → preliminary` and `preliminary → approved` are allowed.
