@@ -97,15 +97,46 @@
                             Gesamt: {{ number_format($positions->sum('amount'), 2, ',', '.') }} €
                         </span>
                     </div>
+                    @php
+                        $sortParams = request()->except(['sort','dir']);
+                        $sortLink = fn(string $field) =>
+                            route('hh.dashboard.search', $budgetYear) . '?' . http_build_query(
+                                array_merge($sortParams, [
+                                    'sort' => $field,
+                                    'dir'  => ($sortField === $field && $sortDir === 'asc') ? 'desc' : 'asc',
+                                ])
+                            );
+                        $sortIcon = fn(string $field) =>
+                            $sortField === $field
+                                ? ($sortDir === 'asc' ? ' ↑' : ' ↓')
+                                : '';
+                    @endphp
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200 text-sm">
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kostenstelle</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sachkonto</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Position</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Betrag (€)</th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <a href="{{ $sortLink('project_name') }}" class="hover:text-indigo-600">
+                                            Name{!! $sortIcon('project_name') !!}
+                                        </a>
+                                    </th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                                        <a href="{{ $sortLink('amount') }}" class="hover:text-indigo-600">
+                                            Betrag (€){!! $sortIcon('amount') !!}
+                                        </a>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <a href="{{ $sortLink('priority') }}" class="hover:text-indigo-600">
+                                            Priorität{!! $sortIcon('priority') !!}
+                                        </a>
+                                    </th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <a href="{{ $sortLink('status') }}" class="hover:text-indigo-600">
+                                            Status{!! $sortIcon('status') !!}
+                                        </a>
+                                    </th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Wiederk.</th>
                                     <th class="px-4 py-3"></th>
                                 </tr>
@@ -158,7 +189,7 @@
                                     <td class="px-4 py-3 text-right font-semibold text-gray-900 whitespace-nowrap">
                                         {{ number_format($positions->sum('amount'), 2, ',', '.') }} €
                                     </td>
-                                    <td colspan="3"></td>
+                                    <td colspan="4"></td>
                                 </tr>
                             </tfoot>
                         </table>

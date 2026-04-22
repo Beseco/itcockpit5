@@ -134,6 +134,12 @@ class DashboardController extends Controller
 
         $hasFilter = $q !== '' || $priority !== '' || $status !== '' || $amountMin !== '' || $amountMax !== '';
 
+        $sortField = in_array($request->input('sort'), ['project_name', 'priority', 'status', 'amount'])
+            ? $request->input('sort') : 'project_name';
+        $sortDir = $request->input('dir') === 'desc' ? 'desc' : 'asc';
+
+        $hasFilter = $q !== '' || $priority !== '' || $status !== '' || $amountMin !== '' || $amountMax !== '';
+
         $positions = collect();
         if ($activeVersion && $hasFilter) {
             $query = BudgetPosition::where('budget_year_version_id', $activeVersion->id);
@@ -144,19 +150,22 @@ class DashboardController extends Controller
                        ->orWhere('description', 'like', "%{$q}%");
                 });
             }
-            if ($priority !== '') $query->where('priority', $priority);
-            if ($status   !== '') $query->where('status', $status);
+            if ($priority  !== '') $query->where('priority', $priority);
+            if ($status    !== '') $query->where('status', $status);
             if ($amountMin !== '') $query->where('amount', '>=', (float) str_replace(',', '.', $amountMin));
             if ($amountMax !== '') $query->where('amount', '<=', (float) str_replace(',', '.', $amountMax));
 
             $positions = $query->with(['costCenter', 'account'])
-                ->orderBy('project_name')
+                ->orderBy($sortField, $sortDir)
                 ->get()
                 ->filter(fn($p) => $this->authService->canAccessCostCenter($request->user(), $p->costCenter, 'Audit_Zugang'))
                 ->values();
         }
 
-        return view('hh::search', compact('budgetYear', 'allBudgetYears', 'positions', 'q', 'priority', 'status', 'amountMin', 'amountMax', 'hasFilter', 'activeVersion'));
+        return view('hh::search', compact(
+            'budgetYear', 'allBudgetYears', 'positions', 'q', 'priority', 'status',
+            'amountMin', 'amountMax', 'hasFilter', 'activeVersion', 'sortField', 'sortDir'
+        ));
     }
 
     public function accountPositions(Request $request, BudgetYear $budgetYear, CostCenter $costCenter, Account $account): View
