@@ -30,7 +30,7 @@ class ServerController extends Controller
         $query = Server::with(['abteilung', 'adminUser', 'gruppe', 'osType', 'role', 'backupLevel', 'patchRing'])
             ->orderBy('name');
 
-        if ($search !== '') {
+        if (filled($search)) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                   ->orWhere('dns_hostname', 'like', "%{$search}%")
@@ -39,11 +39,11 @@ class ServerController extends Controller
             });
         }
 
-        if ($filterStatus !== '') {
+        if (filled($filterStatus)) {
             $query->where('status', $filterStatus);
         }
 
-        if (!empty($filterAbt)) {
+        if (filled($filterAbt)) {
             $query->where('abteilung_id', (int) $filterAbt);
         }
 
@@ -57,7 +57,7 @@ class ServerController extends Controller
             $query->where('admin_user_id', Auth::id());
         } elseif ($filterAdminId === '__none__') {
             $query->whereNull('admin_user_id');
-        } elseif ($filterAdminId !== '') {
+        } elseif (filled($filterAdminId)) {
             $query->where('admin_user_id', (int) $filterAdminId);
         }
 
