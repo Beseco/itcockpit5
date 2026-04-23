@@ -31,3 +31,6 @@ Schedule::command('sslcerts:check-expiry')->dailyAt('08:00');
 
 // Server ohne Administrator – Digest-Benachrichtigung stündlich prüfen
 Schedule::command('server:send-admin-missing-notification')->hourly();
+
+// vSphere-Sync täglich um 03:00 Uhr
+Schedule::command('server:vsphere-sync')->dailyAt('03:00');
