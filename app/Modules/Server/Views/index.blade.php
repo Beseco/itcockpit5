@@ -112,8 +112,32 @@
                     <div class="flex items-center justify-between mb-4 gap-3 flex-wrap">
                         <h3 class="text-lg font-semibold text-gray-800">
                             Server
-                            @if ($servers->total() > $servers->count())
-                                <span class="text-sm font-normal text-gray-400">({{ $servers->total() }} gesamt)</span>
+                            @if ($search || $filterStatus || $filterAbt || $filterLdap || $filterAdminId || $filterNoRevision)
+                                <span class="text-sm font-normal text-indigo-600">{{ $servers->total() }} von {{ $totalServers }}</span>
+                                @if ($search)
+                                    <span class="ml-1 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">Suche: {{ $search }}</span>
+                                @endif
+                                @if ($filterStatus)
+                                    <span class="ml-1 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">Status: {{ \App\Modules\Server\Models\Server::STATUS_LABELS[$filterStatus] ?? $filterStatus }}</span>
+                                @endif
+                                @if ($filterAbt)
+                                    <span class="ml-1 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">Abteilung</span>
+                                @endif
+                                @if ($filterAdminId === '__none__')
+                                    <span class="ml-1 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">Kein Admin</span>
+                                @elseif ($filterAdminId === '__mine__')
+                                    <span class="ml-1 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">Meine Server</span>
+                                @elseif ($filterAdminId)
+                                    <span class="ml-1 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">Admin</span>
+                                @endif
+                                @if ($filterLdap)
+                                    <span class="ml-1 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">{{ $filterLdap === 'synced' ? 'LDAP' : 'Manuell' }}</span>
+                                @endif
+                                @if ($filterNoRevision)
+                                    <span class="ml-1 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">Kein Revision</span>
+                                @endif
+                            @else
+                                <span class="text-sm font-normal text-gray-400">({{ $totalServers }})</span>
                             @endif
                         </h3>
                         <div class="flex gap-2 flex-wrap">

@@ -72,13 +72,14 @@ class ServerController extends Controller
 
         // Anzahl Server ohne Revisionsdatum für Aktionsbutton
         $countNoRevision = Server::whereNull('revision_date')->count();
+        $totalServers    = Server::count();
 
         // Network-Modul: VLAN + Online-Status per IP-Abgleich (optional)
         $networkData = $this->loadNetworkData($servers->pluck('ip_address')->filter()->toArray());
 
         return response()
             ->view('server::index', compact(
-                'servers', 'abteilungen', 'adminUsers', 'countNoRevision', 'networkData',
+                'servers', 'abteilungen', 'adminUsers', 'countNoRevision', 'totalServers', 'networkData',
                 'search', 'filterStatus', 'filterAbt', 'filterLdap',
                 'filterAdminId', 'filterNoRevision', 'perPage'
             ))
