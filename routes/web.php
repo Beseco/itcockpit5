@@ -64,6 +64,24 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
+    // Help-Seiten
+    Route::get('/dashboard/help',            fn() => view('dashboard-help'))->name('dashboard.help');
+    Route::get('/users/help',                fn() => view('users.help'))->name('users.help');
+    Route::get('/roles/help',                fn() => view('roles.help'))->name('roles.help');
+    Route::get('/gruppen/help',              fn() => view('gruppen.help'))->name('gruppen.help');
+    Route::get('/stellen/help',              fn() => view('stellen.help'))->name('stellen.help');
+    Route::get('/stellenbeschreibungen/help',fn() => view('stellenbeschreibungen.help'))->name('stellenbeschreibungen.help');
+    Route::get('/personal/help',             fn() => view('personal.help'))->name('personal.help');
+    Route::get('/aufgaben/help',             fn() => view('aufgaben.help'))->name('aufgaben.help');
+    Route::get('/announcements/help',        fn() => view('announcements.help'))->name('announcements.help');
+    Route::get('/orders/help',               fn() => view('orders.help'))->name('orders.help');
+    Route::get('/dienstleister/help',        fn() => view('dienstleister.help'))->name('dienstleister.help');
+    Route::get('/abteilungen/help',          fn() => view('abteilungen.help'))->name('abteilungen.help');
+    Route::get('/reminders/help',            fn() => view('reminders.help'))->name('reminders.help');
+    Route::get('/cost-centers/help',         fn() => view('cost-centers.help'))->name('cost-centers.help');
+    Route::get('/account-codes/help',        fn() => view('account-codes.help'))->name('account-codes.help');
+    Route::get('/audit-logs/help',           fn() => view('audit-logs.help'))->name('audit-logs.help');
+
     // User management routes
     Route::resource('users', UserController::class);
     Route::post('/users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
