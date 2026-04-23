@@ -293,33 +293,46 @@
                                             </a>
                                             @endcan
                                             @can('server.delete')
-                                                <span x-data="{ open: false }">
-                                                    {{-- Löschen --}}
-                                                    <button @click="open = true"
-                                                            class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-900 hover:bg-red-50 rounded transition-colors"
-                                                            title="Löschen">
+                                                @php
+                                                    $blockReasons = [];
+                                                    if ($server->ldap_synced && $ldapEnabled) $blockReasons[] = 'LDAP';
+                                                    if ($server->vsphere_synced && $vsphereEnabled) $blockReasons[] = 'vSphere';
+                                                @endphp
+                                                @if ($blockReasons)
+                                                    <span class="inline-flex items-center justify-center w-8 h-8 text-gray-300 cursor-not-allowed rounded"
+                                                          title="Löschen gesperrt – noch in {{ implode(' & ', $blockReasons) }} vorhanden">
                                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                                         </svg>
-                                                    </button>
-                                                    <div x-show="open" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" x-transition style="display:none">
-                                                        <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4">
-                                                            <h3 class="text-lg font-semibold text-gray-900 mb-2">Server löschen?</h3>
-                                                            <p class="text-sm text-gray-600 mb-4">
-                                                                „<strong>{{ $server->name }}</strong>" wird unwiderruflich gelöscht.
-                                                            </p>
-                                                            <div class="flex justify-end gap-3">
-                                                                <button @click="open = false"
-                                                                        class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-md">Abbrechen</button>
-                                                                <form action="{{ route('server.destroy', $server) }}" method="POST">
-                                                                    @csrf @method('DELETE')
-                                                                    <button type="submit"
-                                                                            class="px-4 py-2 text-sm bg-red-600 text-white hover:bg-red-700 rounded-md">Löschen</button>
-                                                                </form>
+                                                    </span>
+                                                @else
+                                                    <span x-data="{ open: false }">
+                                                        <button @click="open = true"
+                                                                class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-900 hover:bg-red-50 rounded transition-colors"
+                                                                title="Löschen">
+                                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                            </svg>
+                                                        </button>
+                                                        <div x-show="open" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" x-transition style="display:none">
+                                                            <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4">
+                                                                <h3 class="text-lg font-semibold text-gray-900 mb-2">Server löschen?</h3>
+                                                                <p class="text-sm text-gray-600 mb-4">
+                                                                    „<strong>{{ $server->name }}</strong>" wird unwiderruflich gelöscht.
+                                                                </p>
+                                                                <div class="flex justify-end gap-3">
+                                                                    <button @click="open = false"
+                                                                            class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-md">Abbrechen</button>
+                                                                    <form action="{{ route('server.destroy', $server) }}" method="POST">
+                                                                        @csrf @method('DELETE')
+                                                                        <button type="submit"
+                                                                                class="px-4 py-2 text-sm bg-red-600 text-white hover:bg-red-700 rounded-md">Löschen</button>
+                                                                    </form>
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                </span>
+                                                    </span>
+                                                @endif
                                             @endcan
                                             </div>
                                         </td>

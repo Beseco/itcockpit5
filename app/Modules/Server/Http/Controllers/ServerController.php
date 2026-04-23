@@ -8,6 +8,8 @@ use App\Models\Gruppe;
 use App\Models\User;
 use App\Modules\Server\Models\Server;
 use App\Modules\Server\Models\ServerOption;
+use App\Modules\Server\Models\ServerSyncOu;
+use App\Modules\Server\Models\VsphereSettings;
 use App\Modules\Server\Services\ServerSyncService;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
@@ -71,8 +73,10 @@ class ServerController extends Controller
         $adminUsers  = User::where('is_active', true)->orderBy('name')->get();
 
         // Anzahl Server ohne Revisionsdatum für Aktionsbutton
-        $countNoRevision = Server::whereNull('revision_date')->count();
-        $totalServers    = Server::count();
+        $countNoRevision  = Server::whereNull('revision_date')->count();
+        $totalServers     = Server::count();
+        $ldapEnabled      = ServerSyncOu::where('enabled', true)->exists();
+        $vsphereEnabled   = VsphereSettings::getSingleton()->enabled;
 
         // Network-Modul: VLAN + Online-Status per IP-Abgleich (optional)
         $networkData = $this->loadNetworkData($servers->pluck('ip_address')->filter()->toArray());
@@ -81,7 +85,8 @@ class ServerController extends Controller
             ->view('server::index', compact(
                 'servers', 'abteilungen', 'adminUsers', 'countNoRevision', 'totalServers', 'networkData',
                 'search', 'filterStatus', 'filterAbt', 'filterLdap',
-                'filterAdminId', 'filterNoRevision', 'perPage'
+                'filterAdminId', 'filterNoRevision', 'perPage',
+                'ldapEnabled', 'vsphereEnabled'
             ))
             ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
             ->header('Pragma', 'no-cache')
@@ -146,6 +151,16 @@ class ServerController extends Controller
 
     public function destroy(Server $server)
     {
+        if ($server->ldap_synced && ServerSyncOu::where('enabled', true)->exists()) {
+            return redirect()->route('server.index')
+                ->with('error', "„{$server->name}" kann nicht gelöscht werden: Server ist noch in LDAP synchronisiert.");
+        }
+
+        if ($server->vsphere_synced && VsphereSettings::getSingleton()->enabled) {
+            return redirect()->route('server.index')
+                ->with('error', "„{$server->name}" kann nicht gelöscht werden: Server ist noch in vSphere vorhanden.");
+        }
+
         $name = $server->name;
         $server->delete();
 
