@@ -28,3 +28,6 @@ Schedule::command('tickets:calculate-scores')->weeklyOn(5, '12:00');
 
 // SSL-Zertifikate auf Ablauf prüfen und Benachrichtigungen versenden (täglich 08:00)
 Schedule::command('sslcerts:check-expiry')->dailyAt('08:00');
+
+// Server ohne Administrator – Digest-Benachrichtigung stündlich prüfen
+Schedule::command('server:send-admin-missing-notification')->hourly();

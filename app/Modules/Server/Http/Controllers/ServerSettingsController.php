@@ -6,6 +6,7 @@ use App\Modules\Server\Models\CheckMkSettings;
 use App\Modules\Server\Models\Server;
 use App\Modules\Server\Models\ServerOption;
 use App\Modules\Server\Models\ServerSyncOu;
+use App\Modules\Server\Models\ServerAdminNotificationSettings;
 use App\Modules\Server\Models\VsphereSettings;
 use App\Modules\Server\Services\ServerSyncService;
 use App\Modules\Server\Services\VsphereService;
@@ -22,11 +23,12 @@ class ServerSettingsController extends Controller
         );
         $lastSync         = Server::whereNotNull('last_sync_at')->max('last_sync_at');
         $syncOus          = ServerSyncOu::orderBy('sort_order')->get();
-        $checkMkSettings  = CheckMkSettings::getSingleton();
-        $vsphereSettings  = VsphereSettings::getSingleton();
+        $checkMkSettings              = CheckMkSettings::getSingleton();
+        $vsphereSettings              = VsphereSettings::getSingleton();
+        $adminNotificationSettings    = ServerAdminNotificationSettings::getSingleton();
 
         return view('server::settings.index', compact(
-            'options', 'lastSync', 'syncOus', 'checkMkSettings', 'vsphereSettings'
+            'options', 'lastSync', 'syncOus', 'checkMkSettings', 'vsphereSettings', 'adminNotificationSettings'
         ));
     }
 
@@ -140,6 +142,59 @@ class ServerSettingsController extends Controller
 
         $service = new VsphereService($temp);
         return response()->json($service->testConnection());
+    }
+
+    public function storeAdminNotificationSettings(Request $request)
+    {
+        $request->validate([
+            'email'          => ['required', 'email', 'max:255'],
+            'interval_weeks' => ['required', 'in:1,2,4'],
+            'weekday'        => ['required', 'integer', 'min:1', 'max:5'],
+            'hour'           => ['required', 'integer', 'min:0', 'max:23'],
+        ]);
+
+        $settings = ServerAdminNotificationSettings::getSingleton();
+        $settings->fill([
+            'enabled'        => $request->boolean('enabled'),
+            'email'          => trim($request->email),
+            'interval_weeks' => (int) $request->interval_weeks,
+            'weekday'        => (int) $request->weekday,
+            'hour'           => (int) $request->hour,
+        ]);
+        $settings->save();
+
+        return redirect()->route('server.settings')->with('success', 'Benachrichtigungseinstellungen gespeichert.');
+    }
+
+    public function sendAdminNotificationTest()
+    {
+        $settings = ServerAdminNotificationSettings::getSingleton();
+
+        if (!$settings->isConfigured()) {
+            return redirect()->route('server.settings')
+                ->with('error', 'Keine gültige E-Mail-Adresse konfiguriert.');
+        }
+
+        $servers = \App\Modules\Server\Models\Server::with(['abteilung'])
+            ->whereNull('admin_user_id')
+            ->whereNotIn('status', ['ausgemustert'])
+            ->orderBy('name')
+            ->get();
+
+        if ($servers->isEmpty()) {
+            return redirect()->route('server.settings')
+                ->with('success', 'Test-E-Mail nicht gesendet: Alle aktiven Server haben bereits einen Administrator.');
+        }
+
+        try {
+            \Illuminate\Support\Facades\Mail::to($settings->email)
+                ->send(new \App\Mail\ServerAdminMissingMail($servers));
+            return redirect()->route('server.settings')
+                ->with('success', "Test-E-Mail gesendet an {$settings->email} ({$servers->count()} Server ohne Administrator).");
+        } catch (\Exception $e) {
+            return redirect()->route('server.settings')
+                ->with('error', 'Fehler beim Versand: ' . $e->getMessage());
+        }
     }
 
     public function runVsphereSync()

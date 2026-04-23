@@ -363,6 +363,103 @@
             @endcan
             @endif
 
+            {{-- Server ohne Administrator – Benachrichtigung --}}
+            @can('server.config')
+            <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">Server ohne Administrator – Digest-E-Mail</h3>
+                        <p class="text-xs text-gray-400 mt-0.5">Regelmäßige Benachrichtigung wenn aktive Server keinen Verantwortlichen haben</p>
+                    </div>
+                    @if($adminNotificationSettings->isConfigured())
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Aktiv</span>
+                    @else
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Inaktiv</span>
+                    @endif
+                </div>
+                <div class="p-6 space-y-5">
+                    <form method="POST" action="{{ route('server.settings.admin-notification.update') }}" class="space-y-4">
+                        @csrf
+                        @method('PUT')
+
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" id="an_enabled" name="enabled" value="1"
+                                   @checked(old('enabled', $adminNotificationSettings->enabled))
+                                   class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <label for="an_enabled" class="text-sm font-medium text-gray-700">Digest-E-Mail aktivieren</label>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">E-Mail-Adresse <span class="text-red-500">*</span></label>
+                            <input type="email" name="email"
+                                   value="{{ old('email', $adminNotificationSettings->email) }}"
+                                   placeholder="it-leitung@beispiel.de"
+                                   class="block w-full sm:w-96 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-2">Versandintervall <span class="text-red-500">*</span></label>
+                            <div class="flex gap-6">
+                                @foreach([1 => 'Jede Woche', 2 => 'Alle 2 Wochen', 4 => 'Alle 4 Wochen'] as $weeks => $label)
+                                    <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                                        <input type="radio" name="interval_weeks" value="{{ $weeks }}"
+                                               @checked(old('interval_weeks', $adminNotificationSettings->interval_weeks) == $weeks)
+                                               class="text-indigo-600 focus:ring-indigo-500">
+                                        {{ $label }}
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Wochentag <span class="text-red-500">*</span></label>
+                                <select name="weekday"
+                                        class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                    @foreach([1=>'Montag',2=>'Dienstag',3=>'Mittwoch',4=>'Donnerstag',5=>'Freitag'] as $day => $name)
+                                        <option value="{{ $day }}" @selected(old('weekday', $adminNotificationSettings->weekday) == $day)>{{ $name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Uhrzeit <span class="text-red-500">*</span></label>
+                                <select name="hour"
+                                        class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                    @foreach(range(6, 18) as $h)
+                                        <option value="{{ $h }}" @selected(old('hour', $adminNotificationSettings->hour) == $h)>
+                                            {{ str_pad($h, 2, '0', STR_PAD_LEFT) }}:00 Uhr
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+                        @if($adminNotificationSettings->last_sent_at)
+                            <p class="text-xs text-gray-400">
+                                Letzter Versand: <strong>{{ $adminNotificationSettings->last_sent_at->format('d.m.Y H:i') }} Uhr</strong>
+                            </p>
+                        @endif
+
+                        <div class="pt-2 flex items-center justify-between">
+                            <div>{{-- Platzhalter links --}}</div>
+                            <button type="submit"
+                                    class="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-md hover:bg-indigo-700">
+                                Einstellungen speichern
+                            </button>
+                        </div>
+                    </form>
+
+                    <form action="{{ route('server.settings.admin-notification.test') }}" method="POST">
+                        @csrf
+                        <button type="submit"
+                                class="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 text-xs font-semibold rounded-md hover:bg-gray-50">
+                            Test-E-Mail senden
+                        </button>
+                    </form>
+                </div>
+            </div>
+            @endcan
+
             {{-- vSphere Integration --}}
             @can('server.config')
             <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden"

@@ -17,8 +17,10 @@ Route::middleware(['auth', 'module.permission:server,config'])->group(function (
     Route::put('/settings/checkmk',                      [CheckMkController::class, 'update'])->name('settings.checkmk.update');
     Route::post('/settings/checkmk/test',                [CheckMkController::class, 'test'])->name('settings.checkmk.test');
     Route::post('/settings/checkmk/test-host',           [CheckMkController::class, 'testHost'])->name('settings.checkmk.test-host');
-    Route::put('/settings/vsphere',                      [ServerSettingsController::class, 'storeVsphereSettings'])->name('settings.vsphere.update');
-    Route::post('/settings/vsphere/test',                [ServerSettingsController::class, 'testVsphereConnection'])->name('settings.vsphere.test');
+    Route::put('/settings/vsphere',                         [ServerSettingsController::class, 'storeVsphereSettings'])->name('settings.vsphere.update');
+    Route::post('/settings/vsphere/test',                   [ServerSettingsController::class, 'testVsphereConnection'])->name('settings.vsphere.test');
+    Route::put('/settings/admin-notification',              [ServerSettingsController::class, 'storeAdminNotificationSettings'])->name('settings.admin-notification.update');
+    Route::post('/settings/admin-notification/test',        [ServerSettingsController::class, 'sendAdminNotificationTest'])->name('settings.admin-notification.test');
 });
 
 Route::middleware(['auth', 'module.permission:server,view'])->group(function () {
