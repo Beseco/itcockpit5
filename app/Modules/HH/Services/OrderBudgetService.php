@@ -51,6 +51,42 @@ class OrderBudgetService
     }
 
     /**
+     * Ausgaben (bezahlte Rechnungen, Status 6) für ein HH-Jahr und ein Sachkonto.
+     */
+    public function getAusgabenForAccount(int $year, HhCostCenter $cc, HhAccount $account): float
+    {
+        $itCostCenter  = ItCostCenter::where('number', $cc->number)->first();
+        $itAccountCode = ItAccountCode::where('code', $account->number)->first();
+
+        if (! $itCostCenter || ! $itAccountCode) {
+            return 0.0;
+        }
+
+        return (float) Order::where('budget_year', $year)
+            ->where('cost_center_id', $itCostCenter->id)
+            ->where('account_code_id', $itAccountCode->id)
+            ->where('status', 6)
+            ->sum('price_gross');
+    }
+
+    /**
+     * Ausgaben (bezahlte Rechnungen, Status 6) für ein HH-Jahr und eine Kostenstelle (alle Sachkonten).
+     */
+    public function getAusgabenForCostCenter(int $year, HhCostCenter $cc): float
+    {
+        $itCostCenter = ItCostCenter::where('number', $cc->number)->first();
+
+        if (! $itCostCenter) {
+            return 0.0;
+        }
+
+        return (float) Order::where('budget_year', $year)
+            ->where('cost_center_id', $itCostCenter->id)
+            ->where('status', 6)
+            ->sum('price_gross');
+    }
+
+    /**
      * HH-Budget-Aufschlüsselung für die KST-Detailansicht in Orders.
      * Gibt pro Sachkonto: geplantes Budget, Obligo und verfügbares Budget zurück.
      * Verwendet die aktive HH-Version des angegebenen Jahres.
@@ -81,20 +117,28 @@ class OrderBudgetService
             $hhAccount     = $group->first()->account;
             $itAccountCode = ItAccountCode::where('code', $hhAccount->number)->first();
             $planned       = (float) $group->sum('amount');
-            $obligo        = $itAccountCode
-                ? (float) Order::where('budget_year', $year)
+            $obligo   = 0.0;
+            $ausgaben = 0.0;
+            if ($itAccountCode) {
+                $obligo = (float) Order::where('budget_year', $year)
                     ->where('cost_center_id', $itCostCenter->id)
                     ->where('account_code_id', $itAccountCode->id)
                     ->where('status', '!=', 6)
-                    ->sum('price_gross')
-                : 0.0;
+                    ->sum('price_gross');
+                $ausgaben = (float) Order::where('budget_year', $year)
+                    ->where('cost_center_id', $itCostCenter->id)
+                    ->where('account_code_id', $itAccountCode->id)
+                    ->where('status', 6)
+                    ->sum('price_gross');
+            }
 
             $result[] = [
                 'account_number' => $hhAccount->number,
                 'account_name'   => $hhAccount->name,
                 'planned'        => $planned,
                 'obligo'         => $obligo,
-                'available'      => $planned - $obligo,
+                'ausgaben'       => $ausgaben,
+                'available'      => $planned - $obligo - $ausgaben,
             ];
         }
 

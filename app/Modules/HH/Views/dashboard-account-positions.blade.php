@@ -37,10 +37,10 @@
 
             {{-- Budget-Summary --}}
             @php
-                $summaryPct = $plannedTotal > 0 ? min(100, round(($obligo / $plannedTotal) * 100)) : 0;
+                $summaryPct = $plannedTotal > 0 ? min(100, round((($obligo + $ausgaben) / $plannedTotal) * 100)) : 0;
             @endphp
             <div class="bg-white shadow rounded-lg p-5">
-                <div class="grid grid-cols-3 gap-4 mb-3">
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
                     <div>
                         <p class="text-xs text-gray-500 uppercase tracking-wider">Geplant</p>
                         <p class="mt-1 text-xl font-semibold text-gray-900">{{ number_format($plannedTotal, 0, ',', '.') }} &euro;</p>
@@ -51,10 +51,16 @@
                         <p class="text-xs text-gray-400">offene Bestellungen {{ $budgetYear->year }}</p>
                     </div>
                     <div>
+                        <p class="text-xs text-gray-500 uppercase tracking-wider">Ausgaben (bezahlt)</p>
+                        <p class="mt-1 text-xl font-semibold text-red-600">{{ number_format($ausgaben, 0, ',', '.') }} &euro;</p>
+                        <p class="text-xs text-gray-400">angeordnete Rechnungen {{ $budgetYear->year }}</p>
+                    </div>
+                    <div>
                         <p class="text-xs text-gray-500 uppercase tracking-wider">Verfügbar</p>
                         <p class="mt-1 text-xl font-semibold {{ $availableBudget < 0 ? 'text-red-600' : 'text-green-700' }}">
                             {{ number_format($availableBudget, 0, ',', '.') }} &euro;
                         </p>
+                        <p class="text-xs text-gray-400">Budget − Obligo − Ausgaben</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3">

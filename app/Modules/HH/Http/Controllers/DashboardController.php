@@ -96,21 +96,25 @@ class DashboardController extends Controller
 
         $accountsWithTotals = collect();
         $ccObligo           = 0.0;
+        $ccAusgaben         = 0.0;
         if ($activeVersion && $selectedCostCenter) {
-            $ccObligo = $this->orderBudgetService->getObligoForCostCenter($budgetYear->year, $selectedCostCenter);
+            $ccObligo   = $this->orderBudgetService->getObligoForCostCenter($budgetYear->year, $selectedCostCenter);
+            $ccAusgaben = $this->orderBudgetService->getAusgabenForCostCenter($budgetYear->year, $selectedCostCenter);
             $accountsWithTotals = $allAccounts->map(function (Account $acc) use ($activeVersion, $selectedCostCenter, $budgetYear) {
                 $positions = BudgetPosition::where('budget_year_version_id', $activeVersion->id)
                     ->where('cost_center_id', $selectedCostCenter->id)
                     ->where('account_id', $acc->id)
                     ->with(['costCenter', 'account'])
                     ->get();
-                $planned = (float) $positions->sum('amount');
-                $obligo  = $this->orderBudgetService->getObligoForAccount($budgetYear->year, $selectedCostCenter, $acc);
+                $planned  = (float) $positions->sum('amount');
+                $obligo   = $this->orderBudgetService->getObligoForAccount($budgetYear->year, $selectedCostCenter, $acc);
+                $ausgaben = $this->orderBudgetService->getAusgabenForAccount($budgetYear->year, $selectedCostCenter, $acc);
                 return [
                     'account'   => $acc,
                     'total'     => $planned,
                     'obligo'    => $obligo,
-                    'available' => $planned - $obligo,
+                    'ausgaben'  => $ausgaben,
+                    'available' => $planned - $obligo - $ausgaben,
                     'count'     => $positions->count(),
                     'positions' => $positions,
                 ];
@@ -135,12 +139,12 @@ class DashboardController extends Controller
             Cookie::queue(self::COOKIE_CC, $selectedCostCenter->id, $minutes, '/', null, false, false);
         }
 
-        $ccAvailable = ($totals['total'] ?? 0) - $ccObligo;
+        $ccAvailable = ($totals['total'] ?? 0) - $ccObligo - $ccAusgaben;
 
         return view('hh::dashboard', compact(
             'budgetYear', 'allBudgetYears', 'allCostCenters', 'allAccounts',
             'selectedCostCenter', 'activeVersion', 'totals', 'accountsWithTotals', 'canWrite',
-            'ccObligo', 'ccAvailable'
+            'ccObligo', 'ccAusgaben', 'ccAvailable'
         ));
     }
 
@@ -269,12 +273,13 @@ class DashboardController extends Controller
         $canWrite      = $this->authService->isLeiter($request->user());
         $plannedTotal  = (float) $positions->sum('amount');
         $obligo        = $this->orderBudgetService->getObligoForAccount($budgetYear->year, $costCenter, $account);
-        $availableBudget = $plannedTotal - $obligo;
+        $ausgaben      = $this->orderBudgetService->getAusgabenForAccount($budgetYear->year, $costCenter, $account);
+        $availableBudget = $plannedTotal - $obligo - $ausgaben;
 
         return view('hh::dashboard-account-positions', compact(
             'budgetYear', 'costCenter', 'account', 'activeVersion',
             'positions', 'allAccounts', 'canWrite', 'sortField', 'sortDir',
-            'plannedTotal', 'obligo', 'availableBudget'
+            'plannedTotal', 'obligo', 'ausgaben', 'availableBudget'
         ));
     }
 }

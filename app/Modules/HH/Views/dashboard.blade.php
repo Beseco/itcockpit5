@@ -90,10 +90,15 @@
                     <p class="text-xs text-gray-400 mt-1">offene Bestellungen {{ $budgetYear->year }}</p>
                 </div>
                 <div class="bg-white rounded-lg shadow p-5">
+                    <p class="text-xs text-gray-500 uppercase tracking-wider">Ausgaben (bezahlt)</p>
+                    <p class="mt-1 text-2xl font-semibold text-red-600">{{ number_format($ccAusgaben, 0, ',', '.') }} &euro;</p>
+                    <p class="text-xs text-gray-400 mt-1">angeordnete Rechnungen {{ $budgetYear->year }}</p>
+                </div>
+                <div class="bg-white rounded-lg shadow p-5">
                     <p class="text-xs text-gray-500 uppercase tracking-wider">Verfügbar</p>
                     @php $avail = $ccAvailable; @endphp
                     <p class="mt-1 text-2xl font-semibold {{ $avail < 0 ? 'text-red-600' : 'text-green-700' }}">{{ number_format($avail, 0, ',', '.') }} &euro;</p>
-                    <p class="text-xs text-gray-400 mt-1">Budget − Obligo</p>
+                    <p class="text-xs text-gray-400 mt-1">Budget − Obligo − Ausgaben</p>
                 </div>
                 <div class="bg-white rounded-lg shadow p-5">
                     <p class="text-xs text-gray-500 uppercase tracking-wider">Anteil Investiv</p>
@@ -119,6 +124,7 @@
                                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Pos.</th>
                                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Geplant (&euro;)</th>
                                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Bestellt (&euro;)</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ausgaben (&euro;)</th>
                                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Verfügbar (&euro;)</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase w-28">Auslastung</th>
                                     <th class="px-6 py-3"></th>
@@ -127,7 +133,7 @@
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @forelse($accountsWithTotals as $row)
                                     @php
-                                        $pct = $row['total'] > 0 ? min(100, round(($row['obligo'] / $row['total']) * 100)) : 0;
+                                        $pct = $row['total'] > 0 ? min(100, round((($row['obligo'] + $row['ausgaben']) / $row['total']) * 100)) : 0;
                                     @endphp
                                     <tr class="hover:bg-gray-50" data-search="{{ $row['account']->number }} {{ $row['account']->name }}">
                                         <td class="px-6 py-3 font-mono">
@@ -147,6 +153,9 @@
                                         <td class="px-6 py-3 text-right {{ $row['obligo'] > 0 ? 'text-orange-600 font-medium' : 'text-gray-400' }}">
                                             {{ number_format($row['obligo'], 0, ',', '.') }}
                                         </td>
+                                        <td class="px-6 py-3 text-right {{ $row['ausgaben'] > 0 ? 'text-red-600 font-medium' : 'text-gray-400' }}">
+                                            {{ number_format($row['ausgaben'], 0, ',', '.') }}
+                                        </td>
                                         <td class="px-6 py-3 text-right font-semibold {{ $row['available'] < 0 ? 'text-red-600' : ($row['available'] > 0 ? 'text-green-700' : 'text-gray-400') }}">
                                             {{ number_format($row['available'], 0, ',', '.') }}
                                         </td>
@@ -164,7 +173,7 @@
                                         <td class="px-6 py-3 text-gray-400 text-xs">&#8250;</td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="8" class="px-6 py-4 text-center text-gray-500">Keine Sachkonten vorhanden.</td></tr>
+                                    <tr><td colspan="9" class="px-6 py-4 text-center text-gray-500">Keine Sachkonten vorhanden.</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
