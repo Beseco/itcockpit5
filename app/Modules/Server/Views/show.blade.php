@@ -1,12 +1,18 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 flex-wrap">
             <a href="{{ route('server.index') }}" class="text-gray-400 hover:text-gray-600">← Zurück</a>
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ $server->name }}</h2>
             <span class="px-2 py-0.5 text-xs font-semibold rounded-full
                 {{ \App\Modules\Server\Models\Server::STATUS_COLORS[$server->status] ?? 'bg-gray-100 text-gray-600' }}">
                 {{ \App\Modules\Server\Models\Server::STATUS_LABELS[$server->status] ?? $server->status }}
             </span>
+            @if ($server->ldap_synced)
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-600">LDAP</span>
+            @endif
+            @if ($server->vsphere_synced)
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-600">vSphere</span>
+            @endif
         </div>
     </x-slot>
 

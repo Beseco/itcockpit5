@@ -211,8 +211,15 @@
                                             @if ($server->dns_hostname)
                                                 <div class="text-xs text-gray-400">{{ $server->dns_hostname }}</div>
                                             @endif
-                                            @if ($server->ldap_synced)
-                                                <span class="text-xs text-blue-400">LDAP</span>
+                                            @if ($server->ldap_synced || $server->vsphere_synced)
+                                                <div class="flex gap-1 mt-0.5">
+                                                    @if ($server->ldap_synced)
+                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-600">LDAP</span>
+                                                    @endif
+                                                    @if ($server->vsphere_synced)
+                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-600">vSphere</span>
+                                                    @endif
+                                                </div>
                                             @endif
                                         </td>
                                         <td class="px-4 py-3 text-sm">

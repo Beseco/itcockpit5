@@ -127,6 +127,7 @@ class VsphereService
             'vsphere_datastore' => $diskData['datastore'],
             'status'            => $status,
             'type'              => 'vm',
+            'revision_date'     => now()->addMonths(12),
         ];
 
         if ($server) {
