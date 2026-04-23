@@ -63,8 +63,9 @@ class VsphereService
     {
         try {
             $this->authenticate();
-            $this->get('/vcenter/vm?max_results=1');
-            return ['ok' => true, 'message' => 'Verbindung erfolgreich. vCenter ist erreichbar.'];
+            $datacenters = $this->get('/vcenter/datacenter');
+            $count = is_array($datacenters) ? count($datacenters) : '?';
+            return ['ok' => true, 'message' => "Verbindung erfolgreich. {$count} Datacenter gefunden."];
         } catch (\Throwable $e) {
             return ['ok' => false, 'message' => $e->getMessage()];
         }
