@@ -153,12 +153,12 @@ class ServerController extends Controller
     {
         if ($server->ldap_synced && ServerSyncOu::where('enabled', true)->exists()) {
             return redirect()->route('server.index')
-                ->with('error', "„{$server->name}" kann nicht gelöscht werden: Server ist noch in LDAP synchronisiert.");
+                ->with('error', '"' . $server->name . '" kann nicht geloescht werden: Server ist noch in LDAP synchronisiert.');
         }
 
         if ($server->vsphere_synced && VsphereSettings::getSingleton()->enabled) {
             return redirect()->route('server.index')
-                ->with('error', "„{$server->name}" kann nicht gelöscht werden: Server ist noch in vSphere vorhanden.");
+                ->with('error', '"' . $server->name . '" kann nicht geloescht werden: Server ist noch in vSphere vorhanden.');
         }
 
         $name = $server->name;
