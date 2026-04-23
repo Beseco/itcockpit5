@@ -125,7 +125,11 @@ Route::middleware('auth')->group(function () {
     Route::resource('announcements', AnnouncementController::class);
     Route::post('/announcements/{announcement}/mark-as-fixed', [AnnouncementController::class, 'markAsFixed'])->name('announcements.mark-as-fixed');
 
-    // Bestellverwaltung
+    // Bestellverwaltung – Import (muss vor resource stehen)
+    Route::get('/orders/import',                         [\App\Http\Controllers\OrderImportController::class, 'index'])->name('orders.import');
+    Route::post('/orders/import',                        [\App\Http\Controllers\OrderImportController::class, 'store'])->name('orders.import.store');
+    Route::delete('/orders/import/{batchId}',            [\App\Http\Controllers\OrderImportController::class, 'destroy'])->name('orders.import.destroy');
+
     Route::resource('orders', OrderController::class);
 
     // Dienstleister / Lieferanten

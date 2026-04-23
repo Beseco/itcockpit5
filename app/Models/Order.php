@@ -28,6 +28,8 @@ class Order extends Model
         'status_updated_at',
         'budget_year',
         'hh_budget_position_id',
+        'import_batch_id',
+        'import_source',
     ];
 
     protected $casts = [
