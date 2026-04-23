@@ -372,6 +372,7 @@
                         this.testing = true; this.testResult = null;
                         const form = document.getElementById('vsphere-settings-form');
                         const data = new FormData(form);
+                        data.set('_method', 'POST');
                         try {
                             const r = await fetch('{{ route('server.settings.vsphere.test') }}', {
                                 method: 'POST',
