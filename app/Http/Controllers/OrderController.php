@@ -39,11 +39,14 @@ class OrderController extends Controller
             ->groupBy('it_cost_centers.id', 'it_cost_centers.number', 'it_cost_centers.description')
             ->get();
 
-        $filterStatus   = $request->get('filter_status', 'nicht_angeordnet');
-        $filterDateFrom = $request->get('date_from', '');
-        $filterDateTo   = $request->get('date_to', '');
+        // ConvertEmptyStringsToNull: has() unterscheidet "nicht vorhanden" von "leer gesendet"
+        $filterStatus   = $request->has('filter_status')
+            ? ($request->get('filter_status') ?? '')   // leer gesendet → '' = Alle
+            : 'nicht_angeordnet';                       // Standard wenn nicht in URL
+        $filterDateFrom = $request->get('date_from') ?? '';
+        $filterDateTo   = $request->get('date_to') ?? '';
         $filterOwn      = $request->boolean('filter_own');
-        $search         = trim($request->get('search', ''));
+        $search         = trim((string) ($request->get('search') ?? ''));
 
         $query = Order::with(['vendor', 'costCenter', 'accountCode', 'hhBudgetPosition'])
             ->where('budget_year', $filterBudgetYear)
@@ -51,19 +54,19 @@ class OrderController extends Controller
 
         if ($filterStatus === 'nicht_angeordnet') {
             $query->where('status', '!=', 6);
-        } elseif ($filterStatus !== '') {
+        } elseif (filled($filterStatus)) {
             $query->where('status', (int) $filterStatus);
         }
         if ($filterOwn) {
             $query->where('buyer_user_id', Auth::id());
         }
-        if (!empty($filterDateFrom)) {
+        if (filled($filterDateFrom)) {
             $query->where('order_date', '>=', $filterDateFrom);
         }
-        if (!empty($filterDateTo)) {
+        if (filled($filterDateTo)) {
             $query->where('order_date', '<=', $filterDateTo);
         }
-        if ($search !== '') {
+        if (filled($search)) {
             $query->where(function ($q) use ($search) {
                 $q->where('subject', 'like', "%{$search}%")
                   ->orWhere('buyer_username', 'like', "%{$search}%")
