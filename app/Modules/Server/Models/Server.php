@@ -22,13 +22,17 @@ class Server extends Model
         'os_type_id', 'role_id', 'backup_level_id', 'patch_ring_id',
         'abteilung_id', 'admin_user_id', 'gruppe_id',
         'distinguished_name', 'managed_by_ldap', 'ldap_synced', 'last_sync_at', 'raw_ldap_data',
+        'vsphere_vm_id', 'vsphere_synced', 'vsphere_synced_at',
+        'cpu_count', 'memory_mb', 'disk_gb', 'vsphere_datastore',
     ];
 
     protected $casts = [
-        'ldap_synced'   => 'boolean',
-        'last_sync_at'  => 'datetime',
-        'revision_date' => 'date',
-        'raw_ldap_data' => 'array',
+        'ldap_synced'       => 'boolean',
+        'last_sync_at'      => 'datetime',
+        'revision_date'     => 'date',
+        'raw_ldap_data'     => 'array',
+        'vsphere_synced'    => 'boolean',
+        'vsphere_synced_at' => 'datetime',
     ];
 
     const STATUS_LABELS = [

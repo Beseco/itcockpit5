@@ -17,6 +17,8 @@ Route::middleware(['auth', 'module.permission:server,config'])->group(function (
     Route::put('/settings/checkmk',                      [CheckMkController::class, 'update'])->name('settings.checkmk.update');
     Route::post('/settings/checkmk/test',                [CheckMkController::class, 'test'])->name('settings.checkmk.test');
     Route::post('/settings/checkmk/test-host',           [CheckMkController::class, 'testHost'])->name('settings.checkmk.test-host');
+    Route::put('/settings/vsphere',                      [ServerSettingsController::class, 'storeVsphereSettings'])->name('settings.vsphere.update');
+    Route::post('/settings/vsphere/test',                [ServerSettingsController::class, 'testVsphereConnection'])->name('settings.vsphere.test');
 });
 
 Route::middleware(['auth', 'module.permission:server,view'])->group(function () {
@@ -24,7 +26,8 @@ Route::middleware(['auth', 'module.permission:server,view'])->group(function () 
 });
 
 Route::middleware(['auth', 'module.permission:server,sync'])->group(function () {
-    Route::post('/sync', [ServerSettingsController::class, 'runSync'])->name('sync');
+    Route::post('/sync',         [ServerSettingsController::class, 'runSync'])->name('sync');
+    Route::post('/vsphere-sync', [ServerSettingsController::class, 'runVsphereSync'])->name('vsphere-sync');
 });
 
 Route::middleware(['auth', 'module.permission:server,edit'])->group(function () {

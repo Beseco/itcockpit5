@@ -6,7 +6,10 @@ use App\Modules\Server\Models\CheckMkSettings;
 use App\Modules\Server\Models\Server;
 use App\Modules\Server\Models\ServerOption;
 use App\Modules\Server\Models\ServerSyncOu;
+use App\Modules\Server\Models\VsphereSettings;
 use App\Modules\Server\Services\ServerSyncService;
+use App\Modules\Server\Services\VsphereService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
@@ -14,14 +17,17 @@ class ServerSettingsController extends Controller
 {
     public function index()
     {
-        $options         = collect(ServerOption::CATEGORIES)->mapWithKeys(
+        $options          = collect(ServerOption::CATEGORIES)->mapWithKeys(
             fn ($cat) => [$cat => ServerOption::category($cat)->get()]
         );
-        $lastSync        = Server::whereNotNull('last_sync_at')->max('last_sync_at');
-        $syncOus         = ServerSyncOu::orderBy('sort_order')->get();
-        $checkMkSettings = CheckMkSettings::getSingleton();
+        $lastSync         = Server::whereNotNull('last_sync_at')->max('last_sync_at');
+        $syncOus          = ServerSyncOu::orderBy('sort_order')->get();
+        $checkMkSettings  = CheckMkSettings::getSingleton();
+        $vsphereSettings  = VsphereSettings::getSingleton();
 
-        return view('server::settings.index', compact('options', 'lastSync', 'syncOus', 'checkMkSettings'));
+        return view('server::settings.index', compact(
+            'options', 'lastSync', 'syncOus', 'checkMkSettings', 'vsphereSettings'
+        ));
     }
 
     public function storeOption(Request $request)
@@ -84,6 +90,74 @@ class ServerSettingsController extends Controller
         } catch (\Exception $e) {
             return redirect()->route('server.settings')
                 ->with('error', 'Synchronisation fehlgeschlagen: ' . $e->getMessage());
+        }
+    }
+
+    public function storeVsphereSettings(Request $request)
+    {
+        $request->validate([
+            'vcenter_url' => ['required', 'string', 'max:500'],
+            'username'    => ['required', 'string', 'max:255'],
+            'password'    => ['nullable', 'string'],
+            'verify_ssl'  => ['nullable', 'boolean'],
+        ]);
+
+        $settings = VsphereSettings::getSingleton();
+        $settings->fill([
+            'enabled'     => $request->boolean('enabled'),
+            'vcenter_url' => rtrim(trim($request->vcenter_url), '/'),
+            'username'    => trim($request->username),
+            'verify_ssl'  => $request->boolean('verify_ssl'),
+        ]);
+
+        // Only overwrite password if a new one was entered
+        if (filled($request->password)) {
+            $settings->password = $request->password;
+        }
+
+        $settings->save();
+
+        return redirect()->route('server.settings')->with('success', 'vSphere-Einstellungen gespeichert.');
+    }
+
+    public function testVsphereConnection(Request $request): JsonResponse
+    {
+        $request->validate([
+            'vcenter_url' => ['required', 'string'],
+            'username'    => ['required', 'string'],
+            'password'    => ['nullable', 'string'],
+            'verify_ssl'  => ['nullable', 'boolean'],
+        ]);
+
+        $saved = VsphereSettings::getSingleton();
+
+        $temp              = new VsphereSettings();
+        $temp->enabled     = true;
+        $temp->vcenter_url = rtrim(trim($request->vcenter_url), '/');
+        $temp->username    = trim($request->username);
+        $temp->password    = filled($request->password) ? $request->password : $saved->password;
+        $temp->verify_ssl  = $request->boolean('verify_ssl');
+
+        $service = new VsphereService($temp);
+        return response()->json($service->testConnection());
+    }
+
+    public function runVsphereSync()
+    {
+        $service = VsphereService::make();
+
+        if (!$service->isConfigured()) {
+            return redirect()->route('server.settings')
+                ->with('error', 'vSphere ist nicht konfiguriert oder deaktiviert.');
+        }
+
+        try {
+            $result = $service->sync();
+            return redirect()->route('server.index')
+                ->with('success', "vSphere-Sync abgeschlossen: {$result['updated']} aktualisiert, {$result['created']} neu angelegt, {$result['skipped']} übersprungen.");
+        } catch (\Exception $e) {
+            return redirect()->route('server.settings')
+                ->with('error', 'vSphere-Sync fehlgeschlagen: ' . $e->getMessage());
         }
     }
 }

@@ -348,6 +348,56 @@
                 </div>
             @endif
 
+            {{-- vSphere Hardware --}}
+            @if($server->vsphere_synced)
+                <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">vSphere Hardware</h3>
+                        <span class="text-xs text-gray-400">
+                            Sync: {{ $server->vsphere_synced_at?->format('d.m.Y H:i') ?? '—' }}
+                        </span>
+                    </div>
+                    <div class="p-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        @if($server->cpu_count)
+                            <div>
+                                <span class="font-medium text-gray-500">CPU:</span>
+                                <span class="ml-2 text-gray-900">{{ $server->cpu_count }} {{ $server->cpu_count === 1 ? 'Kern' : 'Kerne' }}</span>
+                            </div>
+                        @endif
+                        @if($server->memory_mb)
+                            <div>
+                                <span class="font-medium text-gray-500">RAM:</span>
+                                <span class="ml-2 text-gray-900">
+                                    @if($server->memory_mb >= 1024)
+                                        {{ number_format($server->memory_mb / 1024, 1, ',', '.') }} GB
+                                    @else
+                                        {{ $server->memory_mb }} MB
+                                    @endif
+                                </span>
+                            </div>
+                        @endif
+                        @if($server->disk_gb)
+                            <div>
+                                <span class="font-medium text-gray-500">Speicher:</span>
+                                <span class="ml-2 text-gray-900">{{ $server->disk_gb }} GB</span>
+                            </div>
+                        @endif
+                        @if($server->vsphere_datastore)
+                            <div>
+                                <span class="font-medium text-gray-500">Datastore:</span>
+                                <span class="ml-2 text-gray-900 font-mono text-xs">{{ $server->vsphere_datastore }}</span>
+                            </div>
+                        @endif
+                        @if($server->vsphere_vm_id)
+                            <div>
+                                <span class="font-medium text-gray-500">VM-ID:</span>
+                                <span class="ml-2 text-gray-400 font-mono text-xs">{{ $server->vsphere_vm_id }}</span>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @endif
+
             {{-- Verknüpfte Applikationen --}}
             <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">

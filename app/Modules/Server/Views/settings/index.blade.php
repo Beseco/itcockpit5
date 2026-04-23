@@ -363,6 +363,151 @@
             @endcan
             @endif
 
+            {{-- vSphere Integration --}}
+            @can('server.config')
+            <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden"
+                 x-data="{
+                    testing: false, testResult: null, testOk: null,
+                    async runTest() {
+                        this.testing = true; this.testResult = null;
+                        const form = document.getElementById('vsphere-settings-form');
+                        const data = new FormData(form);
+                        try {
+                            const r = await fetch('{{ route('server.settings.vsphere.test') }}', {
+                                method: 'POST',
+                                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' },
+                                body: data,
+                            });
+                            const j = await r.json();
+                            this.testOk = j.ok;
+                            this.testResult = j.message;
+                        } catch(e) { this.testOk = false; this.testResult = e.toString(); }
+                        finally { this.testing = false; }
+                    }
+                 }">
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">VMware vSphere Integration</h3>
+                        <p class="text-xs text-gray-400 mt-0.5">VMs automatisch aus vCenter importieren – CPU, RAM, Speicher, Datastore, Status</p>
+                    </div>
+                    @if($vsphereSettings->isConfigured())
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Aktiv</span>
+                    @else
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Inaktiv</span>
+                    @endif
+                </div>
+                <div class="p-6 space-y-5">
+                    <form id="vsphere-settings-form" method="POST" action="{{ route('server.settings.vsphere.update') }}" class="space-y-4">
+                        @csrf
+                        @method('PUT')
+
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" id="vs_enabled" name="enabled" value="1"
+                                   @checked(old('enabled', $vsphereSettings->enabled))
+                                   class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <label for="vs_enabled" class="text-sm font-medium text-gray-700">vSphere-Integration aktivieren</label>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-medium text-gray-600 mb-1">vCenter URL <span class="text-red-500">*</span></label>
+                                <input type="text" name="vcenter_url"
+                                       value="{{ old('vcenter_url', $vsphereSettings->vcenter_url) }}"
+                                       placeholder="https://vcenter.lra.lan"
+                                       class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm font-mono">
+                                <p class="text-xs text-gray-400 mt-0.5">Basis-URL des vCenter Servers (ohne /api)</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Benutzername <span class="text-red-500">*</span></label>
+                                <input type="text" name="username"
+                                       value="{{ old('username', $vsphereSettings->username) }}"
+                                       placeholder="administrator@vsphere.local"
+                                       class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">Passwort</label>
+                                <input type="password" name="password"
+                                       placeholder="{{ $vsphereSettings->password ? '••••••••• (leer lassen = nicht ändern)' : 'Passwort eintragen…' }}"
+                                       autocomplete="new-password"
+                                       class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                            </div>
+
+                            <div class="sm:col-span-2 flex items-center gap-3">
+                                <input type="checkbox" id="vs_verify_ssl" name="verify_ssl" value="1"
+                                       @checked(old('verify_ssl', $vsphereSettings->verify_ssl))
+                                       class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                                <label for="vs_verify_ssl" class="text-sm text-gray-700">SSL-Zertifikat verifizieren</label>
+                                <span class="text-xs text-gray-400">(deaktivieren bei selbstsignierten Zertifikaten)</span>
+                            </div>
+                        </div>
+
+                        <div x-show="testResult !== null"
+                             :class="testOk ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'"
+                             class="border rounded-md px-4 py-3 text-sm flex items-start gap-2" x-cloak>
+                            <span x-text="testOk ? '✓' : '✗'" class="font-bold shrink-0"></span>
+                            <span x-text="testResult"></span>
+                        </div>
+
+                        <div class="pt-2 flex items-center justify-between">
+                            <button type="button" @click="runTest()" :disabled="testing"
+                                    class="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 text-xs font-semibold rounded-md hover:bg-gray-50 disabled:opacity-50">
+                                <svg x-show="testing" class="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                                </svg>
+                                <span x-text="testing ? 'Teste…' : 'Verbindung testen'"></span>
+                            </button>
+                            <button type="submit"
+                                    class="px-4 py-2 bg-indigo-600 text-white text-xs font-semibold rounded-md hover:bg-indigo-700">
+                                Einstellungen speichern
+                            </button>
+                        </div>
+                    </form>
+
+                    {{-- Hinweis --}}
+                    <div class="border border-blue-100 bg-blue-50 rounded-lg p-4 text-xs text-blue-800 space-y-1">
+                        <p class="font-semibold text-blue-900">Hinweise zur vSphere-Verbindung</p>
+                        <ul class="list-disc list-inside space-y-0.5 text-blue-700">
+                            <li>Der Benutzer benötigt mindestens die vSphere-Rolle <strong>Read-Only</strong> auf dem vCenter-Objekt.</li>
+                            <li>IP-Adressen und Hostnamen werden nur ausgelesen wenn <strong>VMware Tools</strong> in der VM installiert sind.</li>
+                            <li>Beim Sync werden bestehende Server per Name oder Hostname gematcht. Neue VMs werden automatisch angelegt.</li>
+                            <li>Manuell gepflegte Felder (Hostname, IP) werden beim Sync <strong>nicht überschrieben</strong>.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            @endcan
+
+            {{-- vSphere Sync --}}
+            @can('server.sync')
+            @if($vsphereSettings->isConfigured())
+            <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">vSphere Synchronisation</h3>
+                        <p class="text-xs text-gray-400 mt-0.5">
+                            @php $lastVsphereSync = \App\Modules\Server\Models\Server::whereNotNull('vsphere_synced_at')->max('vsphere_synced_at'); @endphp
+                            @if($lastVsphereSync)
+                                Letzter Sync: <strong>{{ \Carbon\Carbon::parse($lastVsphereSync)->format('d.m.Y H:i') }} Uhr</strong>
+                            @else
+                                Noch kein Sync durchgeführt.
+                            @endif
+                        </p>
+                    </div>
+                    <form action="{{ route('server.vsphere-sync') }}" method="POST">
+                        @csrf
+                        <button type="submit"
+                                class="inline-flex items-center px-4 py-2 bg-violet-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-violet-700">
+                            vSphere Sync jetzt ausführen
+                        </button>
+                    </form>
+                </div>
+            </div>
+            @endif
+            @endcan
+
             {{-- Erweiterbare Optionen --}}
             @foreach ($options as $category => $categoryOptions)
                 @php
