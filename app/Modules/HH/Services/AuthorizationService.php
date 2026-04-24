@@ -63,13 +63,18 @@ class AuthorizationService
     }
 
     /**
-     * Check whether a user has the "Leiter" role on any cost center,
-     * OR is a Superadministrator/Admin (global roles).
+     * Check whether a user has write access to HH:
+     * - Superadministrator/Admin (global roles), OR
+     * - Spatie permission "hh.edit" (z.B. Gruppenleiter), OR
+     * - HH-interne Kostenstellen-Rolle "Leiter"
      */
     public function isLeiter(User $user): bool
     {
-        // Superadmin and Admin always have Leiter-level access
         if ($user->hasRole(['Superadministrator', 'Admin'])) {
+            return true;
+        }
+
+        if ($user->hasPermissionTo('hh.edit')) {
             return true;
         }
 
