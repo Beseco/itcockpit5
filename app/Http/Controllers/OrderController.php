@@ -40,22 +40,19 @@ class OrderController extends Controller
             ->get();
 
         // ConvertEmptyStringsToNull: has() unterscheidet "nicht vorhanden" von "leer gesendet"
-        $filterStatus      = $request->has('filter_status')
-            ? ($request->get('filter_status') ?? '')   // leer gesendet → '' = Alle
-            : 'nicht_angeordnet';                       // Standard wenn nicht in URL
+        $filterStatus      = $request->get('filter_status') ?? '';
         $filterDateFrom    = $request->get('date_from') ?? '';
         $filterDateTo      = $request->get('date_to') ?? '';
         $filterOwn         = $request->boolean('filter_own');
         $filterAccountCode = (int) $request->get('filter_account_code_id', 0);
+        $filterCostCenter  = (int) $request->get('filter_cost_center_id', 0);
         $search            = trim((string) ($request->get('search') ?? ''));
 
         $query = Order::with(['vendor', 'costCenter', 'accountCode', 'hhBudgetPosition'])
             ->where('budget_year', $filterBudgetYear)
             ->orderBy('order_date', 'desc');
 
-        if ($filterStatus === 'nicht_angeordnet') {
-            $query->where('status', '!=', 6);
-        } elseif (filled($filterStatus)) {
+        if (filled($filterStatus)) {
             $query->where('status', (int) $filterStatus);
         }
         if ($filterOwn) {
@@ -76,6 +73,9 @@ class OrderController extends Controller
         }
         if ($filterAccountCode > 0) {
             $query->where('account_code_id', $filterAccountCode);
+        }
+        if ($filterCostCenter > 0) {
+            $query->where('cost_center_id', $filterCostCenter);
         }
 
         $perPage = in_array((int) $request->get('per_page', 25), [25, 50, 100, 250]) ? (int) $request->get('per_page', 25) : 25;
@@ -105,11 +105,13 @@ class OrderController extends Controller
 
         $availableBudgetYears = [now()->year - 1, now()->year, now()->year + 1];
         $allAccountCodes      = AccountCode::orderBy('code')->get();
+        $allCostCenters       = CostCenter::orderBy('number')->get();
 
         return view('orders.index', compact(
             'obligo', 'kstSummen', 'orders', 'kstDetails', 'kstAccounts', 'hhBudgetData',
             'filterStatus', 'filterDateFrom', 'filterDateTo', 'filterOwn', 'search',
             'filterAccountCode', 'allAccountCodes',
+            'filterCostCenter', 'allCostCenters',
             'perPage', 'filterBudgetYear', 'availableBudgetYears'
         ));
     }
