@@ -40,8 +40,9 @@ class OrderImportController extends Controller
         $costCenters  = CostCenter::pluck('id', 'number');
         $accountCodes = AccountCode::pluck('id', 'code');
 
-        $imported = 0;
-        $skipped  = 0;
+        $imported         = 0;
+        $skipped          = 0;
+        $skippedByAccount = []; // Sachkontonr. => count
 
         foreach ($rows as $row) {
             try {
@@ -64,6 +65,14 @@ class OrderImportController extends Controller
                 $belegart       = trim($row['Belegart'] ?? '');
                 $buyerUsername  = trim($row['Benutzer-ID'] ?? '');
 
+                // Skip records with unknown Sachkontonr.
+                if ($accountCodeNr === '' || !isset($accountCodes[$accountCodeNr])) {
+                    $key = $accountCodeNr !== '' ? $accountCodeNr : '(leer)';
+                    $skippedByAccount[$key] = ($skippedByAccount[$key] ?? 0) + 1;
+                    $skipped++;
+                    continue;
+                }
+
                 $bemerkungen = $belegnr ? "Belegnr.: {$belegnr}" . ($belegart ? " ({$belegart})" : '') : null;
 
                 Order::create([
@@ -74,7 +83,7 @@ class OrderImportController extends Controller
                     'status'           => 6, // angeordnet (bereits bezahlt)
                     'buyer_username'   => $buyerUsername ?: null,
                     'cost_center_id'   => $costCenters[$costCenterCode] ?? null,
-                    'account_code_id'  => $accountCodes[$accountCodeNr] ?? null,
+                    'account_code_id'  => $accountCodes[$accountCodeNr],
                     'bemerkungen'      => $bemerkungen,
                     'budget_year'      => (int) substr($orderDate, 0, 4),
                     'import_batch_id'  => $batchId,
@@ -92,7 +101,9 @@ class OrderImportController extends Controller
             $msg .= ", {$skipped} übersprungen.";
         }
 
-        return redirect()->route('orders.import')->with('success', $msg);
+        return redirect()->route('orders.import')
+            ->with('success', $msg)
+            ->with('skipped_accounts', $skippedByAccount);
     }
 
     public function destroy(string $batchId)
