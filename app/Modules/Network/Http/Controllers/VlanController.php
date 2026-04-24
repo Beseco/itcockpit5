@@ -40,8 +40,8 @@ class VlanController extends Controller
         session()->put('network.vlan_list.sort_column', $sortColumn);
         session()->put('network.vlan_list.sort_direction', $sortDirection);
 
-        // Status filter — default: geplant + produktiv
-        $defaultStatuses = ['geplant', 'produktiv'];
+        // Status filter — default: alle
+        $defaultStatuses = Vlan::STATUSES;
         if ($request->has('status')) {
             $statusFilter = (array) $request->input('status');
             $statusFilter = array_intersect($statusFilter, Vlan::STATUSES);

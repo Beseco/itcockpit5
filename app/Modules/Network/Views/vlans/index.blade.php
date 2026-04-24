@@ -74,9 +74,9 @@
                         @endif
                     </a>
                 @endforeach
-                @if($statusFilter !== ['geplant','produktiv'])
-                    <a href="{{ route('network.index', array_merge(request()->except('status'), ['status' => ['geplant','produktiv']])) }}"
-                       class="text-xs text-gray-400 hover:text-gray-600 underline ml-1">Zurücksetzen</a>
+                @if(count($statusFilter) < count(\App\Modules\Network\Models\Vlan::STATUSES))
+                    <a href="{{ route('network.index', array_merge(request()->except('status'), ['status' => \App\Modules\Network\Models\Vlan::STATUSES])) }}"
+                       class="text-xs text-gray-400 hover:text-gray-600 underline ml-1">Alle anzeigen</a>
                 @endif
             </div>
 
