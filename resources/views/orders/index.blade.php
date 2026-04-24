@@ -181,6 +181,7 @@
                         <select name="filter_status"
                                 class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                             <option value="">Alle Status</option>
+                            <option value="nicht_angeordnet" {{ $filterStatus === 'nicht_angeordnet' ? 'selected' : '' }}>Nicht angeordnet (offen)</option>
                             @foreach (\App\Models\Order::STATUS_LABELS as $val => $label)
                                 <option value="{{ $val }}" {{ $filterStatus == $val ? 'selected' : '' }}>{{ $label }}</option>
                             @endforeach

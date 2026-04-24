@@ -57,7 +57,9 @@ class OrderController extends Controller
             ->where('budget_year', $filterBudgetYear)
             ->orderBy($sortField, $sortDir);
 
-        if (filled($filterStatus)) {
+        if ($filterStatus === 'nicht_angeordnet') {
+            $query->where('status', '!=', 6);
+        } elseif (filled($filterStatus)) {
             $query->where('status', (int) $filterStatus);
         }
         if ($filterOwn) {

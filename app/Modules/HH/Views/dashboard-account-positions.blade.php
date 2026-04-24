@@ -57,7 +57,16 @@
                     </div>
                     <div>
                         <p class="text-xs text-gray-500 uppercase tracking-wider">Bestellt (Obligo)</p>
-                        <p class="mt-1 text-xl font-semibold text-orange-600">{{ number_format($obligo, 0, ',', '.') }} &euro;</p>
+                        @php $obligoUrl = $itCostCenterId && $itAccountCodeId
+                            ? route('orders.index', ['filter_cost_center_id' => $itCostCenterId, 'filter_account_code_id' => $itAccountCodeId, 'filter_status' => 'nicht_angeordnet', 'budget_year' => $budgetYear->year, 'sort' => 'price_gross', 'dir' => 'desc'])
+                            : null; @endphp
+                        @if($obligoUrl && $obligo > 0)
+                            <a href="{{ $obligoUrl }}" class="mt-1 text-xl font-semibold text-orange-600 hover:underline block">
+                                {{ number_format($obligo, 0, ',', '.') }} &euro;
+                            </a>
+                        @else
+                            <p class="mt-1 text-xl font-semibold text-orange-600">{{ number_format($obligo, 0, ',', '.') }} &euro;</p>
+                        @endif
                         <p class="text-xs text-gray-400">offene Bestellungen {{ $budgetYear->year }}</p>
                     </div>
                     <div>
