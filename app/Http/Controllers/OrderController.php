@@ -40,13 +40,14 @@ class OrderController extends Controller
             ->get();
 
         // ConvertEmptyStringsToNull: has() unterscheidet "nicht vorhanden" von "leer gesendet"
-        $filterStatus   = $request->has('filter_status')
+        $filterStatus      = $request->has('filter_status')
             ? ($request->get('filter_status') ?? '')   // leer gesendet → '' = Alle
             : 'nicht_angeordnet';                       // Standard wenn nicht in URL
-        $filterDateFrom = $request->get('date_from') ?? '';
-        $filterDateTo   = $request->get('date_to') ?? '';
-        $filterOwn      = $request->boolean('filter_own');
-        $search         = trim((string) ($request->get('search') ?? ''));
+        $filterDateFrom    = $request->get('date_from') ?? '';
+        $filterDateTo      = $request->get('date_to') ?? '';
+        $filterOwn         = $request->boolean('filter_own');
+        $filterAccountCode = (int) $request->get('filter_account_code_id', 0);
+        $search            = trim((string) ($request->get('search') ?? ''));
 
         $query = Order::with(['vendor', 'costCenter', 'accountCode', 'hhBudgetPosition'])
             ->where('budget_year', $filterBudgetYear)
@@ -72,6 +73,9 @@ class OrderController extends Controller
                   ->orWhere('buyer_username', 'like', "%{$search}%")
                   ->orWhereHas('vendor', fn ($v) => $v->where('firmenname', 'like', "%{$search}%"));
             });
+        }
+        if ($filterAccountCode > 0) {
+            $query->where('account_code_id', $filterAccountCode);
         }
 
         $perPage = in_array((int) $request->get('per_page', 25), [25, 50, 100, 250]) ? (int) $request->get('per_page', 25) : 25;
@@ -100,10 +104,12 @@ class OrderController extends Controller
         }
 
         $availableBudgetYears = [now()->year - 1, now()->year, now()->year + 1];
+        $allAccountCodes      = AccountCode::orderBy('code')->get();
 
         return view('orders.index', compact(
             'obligo', 'kstSummen', 'orders', 'kstDetails', 'kstAccounts', 'hhBudgetData',
             'filterStatus', 'filterDateFrom', 'filterDateTo', 'filterOwn', 'search',
+            'filterAccountCode', 'allAccountCodes',
             'perPage', 'filterBudgetYear', 'availableBudgetYears'
         ));
     }
