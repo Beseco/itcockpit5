@@ -46,6 +46,8 @@ class OrderController extends Controller
         $filterOwn         = $request->boolean('filter_own');
         $filterAccountCode = (int) $request->get('filter_account_code_id', 0);
         $filterCostCenter  = (int) $request->get('filter_cost_center_id', 0);
+        $filterAmountMin   = $request->filled('amount_min') ? (float) str_replace(',', '.', $request->get('amount_min')) : null;
+        $filterAmountMax   = $request->filled('amount_max') ? (float) str_replace(',', '.', $request->get('amount_max')) : null;
         $search            = trim((string) ($request->get('search') ?? ''));
         $sortField         = in_array($request->get('sort'), ['order_date', 'price_gross', 'subject', 'status'])
                                 ? $request->get('sort') : 'order_date';
@@ -79,6 +81,12 @@ class OrderController extends Controller
         }
         if ($filterCostCenter > 0) {
             $query->where('cost_center_id', $filterCostCenter);
+        }
+        if ($filterAmountMin !== null) {
+            $query->where('price_gross', '>=', $filterAmountMin);
+        }
+        if ($filterAmountMax !== null) {
+            $query->where('price_gross', '<=', $filterAmountMax);
         }
 
         $perPage = in_array((int) $request->get('per_page', 25), [25, 50, 100, 250]) ? (int) $request->get('per_page', 25) : 25;
@@ -115,6 +123,7 @@ class OrderController extends Controller
             'filterStatus', 'filterDateFrom', 'filterDateTo', 'filterOwn', 'search',
             'filterAccountCode', 'allAccountCodes',
             'filterCostCenter', 'allCostCenters',
+            'filterAmountMin', 'filterAmountMax',
             'sortField', 'sortDir',
             'perPage', 'filterBudgetYear', 'availableBudgetYears'
         ));
