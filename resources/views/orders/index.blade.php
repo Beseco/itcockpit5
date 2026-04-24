@@ -270,13 +270,30 @@
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Datum</th>
+                                    @php
+                                        function orderSortUrl($field, $cur, $dir) {
+                                            $newDir = ($cur === $field && $dir === 'desc') ? 'asc' : 'desc';
+                                            return route('orders.index', array_merge(request()->except(['sort','dir','page']), ['sort' => $field, 'dir' => $newDir]));
+                                        }
+                                        function orderSortIcon($field, $cur, $dir) {
+                                            return $field === $cur ? ($dir === 'desc' ? ' ↓' : ' ↑') : '';
+                                        }
+                                    @endphp
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <a href="{{ orderSortUrl('order_date', $sortField, $sortDir) }}" class="hover:text-indigo-600">
+                                            Datum{!! orderSortIcon('order_date', $sortField, $sortDir) !!}
+                                        </a>
+                                    </th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Artikel</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kostenstelle</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sachkonto</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Händler</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Käufer</th>
-                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Betrag</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                                        <a href="{{ orderSortUrl('price_gross', $sortField, $sortDir) }}" class="hover:text-indigo-600">
+                                            Betrag{!! orderSortIcon('price_gross', $sortField, $sortDir) !!}
+                                        </a>
+                                    </th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Aktionen</th>
                                 </tr>

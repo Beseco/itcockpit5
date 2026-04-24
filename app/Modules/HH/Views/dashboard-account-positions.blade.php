@@ -38,8 +38,18 @@
             {{-- Budget-Summary --}}
             @php
                 $summaryPct = $plannedTotal > 0 ? min(100, round((($obligo + $ausgaben) / $plannedTotal) * 100)) : 0;
+                $ordersBase = $itCostCenterId && $itAccountCodeId
+                    ? route('orders.index', ['filter_cost_center_id' => $itCostCenterId, 'filter_account_code_id' => $itAccountCodeId, 'filter_status' => 6, 'budget_year' => $budgetYear->year, 'sort' => 'price_gross', 'dir' => 'desc'])
+                    : null;
             @endphp
             <div class="bg-white shadow rounded-lg p-5">
+                <p class="text-xs text-gray-400 mb-3">
+                    <span class="font-medium text-gray-600">KST {{ $costCenter->number }} {{ $costCenter->name }}</span>
+                    <span class="mx-2 text-gray-300">|</span>
+                    <span class="font-medium text-gray-600">{{ $account->number }} {{ $account->name }}</span>
+                    <span class="mx-2 text-gray-300">|</span>
+                    {{ $budgetYear->year }}
+                </p>
                 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
                     <div>
                         <p class="text-xs text-gray-500 uppercase tracking-wider">Geplant</p>
@@ -52,7 +62,14 @@
                     </div>
                     <div>
                         <p class="text-xs text-gray-500 uppercase tracking-wider">Ausgaben (bezahlt)</p>
-                        <p class="mt-1 text-xl font-semibold text-red-600">{{ number_format($ausgaben, 0, ',', '.') }} &euro;</p>
+                        @if($ordersBase && $ausgaben > 0)
+                            <a href="{{ $ordersBase }}"
+                               class="mt-1 text-xl font-semibold text-red-600 hover:underline block">
+                                {{ number_format($ausgaben, 0, ',', '.') }} &euro;
+                            </a>
+                        @else
+                            <p class="mt-1 text-xl font-semibold text-red-600">{{ number_format($ausgaben, 0, ',', '.') }} &euro;</p>
+                        @endif
                         <p class="text-xs text-gray-400">angeordnete Rechnungen {{ $budgetYear->year }}</p>
                     </div>
                     <div>
@@ -72,15 +89,42 @@
                 </div>
             </div>
 
-            {{-- Live-Suche --}}
-            <div class="bg-white shadow rounded-lg p-3 mb-4 flex items-center gap-3">
-                <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/>
-                </svg>
-                <input type="text" id="pos-search" placeholder="Positionsname suchen…"
-                       class="flex-1 border-0 text-sm focus:ring-0 outline-none text-gray-700 placeholder-gray-400">
-                <span id="pos-search-count" class="text-xs text-gray-400 hidden"></span>
-            </div>
+            {{-- Filter --}}
+            @php $hasFilter = $searchQ !== '' || $amountMin !== null || $amountMax !== null; @endphp
+            <form method="GET" action="{{ request()->url() }}" class="bg-white shadow rounded-lg p-3 flex flex-wrap items-end gap-3">
+                <input type="hidden" name="sort" value="{{ $sortField }}">
+                <input type="hidden" name="dir"  value="{{ $sortDir }}">
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Positionsname</label>
+                    <input type="text" name="q" value="{{ $searchQ }}" placeholder="suchen…"
+                           class="border-gray-300 rounded text-sm shadow-sm focus:ring-blue-500 focus:border-blue-500 w-48">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Betrag von (€)</label>
+                    <input type="number" name="amount_min" value="{{ $amountMin ?? '' }}" step="1" min="0" placeholder="0"
+                           class="border-gray-300 rounded text-sm shadow-sm focus:ring-blue-500 focus:border-blue-500 w-28">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-500 mb-1">Betrag bis (€)</label>
+                    <input type="number" name="amount_max" value="{{ $amountMax ?? '' }}" step="1" min="0" placeholder="unbegrenzt"
+                           class="border-gray-300 rounded text-sm shadow-sm focus:ring-blue-500 focus:border-blue-500 w-28">
+                </div>
+                <div class="flex gap-2">
+                    <button type="submit"
+                            class="px-3 py-2 bg-indigo-600 text-white text-xs font-semibold rounded hover:bg-indigo-700 uppercase tracking-wider">
+                        Filtern
+                    </button>
+                    @if($hasFilter)
+                        <a href="{{ request()->url() }}?sort={{ $sortField }}&dir={{ $sortDir }}"
+                           class="px-3 py-2 bg-white border border-gray-300 text-xs font-semibold rounded text-gray-700 hover:bg-gray-50 uppercase tracking-wider">
+                            Zurücksetzen
+                        </a>
+                    @endif
+                </div>
+                @if($hasFilter)
+                    <span class="text-xs text-gray-400 self-center">{{ $positions->count() }} Treffer</span>
+                @endif
+            </form>
 
             <div class="bg-white shadow rounded-lg overflow-hidden">
                 <div class="overflow-x-auto">
@@ -129,7 +173,7 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse($positions as $pos)
-                                <tr class="hover:bg-gray-50" data-name="{{ $pos->project_name }}">
+                                <tr class="hover:bg-gray-50">
                                     <td class="px-4 py-3">{{ $pos->project_name }}</td>
                                     <td class="px-4 py-3">
                                         <span class="px-2 py-0.5 rounded-full text-xs
@@ -377,25 +421,6 @@
     @endif
 
     <script>
-        document.getElementById('pos-search').addEventListener('input', function () {
-            const term = this.value.toLowerCase();
-            const rows = document.querySelectorAll('tbody tr[data-name]');
-            let visible = 0;
-            rows.forEach(function (row) {
-                const name = row.dataset.name.toLowerCase();
-                const show = !term || name.includes(term);
-                row.style.display = show ? '' : 'none';
-                if (show) visible++;
-            });
-            const counter = document.getElementById('pos-search-count');
-            if (term) {
-                counter.textContent = visible + ' Treffer';
-                counter.classList.remove('hidden');
-            } else {
-                counter.classList.add('hidden');
-            }
-        });
-
         function openEditPos(data) {
             window.dispatchEvent(new CustomEvent('open-edit-pos', { detail: data }));
             document.getElementById('modal-edit-pos').classList.remove('hidden');

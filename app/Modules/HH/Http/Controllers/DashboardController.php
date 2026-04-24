@@ -251,15 +251,23 @@ class DashboardController extends Controller
         $budgetYear->load('versions');
         $activeVersion = $budgetYear->versions->firstWhere('is_active', true);
         $allAccounts   = Account::orderBy('number')->get();
+
+        $amountMin = $request->filled('amount_min') ? (float) str_replace(',', '.', $request->input('amount_min')) : null;
+        $amountMax = $request->filled('amount_max') ? (float) str_replace(',', '.', $request->input('amount_max')) : null;
+        $searchQ   = trim($request->input('q', ''));
+
         $positions = collect();
         if ($activeVersion) {
-            $positions = BudgetPosition::where('budget_year_version_id', $activeVersion->id)
+            $query = BudgetPosition::where('budget_year_version_id', $activeVersion->id)
                 ->where('cost_center_id', $costCenter->id)
                 ->where('account_id', $account->id)
-                ->with(['costCenter', 'account'])
-                ->orderBy('project_name')
-                ->get();
+                ->with(['costCenter', 'account']);
+            if ($amountMin !== null) $query->where('amount', '>=', $amountMin);
+            if ($amountMax !== null) $query->where('amount', '<=', $amountMax);
+            if ($searchQ !== '')    $query->where('project_name', 'like', "%{$searchQ}%");
+            $positions = $query->get();
         }
+
         $sortField = in_array($request->input('sort'), ['project_name', 'amount', 'priority', 'status'])
             ? $request->input('sort') : 'project_name';
         $sortDir = $request->input('dir') === 'desc' ? 'desc' : 'asc';
@@ -276,10 +284,16 @@ class DashboardController extends Controller
         $ausgaben      = $this->orderBudgetService->getAusgabenForAccount($budgetYear->year, $costCenter, $account);
         $availableBudget = $plannedTotal - $obligo - $ausgaben;
 
+        // IDs für den Orders-Link (Ausgaben → gefilterte Bestellliste)
+        $itCostCenterId  = \App\Models\CostCenter::where('number', $costCenter->number)->value('id');
+        $itAccountCodeId = \App\Models\AccountCode::where('code', $account->number)->value('id');
+
         return view('hh::dashboard-account-positions', compact(
             'budgetYear', 'costCenter', 'account', 'activeVersion',
             'positions', 'allAccounts', 'canWrite', 'sortField', 'sortDir',
-            'plannedTotal', 'obligo', 'ausgaben', 'availableBudget'
+            'plannedTotal', 'obligo', 'ausgaben', 'availableBudget',
+            'amountMin', 'amountMax', 'searchQ',
+            'itCostCenterId', 'itAccountCodeId'
         ));
     }
 }

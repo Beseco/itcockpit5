@@ -47,10 +47,13 @@ class OrderController extends Controller
         $filterAccountCode = (int) $request->get('filter_account_code_id', 0);
         $filterCostCenter  = (int) $request->get('filter_cost_center_id', 0);
         $search            = trim((string) ($request->get('search') ?? ''));
+        $sortField         = in_array($request->get('sort'), ['order_date', 'price_gross', 'subject', 'status'])
+                                ? $request->get('sort') : 'order_date';
+        $sortDir           = $request->get('dir') === 'asc' ? 'asc' : 'desc';
 
         $query = Order::with(['vendor', 'costCenter', 'accountCode', 'hhBudgetPosition'])
             ->where('budget_year', $filterBudgetYear)
-            ->orderBy('order_date', 'desc');
+            ->orderBy($sortField, $sortDir);
 
         if (filled($filterStatus)) {
             $query->where('status', (int) $filterStatus);
@@ -112,6 +115,7 @@ class OrderController extends Controller
             'filterStatus', 'filterDateFrom', 'filterDateTo', 'filterOwn', 'search',
             'filterAccountCode', 'allAccountCodes',
             'filterCostCenter', 'allCostCenters',
+            'sortField', 'sortDir',
             'perPage', 'filterBudgetYear', 'availableBudgetYears'
         ));
     }
