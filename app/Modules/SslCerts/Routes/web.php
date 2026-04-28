@@ -11,10 +11,11 @@ Route::middleware(['auth', 'module.permission:sslcerts,config'])->group(function
 });
 
 Route::middleware(['auth', 'module.permission:sslcerts,edit'])->group(function () {
-    Route::get('/create',       [SslCertsController::class, 'create'])->name('create');
-    Route::post('/',            [SslCertsController::class, 'store'])->name('store');
-    Route::get('/{cert}/edit',  [SslCertsController::class, 'edit'])->name('edit');
-    Route::put('/{cert}',       [SslCertsController::class, 'update'])->name('update');
+    Route::get('/create',         [SslCertsController::class, 'create'])->name('create');
+    Route::post('/',              [SslCertsController::class, 'store'])->name('store');
+    Route::get('/{cert}/edit',    [SslCertsController::class, 'edit'])->name('edit');
+    Route::put('/{cert}',         [SslCertsController::class, 'update'])->name('update');
+    Route::post('/{cert}/renew',  [SslCertsController::class, 'renew'])->name('renew');
 });
 
 Route::middleware(['auth', 'module.permission:sslcerts,delete'])->group(function () {

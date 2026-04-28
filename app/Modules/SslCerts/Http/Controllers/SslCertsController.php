@@ -5,8 +5,10 @@ namespace App\Modules\SslCerts\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Modules\Server\Models\Server;
+use App\Modules\SslCerts\Models\SslCertHistory;
 use App\Modules\SslCerts\Models\SslCertificate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class SslCertsController extends Controller
 {
@@ -44,7 +46,10 @@ class SslCertsController extends Controller
     public function show(SslCertificate $cert)
     {
         $cert->load('responsibleUser', 'servers');
-        return view('sslcerts::show', compact('cert'));
+        $history = SslCertHistory::where('ssl_certificate_id', $cert->id)
+            ->orderByDesc('created_at')
+            ->get();
+        return view('sslcerts::show', compact('cert', 'history'));
     }
 
     public function edit(SslCertificate $cert)
@@ -79,13 +84,33 @@ class SslCertsController extends Controller
 
         $cert->servers()->sync($request->input('servers', []));
 
+        $this->logHistory($cert, 'aktualisiert');
+
         return redirect()->route('sslcerts.show', $cert)
             ->with('success', 'Zertifikat „' . $cert->name . '" wurde aktualisiert.');
+    }
+
+    public function renew(Request $request, SslCertificate $cert)
+    {
+        $request->validate([
+            'upload_type' => ['required', 'in:p12,pem,url'],
+        ]);
+
+        if ($request->input('upload_type') === 'p12') {
+            return $this->renewFromP12($request, $cert);
+        }
+
+        if ($request->input('upload_type') === 'url') {
+            return $this->renewFromUrl($request, $cert);
+        }
+
+        return $this->renewFromPem($request, $cert);
     }
 
     public function destroy(SslCertificate $cert)
     {
         $name = $cert->name;
+        $this->logHistory($cert, 'gelöscht', 'Zertifikat wurde gelöscht');
         $cert->delete();
 
         return redirect()->route('sslcerts.index')
@@ -113,7 +138,160 @@ class SslCertsController extends Controller
         abort(404);
     }
 
-    // ─── Private helpers ──────────────────────────────────────────────────────
+    // ─── Renew helpers ────────────────────────────────────────────────────────
+
+    private function renewFromP12(Request $request, SslCertificate $cert)
+    {
+        $request->validate([
+            'p12_file' => ['required', 'file', 'max:4096'],
+        ]);
+
+        $p12Data = file_get_contents($request->file('p12_file')->getRealPath());
+        $pin     = $request->input('p12_pin', '');
+
+        $certs = [];
+        if (!openssl_pkcs12_read($p12Data, $certs, $pin)) {
+            return back()->withInput($request->except('p12_pin'))
+                ->withErrors(['p12_file' => 'Das P12-Zertifikat konnte nicht gelesen werden. Bitte Transport-PIN prüfen.']);
+        }
+
+        $certPem    = $certs['cert'] ?? null;
+        $privateKey = $certs['pkey'] ?? null;
+
+        if (!$certPem) {
+            return back()->withInput($request->except('p12_pin'))
+                ->withErrors(['p12_file' => 'Das P12-Zertifikat enthält kein gültiges Zertifikat.']);
+        }
+
+        return $this->applyCertRenewal($cert, $certPem, $privateKey);
+    }
+
+    private function renewFromPem(Request $request, SslCertificate $cert)
+    {
+        $request->validate([
+            'pem_cert' => ['required', 'file', 'max:4096'],
+            'pem_key'  => ['nullable', 'file', 'max:4096'],
+        ]);
+
+        $certPem = file_get_contents($request->file('pem_cert')->getRealPath());
+
+        if (!openssl_x509_parse($certPem)) {
+            return back()->withInput()
+                ->withErrors(['pem_cert' => 'Die Datei enthält kein gültiges PEM-Zertifikat.']);
+        }
+
+        $privateKey = null;
+        if ($request->hasFile('pem_key')) {
+            $privateKey = file_get_contents($request->file('pem_key')->getRealPath());
+            if (!str_contains($privateKey, '-----BEGIN')) {
+                return back()->withInput()
+                    ->withErrors(['pem_key' => 'Die Datei enthält keinen gültigen PEM-Key.']);
+            }
+        }
+
+        return $this->applyCertRenewal($cert, $certPem, $privateKey);
+    }
+
+    private function renewFromUrl(Request $request, SslCertificate $cert)
+    {
+        $request->validate([
+            'cert_url' => ['required', 'url', 'max:500'],
+        ]);
+
+        $url  = $request->input('cert_url');
+        $host = parse_url($url, PHP_URL_HOST);
+        $port = parse_url($url, PHP_URL_PORT) ?? 443;
+
+        if (!$host) {
+            return back()->withInput()
+                ->withErrors(['cert_url' => 'Ungültige URL – kein Hostname erkannt.']);
+        }
+
+        $context = stream_context_create([
+            'ssl' => [
+                'capture_peer_cert' => true,
+                'verify_peer'       => false,
+                'verify_peer_name'  => false,
+                'SNI_enabled'       => true,
+                'peer_name'         => $host,
+            ],
+        ]);
+
+        $socket = @stream_socket_client(
+            "ssl://{$host}:{$port}",
+            $errno, $errstr, 10,
+            STREAM_CLIENT_CONNECT,
+            $context
+        );
+
+        if (!$socket) {
+            return back()->withInput()
+                ->withErrors(['cert_url' => "Verbindung zu {$host}:{$port} fehlgeschlagen: {$errstr}"]);
+        }
+
+        $params = stream_context_get_params($socket);
+        fclose($socket);
+
+        $certResource = $params['options']['ssl']['peer_certificate'] ?? null;
+
+        if (!$certResource) {
+            return back()->withInput()
+                ->withErrors(['cert_url' => 'Es konnte kein Zertifikat von der URL abgerufen werden.']);
+        }
+
+        openssl_x509_export($certResource, $certPem);
+
+        if (!$certPem) {
+            return back()->withInput()
+                ->withErrors(['cert_url' => 'Das Zertifikat konnte nicht exportiert werden.']);
+        }
+
+        return $this->applyCertRenewal($cert, $certPem, null);
+    }
+
+    private function applyCertRenewal(SslCertificate $cert, string $certPem, ?string $privateKey)
+    {
+        $parsed = openssl_x509_parse($certPem);
+
+        $validFrom = isset($parsed['validFrom_time_t'])
+            ? \Carbon\Carbon::createFromTimestamp($parsed['validFrom_time_t']) : null;
+        $validTo   = isset($parsed['validTo_time_t'])
+            ? \Carbon\Carbon::createFromTimestamp($parsed['validTo_time_t']) : null;
+
+        $sanRaw = $parsed['extensions']['subjectAltName'] ?? '';
+        $sans   = [];
+        foreach (explode(',', $sanRaw) as $entry) {
+            $entry = trim($entry);
+            if ($entry) $sans[] = $entry;
+        }
+
+        $cert->update([
+            'subject_cn'         => $parsed['subject']['CN']   ?? null,
+            'subject_o'          => $parsed['subject']['O']    ?? null,
+            'subject_ou'         => $parsed['subject']['OU']   ?? null,
+            'issuer_cn'          => $parsed['issuer']['CN']    ?? null,
+            'issuer_o'           => $parsed['issuer']['O']     ?? null,
+            'serial_number'      => $parsed['serialNumberHex'] ?? ($parsed['serialNumber'] ?? null),
+            'valid_from'         => $validFrom,
+            'valid_to'           => $validTo,
+            'san'                => $sans ?: null,
+            'fingerprint_sha1'   => openssl_x509_fingerprint($certPem, 'sha1')   ?: null,
+            'fingerprint_sha256' => openssl_x509_fingerprint($certPem, 'sha256') ?: null,
+            'cert_pem'           => $certPem,
+            'private_key'        => $privateKey,
+            'notified_30_at'     => null,
+            'notified_14_at'     => null,
+            'notified_daily_at'  => null,
+        ]);
+
+        $note = $validTo ? 'Gültig bis ' . $validTo->format('d.m.Y') : null;
+        $this->logHistory($cert, 'erneuert', $note);
+
+        return redirect()->route('sslcerts.show', $cert)
+            ->with('success', 'Zertifikat „' . $cert->name . '" wurde erfolgreich erneuert.');
+    }
+
+    // ─── Store helpers ────────────────────────────────────────────────────────
 
     private function storeFromUrl(Request $request)
     {
@@ -276,8 +454,24 @@ class SslCertsController extends Controller
 
         $cert->servers()->sync($request->input('servers', []));
 
+        $this->logHistory($cert, 'erstellt');
+
         return redirect()->route('sslcerts.index')
             ->with('success', 'Zertifikat „' . $cert->name . '" wurde erfolgreich importiert.');
+    }
+
+    // ─── History & helpers ────────────────────────────────────────────────────
+
+    private function logHistory(SslCertificate $cert, string $action, ?string $note = null): void
+    {
+        $user = Auth::user();
+        SslCertHistory::create([
+            'ssl_certificate_id' => $cert->id,
+            'user_id'            => $user?->id,
+            'user_name'          => $user?->name,
+            'action'             => $action,
+            'note'               => $note,
+        ]);
     }
 
     private function safeFilename(string $name): string

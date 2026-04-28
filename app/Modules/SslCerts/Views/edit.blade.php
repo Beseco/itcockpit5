@@ -254,5 +254,120 @@
             </form>
         </div>
 
+        {{-- Zertifikat erneuern --}}
+        @can('sslcerts.edit')
+        <div class="bg-white shadow rounded-lg overflow-hidden" x-data="{ tab: 'pem' }">
+            <div class="px-6 py-4 border-b border-gray-100 bg-amber-50 flex items-center gap-2">
+                <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+                <h3 class="text-sm font-semibold text-amber-800">Zertifikat erneuern</h3>
+            </div>
+            <div class="p-6">
+                <p class="text-xs text-gray-500 mb-4">
+                    Neues Zertifikat hochladen – alle technischen Felder (Laufzeit, CN, SANs, Fingerprints) werden automatisch aktualisiert.
+                    Bezeichnung, Beschreibung und Server-Zuordnungen bleiben unverändert.
+                </p>
+
+                {{-- Tabs --}}
+                <div class="flex border-b border-gray-200 mb-5 gap-1">
+                    <button type="button" @click="tab = 'pem'"
+                            :class="tab === 'pem' ? 'border-b-2 border-indigo-500 text-indigo-600' : 'text-gray-500 hover:text-gray-700'"
+                            class="px-4 py-2 text-sm font-medium -mb-px">
+                        PEM / Key
+                    </button>
+                    <button type="button" @click="tab = 'p12'"
+                            :class="tab === 'p12' ? 'border-b-2 border-indigo-500 text-indigo-600' : 'text-gray-500 hover:text-gray-700'"
+                            class="px-4 py-2 text-sm font-medium -mb-px">
+                        P12 / PFX
+                    </button>
+                    <button type="button" @click="tab = 'url'"
+                            :class="tab === 'url' ? 'border-b-2 border-indigo-500 text-indigo-600' : 'text-gray-500 hover:text-gray-700'"
+                            class="px-4 py-2 text-sm font-medium -mb-px">
+                        Von URL
+                    </button>
+                </div>
+
+                {{-- PEM Tab --}}
+                <div x-show="tab === 'pem'" x-cloak>
+                    <form action="{{ route('sslcerts.renew', $cert) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                        @csrf
+                        <input type="hidden" name="upload_type" value="pem">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                PEM-Zertifikat <span class="text-red-500">*</span>
+                            </label>
+                            <input type="file" name="pem_cert" accept=".pem,.crt,.cer"
+                                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                            @error('pem_cert')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Private Key <span class="text-xs text-gray-400 font-normal">(optional)</span>
+                            </label>
+                            <input type="file" name="pem_key" accept=".pem,.key"
+                                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100">
+                            @error('pem_key')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
+                        </div>
+                        <button type="submit"
+                                class="inline-flex items-center px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-md hover:bg-amber-700">
+                            Zertifikat erneuern
+                        </button>
+                    </form>
+                </div>
+
+                {{-- P12 Tab --}}
+                <div x-show="tab === 'p12'" x-cloak>
+                    <form action="{{ route('sslcerts.renew', $cert) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
+                        @csrf
+                        <input type="hidden" name="upload_type" value="p12">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                P12/PFX-Datei <span class="text-red-500">*</span>
+                            </label>
+                            <input type="file" name="p12_file" accept=".p12,.pfx"
+                                   class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-3 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                            @error('p12_file')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Transport-PIN <span class="text-xs text-gray-400 font-normal">(falls vorhanden)</span>
+                            </label>
+                            <input type="password" name="p12_pin"
+                                   class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                            @error('p12_pin')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
+                        </div>
+                        <button type="submit"
+                                class="inline-flex items-center px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-md hover:bg-amber-700">
+                            Zertifikat erneuern
+                        </button>
+                    </form>
+                </div>
+
+                {{-- URL Tab --}}
+                <div x-show="tab === 'url'" x-cloak>
+                    <form action="{{ route('sslcerts.renew', $cert) }}" method="POST" class="space-y-4">
+                        @csrf
+                        <input type="hidden" name="upload_type" value="url">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                HTTPS-URL <span class="text-red-500">*</span>
+                            </label>
+                            <input type="url" name="cert_url"
+                                   placeholder="https://example.com"
+                                   class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                            @error('cert_url')<p class="text-xs text-red-500 mt-1">{{ $message }}</p>@enderror
+                        </div>
+                        <button type="submit"
+                                class="inline-flex items-center px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-md hover:bg-amber-700">
+                            Zertifikat erneuern
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+        @endcan
+
     </div>
 </x-app-layout>

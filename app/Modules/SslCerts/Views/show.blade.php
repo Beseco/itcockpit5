@@ -243,6 +243,40 @@
             </div>
         </div>
 
+        {{-- Änderungshistorie --}}
+        @if($history->isNotEmpty())
+        <div class="bg-white shadow rounded-lg overflow-hidden">
+            <div class="px-5 py-3 bg-gray-50 border-b border-gray-100">
+                <h3 class="text-xs font-semibold text-gray-700 uppercase tracking-wide">Änderungshistorie</h3>
+            </div>
+            <div class="divide-y divide-gray-100">
+                @foreach($history as $entry)
+                    @php
+                        $actionMap = [
+                            'erstellt'      => ['label' => 'Importiert',   'color' => 'bg-green-100 text-green-700'],
+                            'aktualisiert'  => ['label' => 'Aktualisiert', 'color' => 'bg-blue-100 text-blue-700'],
+                            'erneuert'      => ['label' => 'Erneuert',     'color' => 'bg-amber-100 text-amber-700'],
+                            'gelöscht'      => ['label' => 'Gelöscht',     'color' => 'bg-red-100 text-red-700'],
+                        ];
+                        $a = $actionMap[$entry->action] ?? ['label' => $entry->action, 'color' => 'bg-gray-100 text-gray-600'];
+                    @endphp
+                    <div class="px-5 py-3 flex items-center justify-between gap-4 text-sm">
+                        <div class="flex items-center gap-3">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $a['color'] }}">
+                                {{ $a['label'] }}
+                            </span>
+                            <span class="text-gray-700">{{ $entry->user_name ?? '—' }}</span>
+                            @if($entry->note)
+                                <span class="text-gray-400 text-xs">{{ $entry->note }}</span>
+                            @endif
+                        </div>
+                        <span class="text-xs text-gray-400 shrink-0">{{ $entry->created_at->format('d.m.Y H:i') }}</span>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
         {{-- Downloads & Löschen --}}
         <div class="bg-white shadow rounded-lg p-5 flex items-center justify-between flex-wrap gap-3">
             <div class="flex items-center gap-3">
