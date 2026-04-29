@@ -35,7 +35,6 @@ class OrgChartController extends Controller
 
     public function create()
     {
-        $this->authorize('orgchart.edit');
         return view('orgchart::create', [
             'statusOptions'      => OrgVersion::STATUS_LABELS,
             'colorSchemeOptions' => OrgVersion::COLOR_SCHEMES,
@@ -44,8 +43,6 @@ class OrgChartController extends Controller
 
     public function store(Request $request)
     {
-        $this->authorize('orgchart.edit');
-
         $validated = $request->validate([
             'name'         => ['required', 'string', 'max:255'],
             'description'  => ['nullable', 'string'],
@@ -92,8 +89,6 @@ class OrgChartController extends Controller
 
     public function edit(OrgVersion $version)
     {
-        $this->authorize('orgchart.edit');
-
         $version->load([
             'nodes' => fn($q) => $q->orderBy('sort_order'),
         ]);
@@ -113,8 +108,6 @@ class OrgChartController extends Controller
 
     public function update(Request $request, OrgVersion $version)
     {
-        $this->authorize('orgchart.edit');
-
         $validated = $request->validate([
             'name'         => ['required', 'string', 'max:255'],
             'description'  => ['nullable', 'string'],
@@ -140,8 +133,6 @@ class OrgChartController extends Controller
 
     public function destroy(OrgVersion $version)
     {
-        $this->authorize('orgchart.edit');
-
         if (!in_array($version->status, ['entwurf', 'archiviert'])) {
             return redirect()->route('orgchart.index')
                 ->with('error', 'Nur Entwürfe und archivierte Versionen können gelöscht werden.');
@@ -158,8 +149,6 @@ class OrgChartController extends Controller
 
     public function duplicate(OrgVersion $version)
     {
-        $this->authorize('orgchart.edit');
-
         DB::transaction(function () use ($version) {
             $newVersion = $version->replicate();
             $newVersion->name       = $version->name . ' (Kopie)';
@@ -215,10 +204,10 @@ class OrgChartController extends Controller
     public function exportPdf(OrgVersion $version)
     {
         $version->load(['nodes' => fn($q) => $q->orderBy('sort_order')]);
-        $rootNodes       = $version->nodes->whereNull('parent_id')->sortBy('sort_order');
-        $interfaces      = OrgInterface::with(['fromNode', 'toNode'])->where('version_id', $version->id)->get();
+        $rootNodes        = $version->nodes->whereNull('parent_id')->sortBy('sort_order');
+        $interfaces       = OrgInterface::with(['fromNode', 'toNode'])->where('version_id', $version->id)->get();
         $interfacesByNode = $interfaces->groupBy('from_node_id');
-        $allNodes        = $version->nodes;
+        $allNodes         = $version->nodes;
 
         $pdf = Pdf::loadView('orgchart::pdf', compact(
             'version', 'rootNodes', 'interfaces', 'interfacesByNode', 'allNodes'
