@@ -1,68 +1,67 @@
 {{--
-    Node-Karte für die grafische Ansicht.
-    Variablen: $node (OrgNode), $allNodes (Collection), $interfacesByNode (Collection), $scheme (array)
+    Themenblock-Karte (type=group) für die grafische Ansicht.
+    Variablen: $node, $allNodes, $interfacesByNode, $scheme
 --}}
 @php
-    $children  = $allNodes->where('parent_id', $node->id)->where('type', 'group')->sortBy('sort_order');
-    $tasks     = $allNodes->where('parent_id', $node->id)->where('type', 'task')->sortBy('sort_order');
+    $tasks      = $allNodes->where('parent_id', $node->id)->where('type', 'task')->sortBy('sort_order');
+    $subGroups  = $allNodes->where('parent_id', $node->id)->where('type', 'group')->sortBy('sort_order');
     $nodeIfaces = $interfacesByNode->get($node->id, collect());
-    $barColor  = $node->color ?? $scheme['group_bar'];
-    $isEmpty   = ($node->headcount === null || $node->headcount == 0) && $node->type !== 'task';
+    $barColor   = $node->color ?? $scheme['group_bar'];
 @endphp
 
-<div class="rounded-lg border {{ $scheme['card_border'] }} overflow-hidden shadow-sm min-w-[160px] flex-shrink-0"
-     style="{{ $node->color ? 'border-left: 3px solid ' . $node->color . ';' : '' }}">
+<div class="flex flex-col rounded-lg border {{ $scheme['card_border'] }} overflow-hidden min-w-[160px] flex-1">
 
-    {{-- Header --}}
-    <div class="px-3 py-2 flex items-center justify-between gap-2"
-         style="background-color: {{ $barColor }}20; border-bottom: 2px solid {{ $barColor }};">
-        <span class="text-xs font-semibold text-gray-800 leading-tight">{{ $node->name }}</span>
-        <div class="flex items-center gap-1 shrink-0">
-            @if($isEmpty)
-                <span class="inline-flex items-center px-1 py-0.5 rounded text-xs bg-gray-100 text-gray-400 border border-gray-200"
-                      title="Keine Kapazität hinterlegt">—</span>
-            @elseif($node->headcount !== null)
-                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-white border"
-                      style="color: {{ $barColor }}; border-color: {{ $barColor }}40;"
-                      title="Personalkapazität">
-                    {{ number_format($node->headcount, 1, ',', '') }}
-                </span>
-            @endif
-        </div>
+    {{-- Themenblock-Header --}}
+    <div class="px-3 py-1.5 flex items-center justify-between gap-2"
+         style="background-color: {{ $barColor }}; border-bottom: 1px solid {{ $barColor }}dd;">
+        <span class="text-xs font-bold text-white leading-tight drop-shadow-sm">{{ $node->name }}</span>
+        @if($node->headcount !== null && $node->headcount > 0)
+            <span class="shrink-0 text-[10px] font-semibold bg-white/25 text-white px-1.5 py-0.5 rounded"
+                  title="Personalkapazität">
+                {{ number_format($node->headcount, 1, ',', '') }}
+            </span>
+        @endif
     </div>
 
-    {{-- Aufgaben --}}
-    @if($tasks->isNotEmpty())
-    <div class="{{ $scheme['task_bg'] }} px-3 py-2 space-y-0.5">
-        @foreach($tasks as $task)
-        <div class="flex items-start gap-1.5 text-xs text-gray-700">
-            <span class="mt-0.5 w-1.5 h-1.5 rounded-full flex-shrink-0"
-                  style="background-color: {{ $task->color ?? $barColor }};"></span>
-            <span class="leading-tight">{{ $task->name }}</span>
-            @if($task->headcount)
-                <span class="ml-auto text-gray-400 font-mono text-[10px]">{{ number_format($task->headcount, 1, ',', '') }}</span>
+    {{-- Aufgaben-Liste --}}
+    <div class="{{ $scheme['task_bg'] }} flex-1 divide-y divide-gray-100">
+        @forelse($tasks as $task)
+        @php $taskColor = $task->color ?? null; @endphp
+        <div class="px-2.5 py-1.5 flex items-start gap-2 {{ $taskColor ? '' : 'hover:bg-gray-50' }}"
+             @if($taskColor) style="background-color: {{ $taskColor }}18;" @endif>
+            <span class="mt-1 w-1.5 h-1.5 rounded-full flex-shrink-0"
+                  style="background-color: {{ $taskColor ?? $barColor }};"></span>
+            <div class="flex-1 min-w-0">
+                <span class="text-xs text-gray-800 leading-tight block">{{ $task->name }}</span>
+                @if($task->description)
+                    <span class="text-[10px] text-gray-400 leading-tight block mt-0.5">{{ $task->description }}</span>
+                @endif
+            </div>
+            @if($task->headcount && $task->headcount > 0)
+                <span class="text-[10px] text-gray-400 shrink-0 font-mono">{{ number_format($task->headcount, 1, ',', '') }}</span>
             @endif
         </div>
-        @endforeach
+        @empty
+        <div class="px-2.5 py-2 text-[10px] text-gray-300 italic">Keine Aufgaben</div>
+        @endforelse
     </div>
-    @endif
 
-    {{-- Untergruppen --}}
-    @if($children->isNotEmpty())
-    <div class="px-2 py-2 space-y-2 {{ $scheme['subgroup_bg'] }}">
-        @foreach($children as $child)
-            @include('orgchart::_node_card', ['node' => $child])
+    {{-- Untergruppen (rekursiv, falls vorhanden) --}}
+    @if($subGroups->isNotEmpty())
+    <div class="p-2 {{ $scheme['subgroup_bg'] }} border-t border-gray-100 flex flex-wrap gap-2">
+        @foreach($subGroups as $sub)
+            @include('orgchart::_node_card', ['node' => $sub])
         @endforeach
     </div>
     @endif
 
     {{-- Schnittstellen-Tags --}}
     @if($nodeIfaces->isNotEmpty())
-    <div class="px-3 py-2 border-t border-gray-100 flex flex-wrap gap-1">
+    <div class="px-2.5 py-1.5 border-t border-blue-100 bg-blue-50/60 flex flex-wrap gap-1">
         @foreach($nodeIfaces as $iface)
-        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-blue-50 text-blue-700 border border-blue-200"
+        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-white text-blue-700 border border-blue-200 shadow-sm"
               title="{{ $iface->description ?? '' }}">
-            <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-2.5 h-2.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
             </svg>
             {{ $iface->toNode->name }}: {{ $iface->label }}
@@ -70,4 +69,5 @@
         @endforeach
     </div>
     @endif
+
 </div>

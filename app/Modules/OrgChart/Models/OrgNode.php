@@ -18,10 +18,10 @@ class OrgNode extends Model
     ];
 
     public const TYPE_LABELS = [
-        'top'   => 'Leitung (Top)',
+        'top'   => 'Leitung (z.B. Gruppenleitung)',
         'staff' => 'Stabsstelle',
-        'frame' => 'Gruppe / Rahmen',
-        'group' => 'Untergruppe',
+        'frame' => 'Gruppe / Rahmen (oberste Ebene)',
+        'group' => 'Themenblock (z.B. Betrieb, Strategie)',
         'task'  => 'Aufgabe / Tätigkeit',
     ];
 

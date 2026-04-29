@@ -51,114 +51,123 @@
             'klassisch' => [
                 'frame_bg'    => 'bg-amber-50',
                 'frame_border'=> 'border-amber-300',
-                'frame_header'=> 'bg-amber-100 text-amber-900',
+                'frame_header'=> '#92400e',
+                'frame_hbg'   => '#fef3c7',
                 'group_bar'   => '#f59e0b',
                 'card_border' => 'border-gray-200',
                 'task_bg'     => 'bg-white',
-                'subgroup_bg' => 'bg-amber-50/50',
+                'subgroup_bg' => 'bg-amber-50',
+                'leitung_bg'  => '#f59e0b',
             ],
             'modern' => [
                 'frame_bg'    => 'bg-slate-50',
                 'frame_border'=> 'border-slate-300',
-                'frame_header'=> 'bg-slate-200 text-slate-900',
+                'frame_header'=> '#1e293b',
+                'frame_hbg'   => '#e2e8f0',
                 'group_bar'   => '#6366f1',
                 'card_border' => 'border-slate-200',
                 'task_bg'     => 'bg-white',
                 'subgroup_bg' => 'bg-slate-50',
+                'leitung_bg'  => '#6366f1',
             ],
             'behoerde' => [
                 'frame_bg'    => 'bg-green-50',
                 'frame_border'=> 'border-green-300',
-                'frame_header'=> 'bg-green-100 text-green-900',
+                'frame_header'=> '#14532d',
+                'frame_hbg'   => '#dcfce7',
                 'group_bar'   => '#2563eb',
                 'card_border' => 'border-green-200',
                 'task_bg'     => 'bg-white',
-                'subgroup_bg' => 'bg-green-50/50',
+                'subgroup_bg' => 'bg-green-50',
+                'leitung_bg'  => '#2563eb',
             ],
             'bsi' => [
                 'frame_bg'    => 'bg-white',
                 'frame_border'=> 'border-gray-400',
-                'frame_header'=> 'bg-gray-100 text-gray-900',
+                'frame_header'=> '#111827',
+                'frame_hbg'   => '#f3f4f6',
                 'group_bar'   => '#374151',
                 'card_border' => 'border-gray-300',
                 'task_bg'     => 'bg-gray-50',
                 'subgroup_bg' => 'bg-gray-50',
+                'leitung_bg'  => '#374151',
             ],
         ];
         $scheme = $schemes[$version->color_scheme] ?? $schemes['klassisch'];
 
-        // Nodes nach Typ gruppieren
+        // Top-/Stabsstellen-Knoten (oberste Ebene)
         $topNodes   = $rootNodes->whereIn('type', ['top', 'staff'])->sortBy('sort_order');
         $frameNodes = $rootNodes->where('type', 'frame')->sortBy('sort_order');
 
         // KPIs
-        $totalFte    = (float) $allNodes->sum('headcount');
-        $groupCount  = $allNodes->whereIn('type', ['frame', 'group'])->count();
-        $taskCount   = $allNodes->where('type', 'task')->count();
-        $ifaceCount  = $interfaces->count();
+        $totalFte   = (float) $allNodes->sum('headcount');
+        $groupCount = $allNodes->whereIn('type', ['frame', 'group'])->count();
+        $taskCount  = $allNodes->where('type', 'task')->count();
+        $ifaceCount = $interfaces->count();
     @endphp
 
     <style>
         @media print {
             nav, header, .print\:hidden, [class*="print:hidden"] { display: none !important; }
-            body { background: white !important; }
-            .orgchart-container { padding: 0 !important; }
+            body, html { background: white !important; }
+            .orgchart-wrap { padding: 0 !important; }
             @page { size: A3 landscape; margin: 1cm; }
+            .overflow-x-auto { overflow: visible !important; }
         }
     </style>
 
-    <div class="py-6 px-4 sm:px-6 lg:px-8 orgchart-container">
+    <div class="py-4 px-4 sm:px-6 lg:px-8 orgchart-wrap">
 
         @if($version->notes)
-        <div class="mb-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-800 print:hidden">
+        <div class="mb-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2 text-sm text-amber-800 print:hidden">
             <strong>Planungsnotizen:</strong> {{ $version->notes }}
         </div>
         @endif
 
         {{-- KPI-Leiste --}}
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5 print:gap-2">
-            <div class="bg-white rounded-lg border border-gray-200 px-4 py-3 text-center shadow-sm">
-                <div class="text-2xl font-bold text-gray-800">{{ $groupCount }}</div>
-                <div class="text-xs text-gray-500">Gruppen</div>
+        <div class="grid grid-cols-4 gap-3 mb-5 print:hidden">
+            <div class="bg-white rounded-lg border border-gray-200 px-4 py-2.5 text-center shadow-sm">
+                <div class="text-xl font-bold text-gray-800">{{ $groupCount }}</div>
+                <div class="text-xs text-gray-500">Gruppen / Themenblöcke</div>
             </div>
-            <div class="bg-white rounded-lg border border-gray-200 px-4 py-3 text-center shadow-sm">
-                <div class="text-2xl font-bold text-indigo-600">{{ number_format($totalFte, 1, ',', '') }}</div>
+            <div class="bg-white rounded-lg border border-gray-200 px-4 py-2.5 text-center shadow-sm">
+                <div class="text-xl font-bold text-indigo-600">{{ number_format($totalFte, 1, ',', '') }}</div>
                 <div class="text-xs text-gray-500">FTE gesamt</div>
             </div>
-            <div class="bg-white rounded-lg border border-gray-200 px-4 py-3 text-center shadow-sm">
-                <div class="text-2xl font-bold text-gray-600">{{ $taskCount }}</div>
+            <div class="bg-white rounded-lg border border-gray-200 px-4 py-2.5 text-center shadow-sm">
+                <div class="text-xl font-bold text-gray-600">{{ $taskCount }}</div>
                 <div class="text-xs text-gray-500">Aufgaben</div>
             </div>
-            <div class="bg-white rounded-lg border border-gray-200 px-4 py-3 text-center shadow-sm">
-                <div class="text-2xl font-bold text-blue-600">{{ $ifaceCount }}</div>
+            <div class="bg-white rounded-lg border border-gray-200 px-4 py-2.5 text-center shadow-sm">
+                <div class="text-xl font-bold text-blue-600">{{ $ifaceCount }}</div>
                 <div class="text-xs text-gray-500">Schnittstellen</div>
             </div>
         </div>
 
-        {{-- Top-Ebene (Leitung + Stabsstellen) --}}
+        {{-- ── Leitung + Stabsstellen (oberste Ebene) ─────────────────────────── --}}
         @if($topNodes->isNotEmpty())
-        <div class="mb-5 flex flex-wrap gap-3 justify-start items-start">
+        <div class="flex flex-wrap gap-4 justify-center mb-6 items-start">
             @foreach($topNodes as $topNode)
             @php
-                $topChildren = $allNodes->where('parent_id', $topNode->id)->sortBy('sort_order');
                 $topColor    = $topNode->color ?? ($topNode->type === 'top' ? '#7c3aed' : '#059669');
+                $topChildren = $allNodes->where('parent_id', $topNode->id)->sortBy('sort_order');
             @endphp
-            <div class="rounded-lg border-2 shadow-md overflow-hidden min-w-[180px] max-w-xs"
-                 style="border-color: {{ $topColor }};">
-                <div class="px-4 py-2 text-white text-sm font-bold text-center"
+            <div class="rounded-xl border-2 shadow overflow-hidden"
+                 style="border-color: {{ $topColor }}; min-width: 180px; max-width: 260px;">
+                <div class="px-4 py-2 text-white text-sm font-bold text-center leading-tight"
                      style="background-color: {{ $topColor }};">
                     {{ $topNode->name }}
                     @if($topNode->headcount)
-                        <span class="ml-2 text-xs font-normal opacity-80">{{ number_format($topNode->headcount, 1, ',', '') }} FTE</span>
+                        <div class="text-xs font-normal opacity-75 mt-0.5">{{ number_format($topNode->headcount, 1, ',', '') }} FTE</div>
                     @endif
                 </div>
                 @if($topChildren->isNotEmpty())
-                <div class="bg-white px-3 py-2 space-y-0.5">
+                <div class="bg-white divide-y divide-gray-100">
                     @foreach($topChildren as $tc)
-                    <div class="text-xs text-gray-700 flex items-center gap-1.5">
-                        <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background-color: {{ $tc->color ?? $topColor }};"></span>
-                        {{ $tc->name }}
-                        @if($tc->headcount) <span class="ml-auto text-gray-400">{{ number_format($tc->headcount, 1, ',', '') }}</span> @endif
+                    <div class="px-3 py-1.5 text-xs text-gray-700 flex items-center gap-2">
+                        <span class="w-1.5 h-1.5 rounded-full shrink-0" style="background-color: {{ $tc->color ?? $topColor }};"></span>
+                        <span>{{ $tc->name }}</span>
+                        @if($tc->headcount) <span class="ml-auto text-gray-400 font-mono">{{ number_format($tc->headcount, 1, ',', '') }}</span> @endif
                     </div>
                     @endforeach
                 </div>
@@ -168,47 +177,94 @@
         </div>
         @endif
 
-        {{-- Haupt-Gruppen (Frames) --}}
+        {{-- ── Haupt-Gruppen (Frames) ───────────────────────────────────────────── --}}
         @if($frameNodes->isNotEmpty())
-        <div class="flex gap-4 overflow-x-auto pb-4 items-start">
-            @foreach($frameNodes as $frame)
-            @php
-                $frameChildren = $allNodes->where('parent_id', $frame->id)
-                    ->whereIn('type', ['group'])
-                    ->sortBy('sort_order');
-                $frameFte = $allNodes->where('parent_id', $frame->id)->sum('headcount')
-                    + $allNodes->whereIn('parent_id', $allNodes->where('parent_id', $frame->id)->pluck('id'))->sum('headcount');
-                $frameInterfaces = $interfacesByNode->get($frame->id, collect());
-            @endphp
-            <div class="flex-shrink-0 min-w-[220px] max-w-xs rounded-xl border-2 {{ $scheme['frame_border'] }} {{ $scheme['frame_bg'] }} overflow-hidden shadow-sm">
-                {{-- Frame-Header --}}
-                <div class="px-4 py-2.5 {{ $scheme['frame_header'] }} font-bold text-sm border-b {{ $scheme['frame_border'] }} flex items-center justify-between">
-                    <span>{{ $frame->name }}</span>
-                    @if($frameFte > 0)
-                    <span class="text-xs font-normal opacity-70">{{ number_format($frameFte, 1, ',', '') }} FTE</span>
-                    @endif
-                </div>
+        <div class="overflow-x-auto pb-4">
+            <div class="flex gap-4 items-start" style="min-width: max-content;">
+                @foreach($frameNodes as $frame)
+                @php
+                    // Leitung innerhalb des Frames (type=top direkt unter frame)
+                    $frameLeitungen = $allNodes->where('parent_id', $frame->id)->where('type', 'top')->sortBy('sort_order');
+                    // Themenblöcke (type=group) direkt unter frame
+                    $frameGroups    = $allNodes->where('parent_id', $frame->id)->where('type', 'group')->sortBy('sort_order');
+                    // Aufgaben direkt unter frame (ohne Themenblock)
+                    $frameTasks     = $allNodes->where('parent_id', $frame->id)->where('type', 'task')->sortBy('sort_order');
+                    // Schnittstellen des Frames
+                    $frameIfaces    = $interfacesByNode->get($frame->id, collect());
+                    // FTE-Summe des Frames
+                    $frameFte = 0;
+                    foreach ($allNodes->where('version_id', $frame->version_id) as $fn) {
+                        // nur direkte Nachkommen zählen
+                    }
+                    $frameFte = $allNodes->whereIn('parent_id', array_merge(
+                        [$frame->id],
+                        $allNodes->where('parent_id', $frame->id)->pluck('id')->toArray()
+                    ))->sum('headcount');
+                @endphp
 
-                {{-- Gruppen innerhalb des Frames --}}
-                <div class="p-3 space-y-2">
-                    @if($frameChildren->isNotEmpty())
-                        @foreach($frameChildren as $group)
+                <div class="rounded-xl border-2 {{ $scheme['frame_border'] }} {{ $scheme['frame_bg'] }} overflow-hidden shadow-sm flex-shrink-0"
+                     style="min-width: 220px;">
+
+                    {{-- Frame-Header --}}
+                    <div class="px-4 py-2 font-bold text-sm border-b {{ $scheme['frame_border'] }} flex items-center justify-between"
+                         style="background-color: {{ $scheme['frame_hbg'] }}; color: {{ $scheme['frame_header'] }};">
+                        <span>{{ $frame->name }}</span>
+                        @if($frameFte > 0)
+                        <span class="text-xs font-normal opacity-60 ml-2">{{ number_format($frameFte, 1, ',', '') }} FTE</span>
+                        @endif
+                    </div>
+
+                    {{-- Leitung innerhalb der Gruppe --}}
+                    @if($frameLeitungen->isNotEmpty())
+                    <div class="flex justify-center gap-3 px-3 pt-3 pb-1">
+                        @foreach($frameLeitungen as $fl)
+                        @php $lColor = $fl->color ?? $scheme['leitung_bg']; @endphp
+                        <div class="rounded-lg px-3 py-1.5 text-center shadow-sm text-xs font-semibold text-white"
+                             style="background-color: {{ $lColor }}; min-width: 120px;">
+                            {{ $fl->name }}
+                            @if($fl->headcount) <div class="text-[10px] font-normal opacity-75">{{ number_format($fl->headcount, 1, ',', '') }} FTE</div> @endif
+                        </div>
+                        @endforeach
+                    </div>
+                    @endif
+
+                    {{-- Themenblöcke nebeneinander --}}
+                    @if($frameGroups->isNotEmpty())
+                    <div class="flex gap-2 p-3 items-start">
+                        @foreach($frameGroups as $group)
                             @include('orgchart::_node_card', [
-                                'node'            => $group,
-                                'allNodes'        => $allNodes,
+                                'node'             => $group,
+                                'allNodes'         => $allNodes,
                                 'interfacesByNode' => $interfacesByNode,
-                                'scheme'          => $scheme,
+                                'scheme'           => $scheme,
                             ])
                         @endforeach
-                    @else
-                        <p class="text-xs text-gray-400 text-center py-2">Keine Untergruppen</p>
+                    </div>
+                    @endif
+
+                    {{-- Aufgaben direkt unter Frame (ohne Themenblock) --}}
+                    @if($frameTasks->isNotEmpty())
+                    <div class="px-3 pb-3 {{ $frameGroups->isNotEmpty() ? 'border-t border-dashed ' . $scheme['frame_border'] . ' pt-3' : '' }}">
+                        <div class="text-[10px] text-gray-400 uppercase tracking-wider mb-1.5 font-medium">Aufgaben</div>
+                        <div class="space-y-1">
+                            @foreach($frameTasks as $task)
+                            @php $taskColor = $task->color ?? null; @endphp
+                            <div class="flex items-start gap-1.5 text-xs {{ $taskColor ? 'rounded px-1.5 py-0.5' : '' }}"
+                                 @if($taskColor) style="background-color: {{ $taskColor }}18;" @endif>
+                                <span class="mt-1 w-1.5 h-1.5 rounded-full shrink-0"
+                                      style="background-color: {{ $taskColor ?? $scheme['group_bar'] }};"></span>
+                                <span class="text-gray-800">{{ $task->name }}</span>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
                     @endif
 
                     {{-- Frame-eigene Schnittstellen --}}
-                    @if($frameInterfaces->isNotEmpty())
-                    <div class="pt-2 border-t border-dashed {{ $scheme['frame_border'] }} flex flex-wrap gap-1">
-                        @foreach($frameInterfaces as $iface)
-                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-blue-50 text-blue-700 border border-blue-200">
+                    @if($frameIfaces->isNotEmpty())
+                    <div class="px-3 pb-2 border-t border-blue-100 bg-blue-50/40 flex flex-wrap gap-1 pt-2">
+                        @foreach($frameIfaces as $iface)
+                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-white text-blue-700 border border-blue-200 shadow-sm">
                             <svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
                             </svg>
@@ -217,9 +273,10 @@
                         @endforeach
                     </div>
                     @endif
+
                 </div>
+                @endforeach
             </div>
-            @endforeach
         </div>
         @else
             <div class="text-center py-12 text-gray-400">
@@ -230,7 +287,7 @@
             </div>
         @endif
 
-        {{-- Schnittstellen-Matrix --}}
+        {{-- ── Schnittstellen-Matrix ────────────────────────────────────────────── --}}
         @if($interfaces->isNotEmpty())
         <div class="mt-8 print:mt-6">
             <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-3">Schnittstellen-Matrix</h3>
@@ -263,11 +320,9 @@
         </div>
         @endif
 
-        {{-- Meta --}}
         <div class="mt-6 text-xs text-gray-400 flex items-center justify-between print:hidden">
             <span>Erstellt von {{ $version->created_by }}</span>
             <span>Zuletzt geändert: {{ $version->updated_at->format('d.m.Y H:i') }}</span>
         </div>
-
     </div>
 </x-app-layout>
