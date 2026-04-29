@@ -163,6 +163,10 @@ Route::middleware('auth')->group(function () {
         ->middleware('can:applikationen.edit')
         ->name('applikationen.revision-settings.update');
 
+    Route::post('/applikationen/{applikation}/revision-done', [ApplikationController::class, 'markRevisionDone'])
+        ->middleware('can:applikationen.edit')
+        ->name('applikationen.revision-done');
+
     Route::resource('applikationen', ApplikationController::class, [
         'parameters' => ['applikationen' => 'applikation'],
     ])->except(['show']);

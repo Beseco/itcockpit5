@@ -190,6 +190,23 @@ class ApplikationController extends Controller
         return redirect()->route('applikationen.index')->with('success', 'Applikation erfolgreich aktualisiert.');
     }
 
+    public function markRevisionDone(Applikation $applikation)
+    {
+        $this->authorize('applikationen.edit');
+
+        $newDate = now()->addYear()->toDateString();
+        $applikation->update(['revision_date' => $newDate]);
+
+        $this->auditLogger->log('Applikation', 'Revision durchgeführt', [
+            'id'           => $applikation->id,
+            'name'         => $applikation->name,
+            'next_revision' => $newDate,
+        ]);
+
+        return redirect()->route('applikationen.edit', $applikation)
+            ->with('success', 'Revision als durchgeführt markiert. Nächste Revision: ' . \Carbon\Carbon::parse($newDate)->format('d.m.Y'));
+    }
+
     public function destroy(Applikation $applikation)
     {
         $this->authorize('applikationen.delete');
@@ -218,7 +235,6 @@ class ApplikationController extends Controller
             'admin_user_id'            => ['nullable', 'integer', 'exists:users,id'],
             'ansprechpartner'  => ['nullable', 'string', 'max:255'],
             'hersteller'       => ['nullable', 'string', 'max:255'],
-            'revision_date'    => ['nullable', 'date'],
             'doc_url'          => ['nullable', 'string', 'max:500'],
         ]);
     }
