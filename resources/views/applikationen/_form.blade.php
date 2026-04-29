@@ -16,7 +16,7 @@
 
             <div class="sm:col-span-2">
                 <x-input-label for="einsatzzweck" value="Einsatzzweck / Beschreibung" />
-                <textarea id="einsatzzweck" name="einsatzzweck" rows="3"
+                <textarea id="einsatzzweck" name="einsatzzweck" rows="6"
                           class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">{{ old('einsatzzweck', $app->einsatzzweck ?? '') }}</textarea>
                 <x-input-error :messages="$errors->get('einsatzzweck')" class="mt-2" />
             </div>
