@@ -136,7 +136,8 @@ class ApplikationController extends Controller
 
         $validated = $this->validateApp($request);
         $serverIds = $request->input('server_ids', []);
-        $validated['updated_by'] = Auth::user()->name;
+        $validated['updated_by']   = Auth::user()->name;
+        $validated['revision_date'] = now()->addYear()->toDateString();
 
         $app = Applikation::create($validated);
         $app->servers()->sync($serverIds);

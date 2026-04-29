@@ -82,12 +82,14 @@
                 <x-input-error :messages="$errors->get('doc_url')" class="mt-2" />
             </div>
 
+            @isset($app)
             <div>
                 <x-input-label for="revision_date" value="Nächste Revision" />
                 <x-text-input id="revision_date" name="revision_date" type="date" class="mt-1 block w-full"
-                              value="{{ old('revision_date', isset($app) && $app->revision_date ? $app->revision_date->format('Y-m-d') : '') }}" />
+                              value="{{ old('revision_date', $app->revision_date ? $app->revision_date->format('Y-m-d') : '') }}" />
                 <x-input-error :messages="$errors->get('revision_date')" class="mt-2" />
             </div>
+            @endisset
 
         </div>
     </div>
