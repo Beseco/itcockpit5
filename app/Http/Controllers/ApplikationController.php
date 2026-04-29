@@ -152,6 +152,13 @@ class ApplikationController extends Controller
         return redirect()->route('applikationen.index')->with('success', 'Applikation erfolgreich gespeichert.');
     }
 
+    public function show(Applikation $applikation)
+    {
+        $this->authorize('applikationen.view');
+        $applikation->load(['adminUser', 'verantwortlichAdUser', 'abteilung', 'servers']);
+        return view('applikationen.show', ['app' => $applikation]);
+    }
+
     public function edit(Applikation $applikation)
     {
         $this->authorize('applikationen.edit');

@@ -27,7 +27,7 @@
                     @php $revisionFaellig = $app->revision_date && $app->revision_date->isPast(); @endphp
                     <tr class="hover:bg-gray-50 {{ $revisionFaellig ? 'border-l-2 border-l-red-400' : '' }}">
                         <td class="px-4 py-3">
-                            <div class="font-medium text-gray-900">{{ $app->name }}</div>
+                            <a href="{{ route('applikationen.show', $app) }}" class="font-medium text-indigo-700 hover:underline">{{ $app->name }}</a>
                             @if ($app->hersteller)
                                 <div class="text-xs text-gray-400 mt-0.5">{{ $app->hersteller }}</div>
                             @endif

@@ -169,7 +169,7 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('applikationen', ApplikationController::class, [
         'parameters' => ['applikationen' => 'applikation'],
-    ])->except(['show']);
+    ]);
 
     // Erinnerungsmails
     Route::resource('reminders', ReminderMailController::class)->except(['show']);
