@@ -50,6 +50,8 @@ class ApplikationController extends Controller
         $filterAvailability       = $request->get('filter_availability', '');
         $filterOffeneRevision     = $request->boolean('filter_offene_revision');
 
+        $perPage = in_array((int) $request->get('per_page', 25), [25, 50, 100, 250]) ? (int) $request->get('per_page', 25) : 25;
+
         // Aktive Filter in Session speichern (nur bei expliziter Filterübergabe)
         if ($request->has('filter_applied')) {
             session([$sessionKey => [
@@ -62,6 +64,7 @@ class ApplikationController extends Controller
                 'filter_integrity'          => $filterIntegrity,
                 'filter_availability'       => $filterAvailability,
                 'filter_offene_revision'    => $filterOffeneRevision ? '1' : '',
+                'per_page'                  => $perPage !== 25 ? $perPage : '',
             ]]);
         }
 
@@ -89,7 +92,6 @@ class ApplikationController extends Controller
         if ($filterAvailability !== '')    $query->where('availability', $filterAvailability);
         if ($filterOffeneRevision)         $query->whereNotNull('revision_date')->where('revision_date', '<=', now()->toDateString());
 
-        $perPage = in_array((int) $request->get('per_page', 25), [25, 50, 100, 250]) ? (int) $request->get('per_page', 25) : 25;
         $apps = $query->paginate($perPage)->withQueryString();
 
         $abteilungen         = Abteilung::orderBy('sort_order')->orderBy('name')->get();
