@@ -148,6 +148,16 @@
                 <x-input-error :messages="$errors->get('backup_level_id')" class="mt-1" />
             </div>
 
+            @if(isset($server) && $server?->vsphere_datastore)
+            <div>
+                <x-input-label value="vSphere Datastore" />
+                <div class="mt-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-sm text-gray-700 font-mono">
+                    {{ $server->vsphere_datastore }}
+                </div>
+                <p class="mt-1 text-xs text-gray-400">Wird automatisch aus vSphere ausgelesen (schreibgeschützt).</p>
+            </div>
+            @endif
+
             <div>
                 <x-input-label for="patch_ring_id" value="Patch-Ring" />
                 <select id="patch_ring_id" name="patch_ring_id"

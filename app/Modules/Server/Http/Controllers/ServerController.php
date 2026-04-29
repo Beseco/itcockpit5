@@ -175,6 +175,23 @@ class ServerController extends Controller
      */
     public function markRevisionDone(Server $server)
     {
+        $missing = [];
+        if (empty($server->description))    $missing[] = 'Beschreibung';
+        if (empty($server->doc_url))        $missing[] = 'Dokumentations-Link';
+        if (empty($server->type))           $missing[] = 'Typ (VM / Bare Metal)';
+        if (empty($server->operating_system)) $missing[] = 'Betriebssystem';
+        if (empty($server->role_id))        $missing[] = 'Rolle';
+        if (empty($server->backup_level_id)) $missing[] = 'Backup-Stufe';
+        if (empty($server->patch_ring_id))  $missing[] = 'Patch-Ring';
+        if (empty($server->admin_user_id))  $missing[] = 'Verantwortlicher';
+        if (empty($server->gruppe_id))      $missing[] = 'Gruppe';
+        if (empty($server->abteilung_id))   $missing[] = 'Abteilung';
+
+        if ($missing) {
+            return redirect()->route('server.edit', $server)
+                ->with('revision_error', 'Revision kann nicht abgeschlossen werden. Bitte zuerst folgende Felder ausfüllen: ' . implode(', ', $missing) . '.');
+        }
+
         $server->update(['revision_date' => now()->addMonths(12)]);
 
         $this->auditLogger->logModuleAction('Server', 'Revision durchgeführt', [
