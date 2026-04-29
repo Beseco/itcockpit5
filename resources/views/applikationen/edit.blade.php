@@ -12,6 +12,11 @@
                     {{ session('success') }}
                 </div>
             @endif
+            @if(session('revision_error'))
+                <div class="rounded-md bg-red-50 border border-red-300 px-4 py-3 text-sm text-red-800">
+                    {{ session('revision_error') }}
+                </div>
+            @endif
 
             {{-- Fehlende Dokumentation --}}
             @if(!$app->doc_url)
@@ -40,6 +45,16 @@
                             </div>
                         </div>
                         @can('applikationen.edit')
+                        @php
+                            $revMissing = array_filter([
+                                empty($app->einsatzzweck)                ? 'Beschreibung' : null,
+                                empty($app->hersteller)                  ? 'Hersteller' : null,
+                                empty($app->doc_url)                     ? 'Dokumentations-URL' : null,
+                                empty($app->verantwortlich_ad_user_id)   ? 'Verfahrensverantwortlicher' : null,
+                                empty($app->admin_user_id)               ? 'IT-Administrator' : null,
+                            ]);
+                            $revReady = empty($revMissing);
+                        @endphp
                         <button type="button" @click="open = true"
                                 class="shrink-0 inline-flex items-center px-3 py-1.5 bg-red-600 text-white text-xs font-semibold rounded-md hover:bg-red-700">
                             Revision durchführen
@@ -47,26 +62,43 @@
 
                         {{-- Bestätigungs-Modal --}}
                         <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/40" x-transition>
-                            <div class="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4">
-                                <h3 class="text-base font-semibold text-gray-900 mb-2">Revision bestätigen</h3>
-                                <p class="text-sm text-gray-600 mb-1">
-                                    Hiermit bestätige ich, dass die Revision der Applikation
-                                    <strong>{{ $app->name }}</strong> durchgeführt wurde.
-                                </p>
-                                <p class="text-sm text-gray-600 mb-4">
-                                    Das Revisionsdatum wird auf <strong>{{ now()->addYear()->format('d.m.Y') }}</strong> gesetzt.
-                                </p>
-                                <div class="flex justify-end gap-3">
-                                    <button @click="open = false" type="button"
-                                            class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-md">Abbrechen</button>
-                                    <form action="{{ route('applikationen.revision-done', $app) }}" method="POST">
-                                        @csrf
-                                        <button type="submit"
-                                                class="px-4 py-2 text-sm bg-red-600 text-white hover:bg-red-700 rounded-md font-semibold">
-                                            Ja, Revision durchgeführt
-                                        </button>
-                                    </form>
-                                </div>
+                            <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+                                <h3 class="text-base font-semibold text-gray-900 mb-3">Revision bestätigen</h3>
+
+                                @if(!$revReady)
+                                    <div class="rounded-md bg-red-50 border border-red-200 px-4 py-3 mb-4">
+                                        <p class="text-sm font-semibold text-red-700 mb-2">Folgende Felder müssen vor der Revision ausgefüllt sein:</p>
+                                        <ul class="list-disc list-inside space-y-1">
+                                            @foreach($revMissing as $field)
+                                                <li class="text-sm text-red-600">{{ $field }}</li>
+                                            @endforeach
+                                        </ul>
+                                        <p class="text-xs text-red-500 mt-2">Bitte das Formular unten speichern und dann erneut versuchen.</p>
+                                    </div>
+                                    <div class="flex justify-end">
+                                        <button @click="open = false" type="button"
+                                                class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-md">Schließen</button>
+                                    </div>
+                                @else
+                                    <p class="text-sm text-gray-600 mb-1">
+                                        Hiermit bestätige ich, dass die Revision der Applikation
+                                        <strong>{{ $app->name }}</strong> durchgeführt wurde.
+                                    </p>
+                                    <p class="text-sm text-gray-600 mb-4">
+                                        Das Revisionsdatum wird auf <strong>{{ now()->addYear()->format('d.m.Y') }}</strong> gesetzt.
+                                    </p>
+                                    <div class="flex justify-end gap-3">
+                                        <button @click="open = false" type="button"
+                                                class="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-md">Abbrechen</button>
+                                        <form action="{{ route('applikationen.revision-done', $app) }}" method="POST">
+                                            @csrf
+                                            <button type="submit"
+                                                    class="px-4 py-2 text-sm bg-red-600 text-white hover:bg-red-700 rounded-md font-semibold">
+                                                Ja, Revision durchgeführt
+                                            </button>
+                                        </form>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                         @endcan

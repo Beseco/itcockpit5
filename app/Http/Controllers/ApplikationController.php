@@ -194,12 +194,24 @@ class ApplikationController extends Controller
     {
         $this->authorize('applikationen.edit');
 
+        $missing = [];
+        if (empty($applikation->einsatzzweck))           $missing[] = 'Beschreibung';
+        if (empty($applikation->hersteller))             $missing[] = 'Hersteller';
+        if (empty($applikation->doc_url))                $missing[] = 'Dokumentations-URL';
+        if (empty($applikation->verantwortlich_ad_user_id)) $missing[] = 'Verfahrensverantwortlicher';
+        if (empty($applikation->admin_user_id))          $missing[] = 'IT-Administrator';
+
+        if ($missing) {
+            return redirect()->route('applikationen.edit', $applikation)
+                ->with('revision_error', 'Revision kann nicht abgeschlossen werden. Bitte zuerst folgende Felder ausfüllen: ' . implode(', ', $missing) . '.');
+        }
+
         $newDate = now()->addYear()->toDateString();
         $applikation->update(['revision_date' => $newDate]);
 
         $this->auditLogger->log('Applikation', 'Revision durchgeführt', [
-            'id'           => $applikation->id,
-            'name'         => $applikation->name,
+            'id'            => $applikation->id,
+            'name'          => $applikation->name,
             'next_revision' => $newDate,
         ]);
 
