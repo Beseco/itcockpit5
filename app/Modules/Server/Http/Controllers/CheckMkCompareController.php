@@ -15,31 +15,52 @@ class CheckMkCompareController extends Controller
         private AuditLogger $auditLogger,
     ) {}
 
-    public function index()
+    public function index(Request $request)
     {
         if (! $this->svc->isConfigured()) {
             return view('server::checkmk_compare', [
                 'error'         => 'CheckMK ist nicht konfiguriert. Bitte Zugangsdaten unter Einstellungen hinterlegen.',
+                'folders'       => [],
+                'direction'     => null,
+                'selectedFolders' => [],
                 'onlyInCheckMk' => collect(),
                 'notMonitored'  => collect(),
+                'ran'           => false,
             ]);
         }
 
-        $allHosts = collect($this->svc->getAllHosts());
+        $folders         = $this->svc->getFolders();
+        $direction       = $request->input('direction'); // 'checkmk_to_cockpit' | 'cockpit_to_checkmk'
+        $selectedFolders = $request->input('folders', []);
+
+        // No direction chosen yet → show filter form only
+        if (! in_array($direction, ['checkmk_to_cockpit', 'cockpit_to_checkmk'])) {
+            return view('server::checkmk_compare', [
+                'error'           => null,
+                'folders'         => $folders,
+                'direction'       => null,
+                'selectedFolders' => [],
+                'onlyInCheckMk'   => collect(),
+                'notMonitored'    => collect(),
+                'ran'             => false,
+            ]);
+        }
+
+        // Fetch CheckMK hosts (folder-filtered only for checkmk→cockpit direction)
+        $folderFilter = ($direction === 'checkmk_to_cockpit') ? $selectedFolders : [];
+        $allHosts     = collect($this->svc->getAllHosts($folderFilter));
 
         $servers = Server::select('id', 'name', 'dns_hostname', 'checkmk_alias', 'status', 'type')
             ->orderBy('name')
             ->get();
 
-        // Build lookup map: all known IT-Cockpit identifiers (lowercase)
-        // Also adds short hostname (before first dot) so "nextcloud-01.lra.lan" matches "nextcloud-01"
+        // Build IT-Cockpit lookup (full name + short name before first dot)
         $itCockpitMap = [];
         foreach ($servers as $s) {
             foreach ([$s->checkmk_alias, $s->dns_hostname, $s->name] as $identifier) {
                 if ($identifier !== null && $identifier !== '') {
                     $lower = strtolower(trim($identifier));
                     $itCockpitMap[$lower] = $s->id;
-                    // Add short name variant
                     $short = explode('.', $lower)[0];
                     if ($short !== $lower) {
                         $itCockpitMap[$short] = $s->id;
@@ -48,15 +69,22 @@ class CheckMkCompareController extends Controller
             }
         }
 
-        // Hosts in CheckMK but not in IT-Cockpit
-        // Match by full name AND short name (strip domain suffix)
+        // Build CheckMK lookup (full + short)
+        $checkmkNames = [];
+        foreach ($allHosts->pluck('name') as $n) {
+            $full  = strtolower(trim($n));
+            $short = explode('.', $full)[0];
+            $checkmkNames[$full]  = true;
+            $checkmkNames[$short] = true;
+        }
+
+        // CheckMK hosts not in IT-Cockpit
         $onlyInCheckMk = $allHosts->filter(function ($h) use ($itCockpitMap) {
-            $cmkFull  = strtolower(trim($h['name']));
-            $cmkShort = explode('.', $cmkFull)[0];
-            return ! isset($itCockpitMap[$cmkFull]) && ! isset($itCockpitMap[$cmkShort]);
+            $full  = strtolower(trim($h['name']));
+            $short = explode('.', $full)[0];
+            return ! isset($itCockpitMap[$full]) && ! isset($itCockpitMap[$short]);
         })->map(function ($h) {
-            $tags = $h['tags'] ?? [];
-            $tagValues = collect($tags)->values()->map(fn($v) => strtolower((string) $v));
+            $tagValues = collect($h['tags'] ?? [])->values()->map(fn($v) => strtolower((string) $v));
             $suggestedType = 'vm';
             if ($tagValues->contains(fn($v) => str_contains($v, 'firewall'))) {
                 $suggestedType = 'firewall';
@@ -67,16 +95,7 @@ class CheckMkCompareController extends Controller
             return $h;
         })->values();
 
-        // Build CheckMK name set: full names AND short names (before first dot)
-        $checkmkNames = [];
-        foreach ($allHosts->pluck('name') as $n) {
-            $full  = strtolower(trim($n));
-            $short = explode('.', $full)[0];
-            $checkmkNames[$full]  = true;
-            $checkmkNames[$short] = true;
-        }
-
-        // IT-Cockpit servers with no match in CheckMK
+        // IT-Cockpit servers not monitored in CheckMK
         $notMonitored = $servers->filter(function ($s) use ($checkmkNames) {
             foreach ([$s->checkmk_alias, $s->dns_hostname, $s->name] as $identifier) {
                 if ($identifier !== null && $identifier !== '') {
@@ -90,7 +109,15 @@ class CheckMkCompareController extends Controller
             return true;
         });
 
-        return view('server::checkmk_compare', compact('onlyInCheckMk', 'notMonitored'));
+        return view('server::checkmk_compare', [
+            'error'           => null,
+            'folders'         => $folders,
+            'direction'       => $direction,
+            'selectedFolders' => $selectedFolders,
+            'onlyInCheckMk'   => $onlyInCheckMk,
+            'notMonitored'    => $notMonitored,
+            'ran'             => true,
+        ]);
     }
 
     public function import(Request $request)
@@ -109,7 +136,6 @@ class CheckMkCompareController extends Controller
         foreach ($validated['hosts'] as $host) {
             $cmkName = trim($host['name']);
 
-            // Skip if already exists
             $exists = Server::where('checkmk_alias', $cmkName)
                 ->orWhere('dns_hostname', $cmkName)
                 ->orWhereRaw('LOWER(name) = ?', [strtolower($cmkName)])
@@ -138,6 +164,7 @@ class CheckMkCompareController extends Controller
 
         $msg = "{$imported} Gerät(e) importiert" . ($skipped > 0 ? ", {$skipped} bereits vorhanden und übersprungen" : '') . '.';
 
-        return redirect()->route('server.checkmk.compare')->with('success', $msg);
+        return redirect()->route('server.checkmk.compare', ['direction' => 'checkmk_to_cockpit'])
+            ->with('success', $msg);
     }
 }

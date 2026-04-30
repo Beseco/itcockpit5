@@ -45,20 +45,67 @@ class CheckMkService
     }
 
     /**
-     * Gibt alle Hosts aus CheckMK zurück.
-     * Rückgabe: [['name' => ..., 'alias' => ..., 'address' => ..., 'tags' => [...]], ...]
+     * Gibt alle Ordner aus CheckMK zurück.
+     * Rückgabe: [['path' => '/', 'title' => 'Main'], ...]
      */
-    public function getAllHosts(): array
+    public function getFolders(): array
     {
         try {
-            $response = $this->get('/domain-types/host/collections/all', [
-                'columns' => ['name', 'alias', 'address', 'tags'],
+            $response = $this->get('/domain-types/folder_config/collections/all', [
+                'recursive' => 'true',
+                'columns'   => ['title', 'parent'],
             ]);
+            return collect($response['value'] ?? [])
+                ->map(fn($f) => [
+                    'path'  => $f['id'] ?? '/',
+                    'title' => $f['extensions']['title'] ?? ($f['id'] ?? '/'),
+                ])
+                ->sortBy('path')
+                ->values()
+                ->toArray();
+        } catch (\Exception $e) {
+            Log::warning('CheckMK getFolders: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Gibt alle Hosts aus CheckMK zurück, optional gefiltert nach Ordner-Pfaden.
+     * Rückgabe: [['name' => ..., 'alias' => ..., 'address' => ..., 'folder' => ..., 'tags' => [...]], ...]
+     *
+     * @param string[] $folderPaths Leeres Array = alle Ordner
+     */
+    public function getAllHosts(array $folderPaths = []): array
+    {
+        try {
+            $folderPaths = array_filter(array_map('trim', $folderPaths));
+
+            if (count($folderPaths) === 1) {
+                $query = json_encode(['op' => '=', 'left' => 'folder', 'right' => reset($folderPaths)]);
+            } elseif (count($folderPaths) > 1) {
+                $query = json_encode([
+                    'op'   => 'or',
+                    'expr' => array_values(array_map(
+                        fn($p) => ['op' => '=', 'left' => 'folder', 'right' => $p],
+                        $folderPaths
+                    )),
+                ]);
+            } else {
+                $query = null;
+            }
+
+            $params = ['columns' => ['name', 'alias', 'address', 'folder', 'tags']];
+            if ($query) {
+                $params['query'] = $query;
+            }
+
+            $response = $this->get('/domain-types/host/collections/all', $params);
             return collect($response['value'] ?? [])
                 ->map(fn($h) => [
                     'name'    => $h['id'] ?? '',
                     'alias'   => $h['extensions']['alias'] ?? '',
                     'address' => $h['extensions']['address'] ?? '',
+                    'folder'  => $h['extensions']['folder'] ?? '/',
                     'tags'    => $h['extensions']['tags'] ?? [],
                 ])
                 ->filter(fn($h) => !empty($h['name']))
