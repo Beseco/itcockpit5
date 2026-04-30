@@ -46,20 +46,27 @@ class CheckMkService
 
     /**
      * Gibt alle Ordner aus CheckMK zurück.
-     * Rückgabe: [['path' => '/', 'title' => 'Main'], ...]
+     * Rückgabe: [['path' => '~', 'title' => 'Main', 'label' => 'Main (/)'], ...]
+     * CheckMK nutzt "~" als Wurzel-Prefix: "~" = root "/", "~linux" = "/linux"
      */
     public function getFolders(): array
     {
         try {
             $response = $this->get('/domain-types/folder_config/collections/all', [
                 'recursive' => 'true',
-                'columns'   => ['title', 'parent'],
             ]);
             return collect($response['value'] ?? [])
-                ->map(fn($f) => [
-                    'path'  => $f['id'] ?? '/',
-                    'title' => $f['extensions']['title'] ?? ($f['id'] ?? '/'),
-                ])
+                ->map(function ($f) {
+                    $cmkPath = $f['id'] ?? '~';
+                    $title   = $f['extensions']['title'] ?? $cmkPath;
+                    // Build a readable path: replace leading ~ with / and ~ between segments with /
+                    $display = $cmkPath === '~' ? '/' : '/' . ltrim(str_replace('~', '/', $cmkPath), '/');
+                    return [
+                        'path'  => $cmkPath,   // original CheckMK path used for API filter
+                        'title' => $title,
+                        'label' => $title . ' (' . $display . ')',
+                    ];
+                })
                 ->sortBy('path')
                 ->values()
                 ->toArray();

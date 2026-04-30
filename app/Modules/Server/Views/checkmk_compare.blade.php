@@ -76,29 +76,30 @@
                     </div>
 
                     {{-- Ordner-Filter (nur bei checkmk → cockpit) --}}
-                    @if(!empty($folders))
-                    <div x-show="showFolders" x-transition>
+                    <div x-show="showFolders" x-transition style="display:none">
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             CheckMK-Ordner filtern
-                            <span class="text-xs font-normal text-gray-400 ml-1">(leer = alle Ordner)</span>
+                            <span class="text-xs font-normal text-gray-400 ml-1">(kein Haken = alle Ordner)</span>
                         </label>
+                        @if(empty($folders))
+                            <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-400 italic">
+                                Keine Ordner aus CheckMK geladen — alle Hosts werden verglichen.
+                            </div>
+                        @else
                         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 p-4 bg-gray-50 border border-gray-200 rounded-lg max-h-56 overflow-y-auto">
                             @foreach($folders as $folder)
                             <label class="flex items-center gap-2 cursor-pointer group">
                                 <input type="checkbox" name="folders[]" value="{{ $folder['path'] }}"
                                        @if(in_array($folder['path'], $selectedFolders)) checked @endif
                                        class="rounded border-gray-300 text-purple-600 shadow-sm focus:ring-purple-500">
-                                <span class="text-xs text-gray-700 group-hover:text-gray-900 truncate" title="{{ $folder['path'] }}">
+                                <span class="text-xs text-gray-700 group-hover:text-gray-900 truncate" title="{{ $folder['label'] }}">
                                     {{ $folder['title'] }}
-                                    @if($folder['path'] !== '/')
-                                        <span class="text-gray-400 font-mono">{{ $folder['path'] }}</span>
-                                    @endif
                                 </span>
                             </label>
                             @endforeach
                         </div>
+                        @endif
                     </div>
-                    @endif
 
                     <div class="flex justify-end">
                         <button type="submit"
