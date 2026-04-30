@@ -84,7 +84,9 @@ class CheckMkCompareController extends Controller
         }
 
         $folderFilter = ($direction === 'checkmk_to_cockpit') ? $selectedFolders : [];
-        $allHosts     = collect($this->svc->getAllHosts($folderFilter));
+        $allHosts     = collect($this->svc->getAllHosts($folderFilter))
+            ->filter(fn($h) => $this->isProductiveHost($h))
+            ->values();
 
         $servers = Server::select('id', 'name', 'dns_hostname', 'checkmk_alias', 'ip_address', 'status', 'type')
             ->orderBy('name')
@@ -218,5 +220,22 @@ class CheckMkCompareController extends Controller
 
         return redirect()->route('server.checkmk.compare', ['direction' => 'checkmk_to_cockpit'])
             ->with('success', $msg);
+    }
+
+    /**
+     * Prüft ob ein CheckMK-Host die Criticality "Productive system" (Tag-ID "prod") hat.
+     * CheckMK liefert Tags als flaches Array: ['criticality' => 'prod', ...] oder
+     * mit Prefix: ['tag_criticality' => 'prod', ...].
+     */
+    private function isProductiveHost(array $host): bool
+    {
+        $tags = $host['tags'] ?? [];
+        // Criticality-Tag unter verschiedenen möglichen Schlüsseln prüfen
+        $criticality = $tags['criticality'] ?? $tags['tag_criticality'] ?? null;
+        if ($criticality !== null) {
+            return $criticality === 'prod';
+        }
+        // Falls kein Criticality-Tag gesetzt: Host einschließen (kein Ausschluss)
+        return true;
     }
 }
