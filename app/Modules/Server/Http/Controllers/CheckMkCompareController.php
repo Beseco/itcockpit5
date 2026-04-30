@@ -32,19 +32,29 @@ class CheckMkCompareController extends Controller
             ->get();
 
         // Build lookup map: all known IT-Cockpit identifiers (lowercase)
+        // Also adds short hostname (before first dot) so "nextcloud-01.lra.lan" matches "nextcloud-01"
         $itCockpitMap = [];
         foreach ($servers as $s) {
             foreach ([$s->checkmk_alias, $s->dns_hostname, $s->name] as $identifier) {
                 if ($identifier !== null && $identifier !== '') {
-                    $itCockpitMap[strtolower(trim($identifier))] = $s->id;
+                    $lower = strtolower(trim($identifier));
+                    $itCockpitMap[$lower] = $s->id;
+                    // Add short name variant
+                    $short = explode('.', $lower)[0];
+                    if ($short !== $lower) {
+                        $itCockpitMap[$short] = $s->id;
+                    }
                 }
             }
         }
 
         // Hosts in CheckMK but not in IT-Cockpit
-        $onlyInCheckMk = $allHosts->filter(
-            fn($h) => ! isset($itCockpitMap[strtolower(trim($h['name']))])
-        )->map(function ($h) {
+        // Match by full name AND short name (strip domain suffix)
+        $onlyInCheckMk = $allHosts->filter(function ($h) use ($itCockpitMap) {
+            $cmkFull  = strtolower(trim($h['name']));
+            $cmkShort = explode('.', $cmkFull)[0];
+            return ! isset($itCockpitMap[$cmkFull]) && ! isset($itCockpitMap[$cmkShort]);
+        })->map(function ($h) {
             $tags = $h['tags'] ?? [];
             $tagValues = collect($tags)->values()->map(fn($v) => strtolower((string) $v));
             $suggestedType = 'vm';
@@ -57,14 +67,22 @@ class CheckMkCompareController extends Controller
             return $h;
         })->values();
 
-        // Build CheckMK name set
-        $checkmkNames = $allHosts->pluck('name')->map(fn($n) => strtolower(trim($n)))->flip();
+        // Build CheckMK name set: full names AND short names (before first dot)
+        $checkmkNames = [];
+        foreach ($allHosts->pluck('name') as $n) {
+            $full  = strtolower(trim($n));
+            $short = explode('.', $full)[0];
+            $checkmkNames[$full]  = true;
+            $checkmkNames[$short] = true;
+        }
 
         // IT-Cockpit servers with no match in CheckMK
         $notMonitored = $servers->filter(function ($s) use ($checkmkNames) {
             foreach ([$s->checkmk_alias, $s->dns_hostname, $s->name] as $identifier) {
                 if ($identifier !== null && $identifier !== '') {
-                    if (isset($checkmkNames[strtolower(trim($identifier))])) {
+                    $lower = strtolower(trim($identifier));
+                    $short = explode('.', $lower)[0];
+                    if (isset($checkmkNames[$lower]) || isset($checkmkNames[$short])) {
                         return false;
                     }
                 }
