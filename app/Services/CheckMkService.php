@@ -71,51 +71,60 @@ class CheckMkService
     }
 
     /**
-     * Gibt alle Hosts aus CheckMK zurück, optional gefiltert nach Ordner-Pfaden.
-     * Rückgabe: [['name' => ..., 'alias' => ..., 'address' => ..., 'folder' => ..., 'tags' => [...]], ...]
+     * Gibt alle Hosts aus CheckMK zurück, optional gefiltert nach Ordner-Pfaden (CheckMK ~-Notation).
+     * Wenn Ordner angegeben: je Ordner GET /objects/folder_config/{id}/collections/hosts, Ergebnisse zusammenführen.
+     * Ohne Ordner: GET /domain-types/host/collections/all.
      *
-     * @param string[] $folderPaths Leeres Array = alle Ordner
+     * @param string[] $folderPaths CheckMK-Ordner-IDs, z.B. ['~server', '~netzwerk']
      */
     public function getAllHosts(array $folderPaths = []): array
     {
         try {
-            $folderPaths = array_filter(array_map('trim', $folderPaths));
+            $folderPaths = array_values(array_filter(array_map('trim', $folderPaths)));
 
-            if (count($folderPaths) === 1) {
-                $query = json_encode(['op' => '=', 'left' => 'folder', 'right' => reset($folderPaths)]);
-            } elseif (count($folderPaths) > 1) {
-                $query = json_encode([
-                    'op'   => 'or',
-                    'expr' => array_values(array_map(
-                        fn($p) => ['op' => '=', 'left' => 'folder', 'right' => $p],
-                        $folderPaths
-                    )),
+            if (empty($folderPaths)) {
+                $response = $this->get('/domain-types/host/collections/all', [
+                    'columns' => ['name', 'alias', 'address', 'folder', 'tags'],
                 ]);
-            } else {
-                $query = null;
+                return $this->parseHosts($response['value'] ?? []);
             }
 
-            $params = ['columns' => ['name', 'alias', 'address', 'folder', 'tags']];
-            if ($query) {
-                $params['query'] = $query;
+            // Für jeden Ordner einzeln abfragen und zusammenführen
+            $all = [];
+            foreach ($folderPaths as $folder) {
+                try {
+                    $response = $this->get(
+                        '/objects/folder_config/' . rawurlencode($folder) . '/collections/hosts',
+                        ['columns' => ['name', 'alias', 'address', 'folder', 'tags']]
+                    );
+                    $all = array_merge($all, $this->parseHosts($response['value'] ?? []));
+                } catch (\Exception $e) {
+                    Log::warning("CheckMK hosts für Ordner '{$folder}': " . $e->getMessage());
+                }
             }
 
-            $response = $this->get('/domain-types/host/collections/all', $params);
-            return collect($response['value'] ?? [])
-                ->map(fn($h) => [
-                    'name'    => $h['id'] ?? '',
-                    'alias'   => $h['extensions']['alias'] ?? '',
-                    'address' => $h['extensions']['address'] ?? '',
-                    'folder'  => $h['extensions']['folder'] ?? '/',
-                    'tags'    => $h['extensions']['tags'] ?? [],
-                ])
-                ->filter(fn($h) => !empty($h['name']))
-                ->values()
-                ->toArray();
+            // Duplikate entfernen (Host kann in mehreren Ergebnissen auftauchen)
+            return collect($all)->unique('name')->values()->toArray();
+
         } catch (\Exception $e) {
             Log::warning('CheckMK getAllHosts: ' . $e->getMessage());
             return [];
         }
+    }
+
+    private function parseHosts(array $values): array
+    {
+        return collect($values)
+            ->map(fn($h) => [
+                'name'    => $h['id'] ?? '',
+                'alias'   => $h['extensions']['alias'] ?? '',
+                'address' => $h['extensions']['address'] ?? '',
+                'folder'  => $h['extensions']['folder'] ?? '~',
+                'tags'    => $h['extensions']['tags'] ?? [],
+            ])
+            ->filter(fn($h) => !empty($h['name']))
+            ->values()
+            ->toArray();
     }
 
     // ─── Private ─────────────────────────────────────────────────────────────
