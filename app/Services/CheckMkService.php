@@ -82,9 +82,11 @@ class CheckMkService
         try {
             $folderPaths = array_values(array_filter(array_map('trim', $folderPaths)));
 
+            $columns = ['name', 'alias', 'address', 'folder', 'tags', 'state'];
+
             if (empty($folderPaths)) {
                 $response = $this->get('/domain-types/host/collections/all', [
-                    'columns' => ['name', 'alias', 'address', 'folder', 'tags'],
+                    'columns' => $columns,
                 ]);
                 return $this->parseHosts($response['value'] ?? []);
             }
@@ -95,7 +97,7 @@ class CheckMkService
                 try {
                     $response = $this->get(
                         '/objects/folder_config/' . rawurlencode($folder) . '/collections/hosts',
-                        ['columns' => ['name', 'alias', 'address', 'folder', 'tags']]
+                        ['columns' => $columns]
                     );
                     $all = array_merge($all, $this->parseHosts($response['value'] ?? []));
                 } catch (\Exception $e) {
@@ -117,17 +119,20 @@ class CheckMkService
         return collect($values)
             ->map(function ($h) {
                 $ext = $h['extensions'] ?? [];
-                // IP: folder-endpoint liefert attributes.ipaddress, all-hosts-endpoint liefert address
+                // IP: folder-endpoint → attributes.ipaddress, all-hosts-endpoint → address
                 $ip = $ext['address']
                     ?? $ext['attributes']['ipaddress']
                     ?? $ext['attributes']['ip_address']
                     ?? '';
+                // State: 0=UP, 1=DOWN, 2=UNREACH, null=unbekannt
+                $state = $ext['state'] ?? null;
                 return [
                     'name'    => $h['id'] ?? '',
                     'alias'   => $ext['alias'] ?? '',
                     'address' => $ip,
                     'folder'  => $ext['folder'] ?? '~',
                     'tags'    => $ext['tags'] ?? [],
+                    'state'   => $state,
                 ];
             })
             ->filter(fn($h) => !empty($h['name']))
