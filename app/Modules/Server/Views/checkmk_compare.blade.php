@@ -81,9 +81,13 @@
                             CheckMK-Ordner filtern
                             <span class="text-xs font-normal text-gray-400 ml-1">(kein Haken = alle Ordner)</span>
                         </label>
-                        @if(empty($folders))
+                        @if(!empty($foldersError))
+                            <div class="p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+                                <strong>Fehler:</strong> {{ $foldersError }}
+                            </div>
+                        @elseif(empty($folders))
                             <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-400 italic">
-                                Keine Ordner aus CheckMK geladen — alle Hosts werden verglichen.
+                                Keine Ordner gefunden — alle Hosts werden verglichen.
                             </div>
                         @else
                         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 p-4 bg-gray-50 border border-gray-200 rounded-lg max-h-56 overflow-y-auto">

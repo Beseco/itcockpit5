@@ -47,33 +47,27 @@ class CheckMkService
     /**
      * Gibt alle Ordner aus CheckMK zurück.
      * Rückgabe: [['path' => '~', 'title' => 'Main', 'label' => 'Main (/)'], ...]
-     * CheckMK nutzt "~" als Wurzel-Prefix: "~" = root "/", "~linux" = "/linux"
+     * CheckMK nutzt "~" als Wurzel-Prefix: "~" = root "/", "~subfolder" = "/subfolder"
+     *
+     * @throws \RuntimeException wenn die API antwortet aber mit Fehler
      */
     public function getFolders(): array
     {
-        try {
-            $response = $this->get('/domain-types/folder_config/collections/all', [
-                'recursive' => 'true',
-            ]);
-            return collect($response['value'] ?? [])
-                ->map(function ($f) {
-                    $cmkPath = $f['id'] ?? '~';
-                    $title   = $f['extensions']['title'] ?? $cmkPath;
-                    // Build a readable path: replace leading ~ with / and ~ between segments with /
-                    $display = $cmkPath === '~' ? '/' : '/' . ltrim(str_replace('~', '/', $cmkPath), '/');
-                    return [
-                        'path'  => $cmkPath,   // original CheckMK path used for API filter
-                        'title' => $title,
-                        'label' => $title . ' (' . $display . ')',
-                    ];
-                })
-                ->sortBy('path')
-                ->values()
-                ->toArray();
-        } catch (\Exception $e) {
-            Log::warning('CheckMK getFolders: ' . $e->getMessage());
-            return [];
-        }
+        $response = $this->get('/domain-types/folder_config/collections/all');
+        return collect($response['value'] ?? [])
+            ->map(function ($f) {
+                $cmkPath = $f['id'] ?? '~';
+                $title   = $f['extensions']['title'] ?? $cmkPath;
+                $display = $cmkPath === '~' ? '/' : '/' . ltrim(str_replace('~', '/', $cmkPath), '/');
+                return [
+                    'path'  => $cmkPath,
+                    'title' => $title,
+                    'label' => $title . ' (' . $display . ')',
+                ];
+            })
+            ->sortBy('path')
+            ->values()
+            ->toArray();
     }
 
     /**

@@ -29,7 +29,15 @@ class CheckMkCompareController extends Controller
             ]);
         }
 
-        $folders         = $this->svc->getFolders();
+        $foldersError = null;
+        try {
+            $folders = $this->svc->getFolders();
+        } catch (\Exception $e) {
+            $folders      = [];
+            $foldersError = 'Ordner konnten nicht geladen werden: ' . $e->getMessage();
+            Log::warning('CheckMK getFolders: ' . $e->getMessage());
+        }
+
         $direction       = $request->input('direction'); // 'checkmk_to_cockpit' | 'cockpit_to_checkmk'
         $selectedFolders = $request->input('folders', []);
 
@@ -37,6 +45,7 @@ class CheckMkCompareController extends Controller
         if (! in_array($direction, ['checkmk_to_cockpit', 'cockpit_to_checkmk'])) {
             return view('server::checkmk_compare', [
                 'error'           => null,
+                'foldersError'    => $foldersError,
                 'folders'         => $folders,
                 'direction'       => null,
                 'selectedFolders' => [],
@@ -111,6 +120,7 @@ class CheckMkCompareController extends Controller
 
         return view('server::checkmk_compare', [
             'error'           => null,
+            'foldersError'    => $foldersError,
             'folders'         => $folders,
             'direction'       => $direction,
             'selectedFolders' => $selectedFolders,
