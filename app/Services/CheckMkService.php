@@ -115,13 +115,21 @@ class CheckMkService
     private function parseHosts(array $values): array
     {
         return collect($values)
-            ->map(fn($h) => [
-                'name'    => $h['id'] ?? '',
-                'alias'   => $h['extensions']['alias'] ?? '',
-                'address' => $h['extensions']['address'] ?? '',
-                'folder'  => $h['extensions']['folder'] ?? '~',
-                'tags'    => $h['extensions']['tags'] ?? [],
-            ])
+            ->map(function ($h) {
+                $ext = $h['extensions'] ?? [];
+                // IP: folder-endpoint liefert attributes.ipaddress, all-hosts-endpoint liefert address
+                $ip = $ext['address']
+                    ?? $ext['attributes']['ipaddress']
+                    ?? $ext['attributes']['ip_address']
+                    ?? '';
+                return [
+                    'name'    => $h['id'] ?? '',
+                    'alias'   => $ext['alias'] ?? '',
+                    'address' => $ip,
+                    'folder'  => $ext['folder'] ?? '~',
+                    'tags'    => $ext['tags'] ?? [],
+                ];
+            })
             ->filter(fn($h) => !empty($h['name']))
             ->values()
             ->toArray();
