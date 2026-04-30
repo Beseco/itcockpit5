@@ -83,11 +83,6 @@ class CheckMkCompareController extends Controller
             ]));
         }
 
-        $folderFilter = ($direction === 'checkmk_to_cockpit') ? $selectedFolders : [];
-        $allHosts     = collect($this->svc->getAllHosts($folderFilter))
-            ->filter(fn($h) => $this->isProductiveHost($h) && $this->isHostUp($h))
-            ->values();
-
         $servers = Server::select('id', 'name', 'dns_hostname', 'checkmk_alias', 'ip_address', 'status', 'type')
             ->orderBy('name')
             ->get();
@@ -105,15 +100,26 @@ class CheckMkCompareController extends Controller
                     }
                 }
             }
-            // IP address match
             if (!empty($s->ip_address)) {
                 $itCockpitMap[trim($s->ip_address)] = $s->id;
             }
         }
 
-        // CheckMK lookup: hostname variants + IP address
+        // Für Import-Vorschläge (checkmk→cockpit): nur UP + productive Hosts aus gewählten Ordnern
+        $hostsForImport = collect($this->svc->getAllHosts(
+                $direction === 'checkmk_to_cockpit' ? $selectedFolders : []
+            ))
+            ->filter(fn($h) => $this->isProductiveHost($h) && $this->isHostUp($h))
+            ->values();
+
+        // Für Monitoring-Lookup (cockpit→checkmk): ALLE CheckMK-Hosts (auch DOWN),
+        // damit Server die in CheckMK existieren aber gerade DOWN sind nicht fälschlich als
+        // "nicht überwacht" erscheinen. Keine Ordner-Einschränkung.
+        $allHostsForLookup = collect($this->svc->getAllHosts([]));
+
+        // CheckMK lookup: hostname variants + IP
         $checkmkLookup = [];
-        foreach ($allHosts as $h) {
+        foreach ($allHostsForLookup as $h) {
             $full  = strtolower(trim($h['name']));
             $short = explode('.', $full)[0];
             $checkmkLookup[$full]  = true;
@@ -124,7 +130,7 @@ class CheckMkCompareController extends Controller
         }
 
         // CheckMK hosts not in IT-Cockpit
-        $onlyInCheckMk = $allHosts->filter(function ($h) use ($itCockpitMap) {
+        $onlyInCheckMk = $hostsForImport->filter(function ($h) use ($itCockpitMap) {
             $full  = strtolower(trim($h['name']));
             $short = explode('.', $full)[0];
             $ip    = trim($h['address'] ?? '');
