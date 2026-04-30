@@ -51,13 +51,20 @@ class Server extends Model
         'ausgemustert'  => 'bg-red-100 text-red-700',
     ];
 
+    // Typ wird jetzt als freier String gespeichert und über ServerOption::category('geraet_typ') verwaltet.
+    // TYPE_LABELS bleibt für bestehende Anzeigen als Fallback erhalten.
     const TYPE_LABELS = [
-        'vm'         => 'VM',
-        'bare_metal' => 'Bare Metal',
-        'firewall'   => 'Firewall',
-        'usv'        => 'USV',
-        'sonstiges'  => 'Sonstiges Gerät',
+        'VM'             => 'VM',
+        'Bare Metal'     => 'Bare Metal',
+        'Firewall'       => 'Firewall',
+        'USV'            => 'USV',
+        'Sonstiges Gerät'=> 'Sonstiges Gerät',
     ];
+
+    public static function getTypeOptions(): \Illuminate\Support\Collection
+    {
+        return \App\Modules\Server\Models\ServerOption::category('geraet_typ')->pluck('label');
+    }
 
     // ─── Relationships ────────────────────────────────────────────────────────
 

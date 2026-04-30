@@ -156,40 +156,68 @@
                     <form action="{{ route('server.checkmk.compare.import') }}" method="POST">
                         @csrf
                         <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
+                            <table class="min-w-full divide-y divide-gray-200 text-sm">
                                 <thead class="bg-gray-50">
                                     <tr>
-                                        <th class="px-4 py-3 text-left w-10">
+                                        <th class="px-3 py-3 text-left w-10">
                                             <input type="checkbox" id="select-all"
                                                    class="rounded border-gray-300 text-purple-600 shadow-sm focus:ring-purple-500"
                                                    onclick="document.querySelectorAll('.row-check').forEach(cb => cb.checked = this.checked)">
                                         </th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name (CheckMK)</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Alias</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP-Adresse</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ordner</th>
-                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Typ (für Import)</th>
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name (CheckMK)</th>
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ordner</th>
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Typ</th>
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Abteilung</th>
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Admin</th>
+                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Gruppe</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-100">
                                     @foreach($onlyInCheckMk as $i => $host)
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="px-4 py-2.5">
+                                    <tr class="hover:bg-gray-50 align-top">
+                                        <td class="px-3 py-2.5">
                                             <input type="checkbox" name="hosts[{{ $i }}][_selected]" value="1"
-                                                   class="row-check rounded border-gray-300 text-purple-600 shadow-sm focus:ring-purple-500">
+                                                   class="row-check mt-1 rounded border-gray-300 text-purple-600 shadow-sm focus:ring-purple-500">
                                             <input type="hidden" name="hosts[{{ $i }}][name]"    value="{{ $host['name'] }}">
                                             <input type="hidden" name="hosts[{{ $i }}][alias]"   value="{{ $host['alias'] }}">
                                             <input type="hidden" name="hosts[{{ $i }}][address]" value="{{ $host['address'] }}">
                                         </td>
-                                        <td class="px-4 py-2.5 text-sm font-mono text-gray-900">{{ $host['name'] }}</td>
-                                        <td class="px-4 py-2.5 text-sm text-gray-500">{{ $host['alias'] ?: '—' }}</td>
-                                        <td class="px-4 py-2.5 text-sm text-gray-500 font-mono">{{ $host['address'] ?: '—' }}</td>
-                                        <td class="px-4 py-2.5 text-xs text-gray-400 font-mono">{{ $host['folder'] ?? '/' }}</td>
-                                        <td class="px-4 py-2.5">
+                                        <td class="px-3 py-2.5 font-mono text-gray-900 whitespace-nowrap">{{ $host['name'] }}</td>
+                                        <td class="px-3 py-2.5 text-gray-500 font-mono whitespace-nowrap">{{ $host['address'] ?: '—' }}</td>
+                                        <td class="px-3 py-2.5 text-xs text-gray-400 font-mono whitespace-nowrap">{{ $host['folder'] ?? '~' }}</td>
+                                        <td class="px-3 py-2.5">
                                             <select name="hosts[{{ $i }}][type]"
-                                                    class="border-gray-300 focus:border-purple-500 focus:ring-purple-500 rounded-md shadow-sm text-sm py-1">
-                                                @foreach(\App\Modules\Server\Models\Server::TYPE_LABELS as $val => $label)
-                                                    <option value="{{ $val }}" @selected($val === $host['suggested_type'])>{{ $label }}</option>
+                                                    class="border-gray-300 focus:border-purple-500 focus:ring-purple-500 rounded-md shadow-sm text-xs py-1 w-32">
+                                                @foreach($deviceTypes as $t)
+                                                    <option value="{{ $t }}" @selected($t === $host['suggested_type'])>{{ $t }}</option>
+                                                @endforeach
+                                            </select>
+                                        </td>
+                                        <td class="px-3 py-2.5">
+                                            <select name="hosts[{{ $i }}][abteilung_id]"
+                                                    class="border-gray-300 focus:border-purple-500 focus:ring-purple-500 rounded-md shadow-sm text-xs py-1 w-36">
+                                                <option value="">— keine —</option>
+                                                @foreach($abteilungen as $abt)
+                                                    <option value="{{ $abt->id }}">{{ $abt->anzeigename }}</option>
+                                                @endforeach
+                                            </select>
+                                        </td>
+                                        <td class="px-3 py-2.5">
+                                            <select name="hosts[{{ $i }}][admin_user_id]"
+                                                    class="border-gray-300 focus:border-purple-500 focus:ring-purple-500 rounded-md shadow-sm text-xs py-1 w-36">
+                                                <option value="">— keiner —</option>
+                                                @foreach($adminUsers as $u)
+                                                    <option value="{{ $u->id }}">{{ $u->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </td>
+                                        <td class="px-3 py-2.5">
+                                            <select name="hosts[{{ $i }}][gruppe_id]"
+                                                    class="border-gray-300 focus:border-purple-500 focus:ring-purple-500 rounded-md shadow-sm text-xs py-1 w-32">
+                                                <option value="">— keine —</option>
+                                                @foreach($gruppen as $g)
+                                                    <option value="{{ $g->id }}">{{ $g->name }}</option>
                                                 @endforeach
                                             </select>
                                         </td>
@@ -199,7 +227,7 @@
                             </table>
                         </div>
                         <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between gap-3 flex-wrap">
-                            <p class="text-xs text-gray-500">Nur markierte Geräte werden importiert. Typ kann pro Gerät angepasst werden.</p>
+                            <p class="text-xs text-gray-500">Nur markierte Geräte werden importiert. Alle Felder können pro Gerät angepasst werden.</p>
                             <button type="submit"
                                     onclick="
                                         const checked = document.querySelectorAll('.row-check:checked');

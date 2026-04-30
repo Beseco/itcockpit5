@@ -29,10 +29,13 @@ Route::middleware(['auth', 'module.permission:server,view'])->group(function () 
 });
 
 Route::middleware(['auth', 'module.permission:server,sync'])->group(function () {
-    Route::post('/sync',                      [ServerSettingsController::class, 'runSync'])->name('sync');
-    Route::post('/vsphere-sync',              [ServerSettingsController::class, 'runVsphereSync'])->name('vsphere-sync');
-    Route::get('/checkmk-compare',            [CheckMkCompareController::class, 'index'])->name('checkmk.compare');
-    Route::post('/checkmk-compare/import',    [CheckMkCompareController::class, 'import'])->name('checkmk.compare.import');
+    Route::post('/sync',         [ServerSettingsController::class, 'runSync'])->name('sync');
+    Route::post('/vsphere-sync', [ServerSettingsController::class, 'runVsphereSync'])->name('vsphere-sync');
+});
+
+Route::middleware(['auth', 'module.permission:server,create'])->group(function () {
+    Route::get('/checkmk-compare',         [CheckMkCompareController::class, 'index'])->name('checkmk.compare');
+    Route::post('/checkmk-compare/import', [CheckMkCompareController::class, 'import'])->name('checkmk.compare.import');
 });
 
 Route::middleware(['auth', 'module.permission:server,edit'])->group(function () {

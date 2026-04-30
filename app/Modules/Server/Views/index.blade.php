@@ -162,7 +162,7 @@
                                     </button>
                                 </form>
                             @endcan
-                            @can('server.sync')
+                            @can('server.create')
                                 <a href="{{ route('server.checkmk.compare') }}"
                                    class="inline-flex items-center px-3 py-2 bg-purple-600 border border-transparent rounded-md text-xs font-semibold text-white uppercase tracking-widest hover:bg-purple-700">
                                     CheckMK-Abgleich

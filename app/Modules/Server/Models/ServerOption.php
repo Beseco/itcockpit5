@@ -11,13 +11,14 @@ class ServerOption extends Model
 
     protected $fillable = ['category', 'label', 'sort_order'];
 
-    const CATEGORIES = ['os_type', 'role', 'backup_level', 'patch_ring'];
+    const CATEGORIES = ['os_type', 'role', 'backup_level', 'patch_ring', 'geraet_typ'];
 
     const CATEGORY_LABELS = [
         'os_type'      => 'Betriebssystem-Typ',
         'role'         => 'Rolle',
         'backup_level' => 'Backup-Stufe',
         'patch_ring'   => 'Patch-Ring',
+        'geraet_typ'   => 'Gerätetyp',
     ];
 
     public function scopeCategory(Builder $q, string $cat): Builder
