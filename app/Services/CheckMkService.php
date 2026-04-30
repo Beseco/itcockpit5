@@ -44,6 +44,32 @@ class CheckMkService
         }
     }
 
+    /**
+     * Gibt alle Hosts aus CheckMK zurück.
+     * Rückgabe: [['name' => ..., 'alias' => ..., 'address' => ..., 'tags' => [...]], ...]
+     */
+    public function getAllHosts(): array
+    {
+        try {
+            $response = $this->get('/domain-types/host/collections/all', [
+                'columns' => ['name', 'alias', 'address', 'tags'],
+            ]);
+            return collect($response['value'] ?? [])
+                ->map(fn($h) => [
+                    'name'    => $h['id'] ?? '',
+                    'alias'   => $h['extensions']['alias'] ?? '',
+                    'address' => $h['extensions']['address'] ?? '',
+                    'tags'    => $h['extensions']['tags'] ?? [],
+                ])
+                ->filter(fn($h) => !empty($h['name']))
+                ->values()
+                ->toArray();
+        } catch (\Exception $e) {
+            Log::warning('CheckMK getAllHosts: ' . $e->getMessage());
+            return [];
+        }
+    }
+
     // ─── Private ─────────────────────────────────────────────────────────────
 
     private function fetchHostState(string $hostname): array

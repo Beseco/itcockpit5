@@ -163,6 +163,12 @@
                                 </form>
                             @endcan
                             @can('server.sync')
+                                <a href="{{ route('server.checkmk.compare') }}"
+                                   class="inline-flex items-center px-3 py-2 bg-purple-600 border border-transparent rounded-md text-xs font-semibold text-white uppercase tracking-widest hover:bg-purple-700">
+                                    CheckMK-Abgleich
+                                </a>
+                            @endcan
+                            @can('server.sync')
                                 <form action="{{ route('server.sync') }}" method="POST">
                                     @csrf
                                     <button type="submit"

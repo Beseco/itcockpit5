@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\Server\Http\Controllers\CheckMkCompareController;
 use App\Modules\Server\Http\Controllers\CheckMkController;
 use App\Modules\Server\Http\Controllers\ServerController;
 use App\Modules\Server\Http\Controllers\ServerSettingsController;
@@ -28,8 +29,10 @@ Route::middleware(['auth', 'module.permission:server,view'])->group(function () 
 });
 
 Route::middleware(['auth', 'module.permission:server,sync'])->group(function () {
-    Route::post('/sync',         [ServerSettingsController::class, 'runSync'])->name('sync');
-    Route::post('/vsphere-sync', [ServerSettingsController::class, 'runVsphereSync'])->name('vsphere-sync');
+    Route::post('/sync',                      [ServerSettingsController::class, 'runSync'])->name('sync');
+    Route::post('/vsphere-sync',              [ServerSettingsController::class, 'runVsphereSync'])->name('vsphere-sync');
+    Route::get('/checkmk-compare',            [CheckMkCompareController::class, 'index'])->name('checkmk.compare');
+    Route::post('/checkmk-compare/import',    [CheckMkCompareController::class, 'import'])->name('checkmk.compare.import');
 });
 
 Route::middleware(['auth', 'module.permission:server,edit'])->group(function () {

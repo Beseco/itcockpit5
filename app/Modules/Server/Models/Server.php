@@ -54,6 +54,9 @@ class Server extends Model
     const TYPE_LABELS = [
         'vm'         => 'VM',
         'bare_metal' => 'Bare Metal',
+        'firewall'   => 'Firewall',
+        'usv'        => 'USV',
+        'sonstiges'  => 'Sonstiges Gerät',
     ];
 
     // ─── Relationships ────────────────────────────────────────────────────────
