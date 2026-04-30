@@ -59,7 +59,7 @@ class CheckMkCompareController extends Controller
         $selectedFolders = $request->input('folders', []);
 
         // Lookup data for import form
-        $abteilungen = Abteilung::orderBy('anzeigename')->get(['id', 'anzeigename']);
+        $abteilungen = Abteilung::orderBy('kurzzeichen')->orderBy('name')->get(['id', 'name', 'kurzzeichen']);
         $adminUsers  = User::orderBy('name')->get(['id', 'name']);
         $gruppen     = Gruppe::orderBy('name')->get(['id', 'name']);
 
