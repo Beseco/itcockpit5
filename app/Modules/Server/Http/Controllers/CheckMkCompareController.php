@@ -34,9 +34,14 @@ class CheckMkCompareController extends Controller
         try {
             $folders = $this->svc->getFolders();
         } catch (\Exception $e) {
-            $folders      = [];
-            $foldersError = 'Ordner konnten nicht geladen werden: ' . $e->getMessage();
-            Log::warning('CheckMK getFolders: ' . $e->getMessage());
+            $folders = [];
+            $msg = $e->getMessage();
+            if (str_contains($msg, '401') || str_contains($msg, 'Unauthorized') || str_contains($msg, 'no permissions')) {
+                $foldersError = 'Ordner-Filter nicht verfügbar: Der CheckMK-API-Nutzer hat keine Leseberechtigung auf das Hauptverzeichnis. Alle erreichbaren Hosts werden verglichen.';
+            } else {
+                $foldersError = 'Ordner konnten nicht geladen werden: ' . $msg;
+            }
+            Log::warning('CheckMK getFolders: ' . $msg);
         }
 
         $direction       = $request->input('direction'); // 'checkmk_to_cockpit' | 'cockpit_to_checkmk'

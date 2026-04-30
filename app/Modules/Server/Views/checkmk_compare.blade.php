@@ -82,8 +82,11 @@
                             <span class="text-xs font-normal text-gray-400 ml-1">(kein Haken = alle Ordner)</span>
                         </label>
                         @if(!empty($foldersError))
-                            <div class="p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
-                                <strong>Fehler:</strong> {{ $foldersError }}
+                            <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800 flex items-start gap-2">
+                                <svg class="w-4 h-4 mt-0.5 shrink-0 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                                </svg>
+                                <span>{{ $foldersError }}</span>
                             </div>
                         @elseif(empty($folders))
                             <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-400 italic">
