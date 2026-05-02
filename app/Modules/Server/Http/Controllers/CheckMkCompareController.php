@@ -3,7 +3,6 @@
 namespace App\Modules\Server\Http\Controllers;
 
 use App\Models\Abteilung;
-use App\Models\Gruppe;
 use App\Models\User;
 use App\Modules\Server\Models\Server;
 use App\Modules\Server\Models\ServerOption;
@@ -37,7 +36,6 @@ class CheckMkCompareController extends Controller
                 'deviceTypes'     => $deviceTypes,
                 'abteilungen'     => collect(),
                 'adminUsers'      => collect(),
-                'gruppen'         => collect(),
             ]);
         }
 
@@ -61,7 +59,6 @@ class CheckMkCompareController extends Controller
         // Lookup data for import form
         $abteilungen = Abteilung::orderBy('kurzzeichen')->orderBy('name')->get(['id', 'name', 'kurzzeichen']);
         $adminUsers  = User::orderBy('name')->get(['id', 'name']);
-        $gruppen     = Gruppe::orderBy('name')->get(['id', 'name']);
 
         $base = [
             'error'           => null,
@@ -72,7 +69,6 @@ class CheckMkCompareController extends Controller
             'deviceTypes'     => $deviceTypes,
             'abteilungen'     => $abteilungen,
             'adminUsers'      => $adminUsers,
-            'gruppen'         => $gruppen,
         ];
 
         if (! in_array($direction, ['checkmk_to_cockpit', 'cockpit_to_checkmk'])) {
@@ -180,7 +176,6 @@ class CheckMkCompareController extends Controller
             'hosts.*.alias'          => ['nullable', 'string'],
             'hosts.*.abteilung_id'   => ['nullable', 'integer', 'exists:abteilungen,id'],
             'hosts.*.admin_user_id'  => ['nullable', 'integer', 'exists:users,id'],
-            'hosts.*.gruppe_id'      => ['nullable', 'integer', 'exists:gruppen,id'],
         ]);
 
         $imported = 0;
@@ -211,7 +206,6 @@ class CheckMkCompareController extends Controller
                 'status'        => 'produktiv',
                 'abteilung_id'  => $host['abteilung_id'] ?? null,
                 'admin_user_id' => $host['admin_user_id'] ?? null,
-                'gruppe_id'     => $host['gruppe_id'] ?? null,
             ], fn($v) => $v !== null));
 
             $imported++;

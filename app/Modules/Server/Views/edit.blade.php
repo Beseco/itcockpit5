@@ -29,7 +29,6 @@
                 if (empty($server->backup_level_id))  $revMissing[] = 'Backup-Stufe';
                 if (empty($server->patch_ring_id))    $revMissing[] = 'Patch-Ring';
                 if (empty($server->admin_user_id))    $revMissing[] = 'Verantwortlicher';
-                if (empty($server->gruppe_id))        $revMissing[] = 'Gruppe';
                 if (empty($server->abteilung_id))     $revMissing[] = 'Abteilung';
             @endphp
 
@@ -42,7 +41,7 @@
             <div class="mb-4 bg-white shadow-sm sm:rounded-lg px-5 py-4"
                  x-data="{
                     revOpen: false,
-                    checks: { c1: false, c2: false, c3: false, c4: false, c5: false, c6: false, c7: false, c8: false, c9: false, c10: false },
+                    checks: { c1: false, c2: false, c3: false, c4: false, c5: false, c6: false, c7: false, c8: false, c10: false },
                     get allChecked() { return Object.values(this.checks).every(v => v); }
                  }">
                 <div class="flex items-center justify-between">
@@ -108,7 +107,6 @@
                                     'c6'  => 'Backup-Stufe wurde geprüft und ist korrekt',
                                     'c7'  => 'Patch-Ring wurde geprüft und ist korrekt',
                                     'c8'  => 'Verantwortlicher ist korrekt zugeordnet',
-                                    'c9'  => 'Gruppe ist korrekt zugeordnet',
                                     'c10' => 'Abteilung ist korrekt zugeordnet',
                                 ] as $key => $label)
                                 <label class="flex items-start gap-3 cursor-pointer group">

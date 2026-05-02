@@ -269,7 +269,6 @@
                 <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                     <div><span class="font-medium text-gray-500">Abteilung:</span> <span class="ml-2 text-gray-900">{{ $server->abteilung?->anzeigename ?? '—' }}</span></div>
                     <div><span class="font-medium text-gray-500">Admin:</span> <span class="ml-2 text-gray-900">{{ $server->adminUser?->name ?? '—' }}</span></div>
-                    <div><span class="font-medium text-gray-500">Gruppe:</span> <span class="ml-2 text-gray-900">{{ $server->gruppe?->name ?? '—' }}</span></div>
                 </div>
             </div>
 

@@ -1,5 +1,5 @@
 {{-- Gemeinsames Formular für Create und Edit --}}
-{{-- Variablen: $server (null bei Create), $abteilungen, $users, $gruppen, $applikationen,
+{{-- Variablen: $server (null bei Create), $abteilungen, $users, $applikationen,
                $osTypes, $roles, $backupLevels, $patchRings, $statusOptions, $typeOptions --}}
 
 <div class="space-y-6">
@@ -206,20 +206,6 @@
                     @endforeach
                 </select>
                 <x-input-error :messages="$errors->get('admin_user_id')" class="mt-1" />
-            </div>
-
-            <div>
-                <x-input-label for="gruppe_id" value="Gruppe" />
-                <select id="gruppe_id" name="gruppe_id"
-                        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
-                    <option value="">— Keine Zuordnung —</option>
-                    @foreach ($gruppen as $gruppe)
-                        <option value="{{ $gruppe->id }}" @selected(old('gruppe_id', $server?->gruppe_id) == $gruppe->id)>
-                            {{ $gruppe->name }}
-                        </option>
-                    @endforeach
-                </select>
-                <x-input-error :messages="$errors->get('gruppe_id')" class="mt-1" />
             </div>
 
         </div>

@@ -4,7 +4,6 @@ namespace App\Modules\Server\Http\Controllers;
 
 use App\Models\Abteilung;
 use App\Models\Applikation;
-use App\Models\Gruppe;
 use App\Models\User;
 use App\Modules\Server\Models\Server;
 use App\Modules\Server\Models\ServerOption;
@@ -29,7 +28,7 @@ class ServerController extends Controller
         $filterAdminId   = $request->get('filter_admin_id', '');
         $filterNoRevision= $request->boolean('filter_no_revision');
 
-        $query = Server::with(['abteilung', 'adminUser', 'gruppe', 'osType', 'role', 'backupLevel', 'patchRing'])
+        $query = Server::with(['abteilung', 'adminUser', 'osType', 'role', 'backupLevel', 'patchRing'])
             ->orderBy('name');
 
         if (filled($search)) {
@@ -95,7 +94,7 @@ class ServerController extends Controller
 
     public function show(Server $server)
     {
-        $server->load(['abteilung', 'adminUser', 'gruppe', 'osType', 'role', 'backupLevel', 'patchRing', 'applikationen']);
+        $server->load(['abteilung', 'adminUser', 'osType', 'role', 'backupLevel', 'patchRing', 'applikationen']);
         $networkEntry = $server->ip_address
             ? $this->loadNetworkData([$server->ip_address])[$server->ip_address] ?? null
             : null;
@@ -184,7 +183,6 @@ class ServerController extends Controller
         if (empty($server->backup_level_id)) $missing[] = 'Backup-Stufe';
         if (empty($server->patch_ring_id))  $missing[] = 'Patch-Ring';
         if (empty($server->admin_user_id))  $missing[] = 'Verantwortlicher';
-        if (empty($server->gruppe_id))      $missing[] = 'Gruppe';
         if (empty($server->abteilung_id))   $missing[] = 'Abteilung';
 
         if ($missing) {
@@ -268,7 +266,6 @@ class ServerController extends Controller
         return [
             'abteilungen'   => Abteilung::orderBy('sort_order')->orderBy('name')->get(),
             'users'         => User::where('is_active', true)->orderBy('name')->get(),
-            'gruppen'       => Gruppe::orderBy('name')->get(),
             'applikationen' => Applikation::orderBy('name')->get(),
             'osTypes'       => ServerOption::category('os_type')->get(),
             'roles'         => ServerOption::category('role')->get(),
@@ -299,7 +296,6 @@ class ServerController extends Controller
             'patch_ring_id'    => ['nullable', 'integer', 'exists:server_options,id'],
             'abteilung_id'     => ['nullable', 'integer', 'exists:abteilungen,id'],
             'admin_user_id'    => ['nullable', 'integer', 'exists:users,id'],
-            'gruppe_id'        => ['nullable', 'integer', 'exists:gruppen,id'],
             'applikation_ids'   => ['nullable', 'array'],
             'applikation_ids.*' => ['integer', 'exists:applikationen,id'],
         ]);

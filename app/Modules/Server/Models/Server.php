@@ -4,7 +4,6 @@ namespace App\Modules\Server\Models;
 
 use App\Models\Abteilung;
 use App\Models\Applikation;
-use App\Models\Gruppe;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -20,7 +19,7 @@ class Server extends Model
         'description', 'bemerkungen', 'doc_url', 'revision_date',
         'status', 'type',
         'os_type_id', 'role_id', 'backup_level_id', 'patch_ring_id',
-        'abteilung_id', 'admin_user_id', 'gruppe_id',
+        'abteilung_id', 'admin_user_id',
         'distinguished_name', 'managed_by_ldap', 'ldap_synced', 'last_sync_at', 'raw_ldap_data',
         'vsphere_vm_id', 'vsphere_synced', 'vsphere_synced_at',
         'cpu_count', 'memory_mb', 'disk_gb', 'vsphere_datastore',
@@ -72,11 +71,6 @@ class Server extends Model
     public function adminUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'admin_user_id');
-    }
-
-    public function gruppe(): BelongsTo
-    {
-        return $this->belongsTo(Gruppe::class);
     }
 
     public function osType(): BelongsTo

@@ -170,7 +170,6 @@
                                         <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Typ</th>
                                         <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Abteilung</th>
                                         <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Admin</th>
-                                        <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase">Gruppe</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-100">
@@ -209,15 +208,6 @@
                                                 <option value="">— keiner —</option>
                                                 @foreach($adminUsers as $u)
                                                     <option value="{{ $u->id }}">{{ $u->name }}</option>
-                                                @endforeach
-                                            </select>
-                                        </td>
-                                        <td class="px-3 py-2.5">
-                                            <select name="hosts[{{ $i }}][gruppe_id]"
-                                                    class="border-gray-300 focus:border-purple-500 focus:ring-purple-500 rounded-md shadow-sm text-xs py-1 w-32">
-                                                <option value="">— keine —</option>
-                                                @foreach($gruppen as $g)
-                                                    <option value="{{ $g->id }}">{{ $g->name }}</option>
                                                 @endforeach
                                             </select>
                                         </td>
