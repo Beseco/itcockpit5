@@ -23,6 +23,7 @@ class ServerController extends Controller
     {
         $search          = $request->get('search', '');
         $filterStatus    = $request->get('filter_status', '');
+        $filterType      = $request->get('filter_type', '');
         $filterAbt       = $request->get('filter_abteilung_id', '');
         $filterLdap      = $request->get('filter_ldap', '');
         $filterAdminId   = $request->get('filter_admin_id', '');
@@ -42,6 +43,10 @@ class ServerController extends Controller
 
         if (filled($filterStatus)) {
             $query->where('status', $filterStatus);
+        }
+
+        if (filled($filterType)) {
+            $query->where('type', $filterType);
         }
 
         if (filled($filterAbt)) {
@@ -70,6 +75,7 @@ class ServerController extends Controller
         $servers     = $query->paginate($perPage)->withQueryString();
         $abteilungen = Abteilung::orderBy('sort_order')->orderBy('name')->get();
         $adminUsers  = User::where('is_active', true)->orderBy('name')->get();
+        $typeOptions = Server::getTypeOptions();
 
         // Anzahl Server ohne Revisionsdatum für Aktionsbutton
         $countNoRevision  = Server::whereNull('revision_date')->count();
@@ -82,8 +88,8 @@ class ServerController extends Controller
 
         return response()
             ->view('server::index', compact(
-                'servers', 'abteilungen', 'adminUsers', 'countNoRevision', 'totalServers', 'networkData',
-                'search', 'filterStatus', 'filterAbt', 'filterLdap',
+                'servers', 'abteilungen', 'adminUsers', 'typeOptions', 'countNoRevision', 'totalServers', 'networkData',
+                'search', 'filterStatus', 'filterType', 'filterAbt', 'filterLdap',
                 'filterAdminId', 'filterNoRevision', 'perPage',
                 'ldapEnabled', 'vsphereEnabled'
             ))

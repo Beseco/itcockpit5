@@ -47,6 +47,18 @@
                     </div>
 
                     <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Typ</label>
+                        <select name="filter_type"
+                                onchange="document.getElementById('server-filter-form').submit()"
+                                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                            <option value="">Alle Typen</option>
+                            @foreach ($typeOptions as $t)
+                                <option value="{{ $t }}" @selected($filterType === $t)>{{ $t }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
                         <label class="block text-xs font-medium text-gray-500 mb-1">Abteilung</label>
                         <select name="filter_abteilung_id"
                                 onchange="document.getElementById('server-filter-form').submit()"
@@ -96,7 +108,7 @@
                                 class="inline-flex items-center px-3 py-2 bg-indigo-600 border border-transparent rounded-md text-xs font-semibold text-white uppercase tracking-widest hover:bg-indigo-700">
                             Filtern
                         </button>
-                        @if ($search || $filterStatus || $filterAbt || $filterLdap || $filterAdminId || $filterNoRevision)
+                        @if ($search || $filterStatus || $filterType || $filterAbt || $filterLdap || $filterAdminId || $filterNoRevision)
                             <a href="{{ route('server.index') }}"
                                class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md text-xs font-semibold text-gray-700 uppercase tracking-widest hover:bg-gray-50">
                                 Zurücksetzen
@@ -112,13 +124,16 @@
                     <div class="flex items-center justify-between mb-4 gap-3 flex-wrap">
                         <h3 class="text-lg font-semibold text-gray-800">
                             Server
-                            @if ($search || $filterStatus || $filterAbt || $filterLdap || $filterAdminId || $filterNoRevision)
+                            @if ($search || $filterStatus || $filterType || $filterAbt || $filterLdap || $filterAdminId || $filterNoRevision)
                                 <span class="text-sm font-normal text-indigo-600">{{ $servers->total() }} von {{ $totalServers }}</span>
                                 @if ($search)
                                     <span class="ml-1 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">Suche: {{ $search }}</span>
                                 @endif
                                 @if ($filterStatus)
                                     <span class="ml-1 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">Status: {{ \App\Modules\Server\Models\Server::STATUS_LABELS[$filterStatus] ?? $filterStatus }}</span>
+                                @endif
+                                @if ($filterType)
+                                    <span class="ml-1 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">Typ: {{ $filterType }}</span>
                                 @endif
                                 @if ($filterAbt)
                                     <span class="ml-1 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">Abteilung</span>
