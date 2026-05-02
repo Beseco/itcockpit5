@@ -154,6 +154,7 @@ class CheckMkCompareController extends Controller
                     foreach ($this->hostVariants($identifier) as $variant) {
                         if (isset($checkmkLookup[$variant])) return false;
                     }
+                }
             }
             if (!empty($s->ip_address) && isset($checkmkLookup[trim($s->ip_address)])) return false;
             return true;
