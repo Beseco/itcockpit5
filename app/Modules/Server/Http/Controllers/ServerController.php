@@ -275,7 +275,7 @@ class ServerController extends Controller
             'backupLevels'  => ServerOption::category('backup_level')->get(),
             'patchRings'    => ServerOption::category('patch_ring')->get(),
             'statusOptions' => Server::STATUS_LABELS,
-            'typeOptions'   => Server::TYPE_LABELS,
+            'typeOptions'   => Server::getTypeOptions(),
         ];
     }
 

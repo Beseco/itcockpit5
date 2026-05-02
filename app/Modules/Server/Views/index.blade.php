@@ -255,7 +255,7 @@
                                             {{ $server->osType?->label ?? $server->operating_system ?? '—' }}
                                             @if ($server->type)
                                                 <span class="text-xs text-gray-400">
-                                                    ({{ \App\Modules\Server\Models\Server::TYPE_LABELS[$server->type] }})
+                                                    ({{ $server->type }})
                                                 </span>
                                             @endif
                                         </td>

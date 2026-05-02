@@ -51,15 +51,11 @@ class Server extends Model
         'ausgemustert'  => 'bg-red-100 text-red-700',
     ];
 
-    // Typ wird jetzt als freier String gespeichert und über ServerOption::category('geraet_typ') verwaltet.
-    // TYPE_LABELS bleibt für bestehende Anzeigen als Fallback erhalten.
-    const TYPE_LABELS = [
-        'VM'             => 'VM',
-        'Bare Metal'     => 'Bare Metal',
-        'Firewall'       => 'Firewall',
-        'USV'            => 'USV',
-        'Sonstiges Gerät'=> 'Sonstiges Gerät',
-    ];
+    public static function getTypeLabel(?string $type): string
+    {
+        if ($type === null || $type === '') return '—';
+        return $type; // Typ ist jetzt der Label-Wert selbst (via ServerOption)
+    }
 
     public static function getTypeOptions(): \Illuminate\Support\Collection
     {

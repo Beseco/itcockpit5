@@ -101,12 +101,12 @@
             </div>
 
             <div>
-                <x-input-label for="type" value="Typ (VM / Bare Metal)" />
+                <x-input-label for="type" value="Typ" />
                 <select id="type" name="type"
                         class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                     <option value="">— Nicht angegeben —</option>
-                    @foreach ($typeOptions as $val => $label)
-                        <option value="{{ $val }}" @selected(old('type', $server?->type) === $val)>{{ $label }}</option>
+                    @foreach ($typeOptions as $label)
+                        <option value="{{ $label }}" @selected(old('type', $server?->type) === $label)>{{ $label }}</option>
                     @endforeach
                 </select>
                 <x-input-error :messages="$errors->get('type')" class="mt-1" />

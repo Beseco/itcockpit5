@@ -251,7 +251,7 @@
                     </div>
                     <div><span class="font-medium text-gray-500">Typ:</span>
                         <span class="ml-2 text-gray-900">
-                            {{ $server->type ? \App\Modules\Server\Models\Server::TYPE_LABELS[$server->type] : '—' }}
+                            {{ $server->type ?? '—' }}
                         </span>
                     </div>
                     <div><span class="font-medium text-gray-500">OS-Typ:</span> <span class="ml-2 text-gray-900">{{ $server->osType?->label ?? '—' }}</span></div>

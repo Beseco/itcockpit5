@@ -290,7 +290,7 @@
                                         {{ $server->checkmk_alias ?: ($server->dns_hostname ?: '—') }}
                                     </td>
                                     <td class="px-4 py-2.5 text-sm text-gray-500">
-                                        {{ \App\Modules\Server\Models\Server::TYPE_LABELS[$server->type] ?? '—' }}
+                                        {{ $server->type ?? '—' }}
                                     </td>
                                     <td class="px-4 py-2.5">
                                         @php $colors = \App\Modules\Server\Models\Server::STATUS_COLORS[$server->status] ?? 'bg-gray-100 text-gray-600'; @endphp
