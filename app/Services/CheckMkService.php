@@ -77,21 +77,39 @@ class CheckMkService
      *
      * @param string[] $folderPaths CheckMK-Ordner-IDs, z.B. ['~server', '~netzwerk']
      */
+    /**
+     * Alle Hosts für den Monitoring-Lookup (IT-Cockpit→CheckMK).
+     * Nur Name + IP, kein State-Filter – auch DOWN-Hosts sind "überwacht".
+     * Nutzt /domain-types/host/collections/all ohne columns-Filter (breite Kompatibilität).
+     */
+    public function getAllHostsForLookup(): array
+    {
+        try {
+            $response = $this->get('/domain-types/host/collections/all');
+            return $this->parseHosts($response['value'] ?? []);
+        } catch (\Exception $e) {
+            Log::warning('CheckMK getAllHostsForLookup: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Hosts für Import-Vorschläge (CheckMK→IT-Cockpit), mit State-Spalte.
+     * Optional gefiltert nach Ordnern (CheckMK ~-Notation).
+     *
+     * @param string[] $folderPaths z.B. ['~server', '~netzwerk']
+     */
     public function getAllHosts(array $folderPaths = []): array
     {
         try {
             $folderPaths = array_values(array_filter(array_map('trim', $folderPaths)));
-
-            $columns = ['name', 'alias', 'address', 'folder', 'tags', 'state'];
+            $columns     = ['name', 'alias', 'address', 'folder', 'tags', 'state'];
 
             if (empty($folderPaths)) {
-                $response = $this->get('/domain-types/host/collections/all', [
-                    'columns' => $columns,
-                ]);
+                $response = $this->get('/domain-types/host/collections/all', ['columns' => $columns]);
                 return $this->parseHosts($response['value'] ?? []);
             }
 
-            // Für jeden Ordner einzeln abfragen und zusammenführen
             $all = [];
             foreach ($folderPaths as $folder) {
                 try {
@@ -105,7 +123,6 @@ class CheckMkService
                 }
             }
 
-            // Duplikate entfernen (Host kann in mehreren Ergebnissen auftauchen)
             return collect($all)->unique('name')->values()->toArray();
 
         } catch (\Exception $e) {

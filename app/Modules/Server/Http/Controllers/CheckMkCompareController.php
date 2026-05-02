@@ -112,18 +112,17 @@ class CheckMkCompareController extends Controller
             ->filter(fn($h) => $this->isProductiveHost($h) && $this->isHostUp($h))
             ->values();
 
-        // Für Monitoring-Lookup (cockpit→checkmk): ALLE CheckMK-Hosts (auch DOWN),
-        // damit Server die in CheckMK existieren aber gerade DOWN sind nicht fälschlich als
-        // "nicht überwacht" erscheinen. Keine Ordner-Einschränkung.
-        $allHostsForLookup = collect($this->svc->getAllHosts([]));
+        // Für Monitoring-Lookup: dedizierte Methode ohne columns-Filter (max. Kompatibilität),
+        // alle Hosts inkl. DOWN, keine Ordner-Einschränkung.
+        $allHostsForLookup = collect($this->svc->getAllHostsForLookup());
 
-        // CheckMK lookup: hostname variants + IP
+        // CheckMK lookup – normalisierte Varianten pro Host:
+        // full FQDN, Kurzname (vor erstem Punkt), FQDN+lra.lan, ohne .lra.lan, IP
         $checkmkLookup = [];
         foreach ($allHostsForLookup as $h) {
-            $full  = strtolower(trim($h['name']));
-            $short = explode('.', $full)[0];
-            $checkmkLookup[$full]  = true;
-            $checkmkLookup[$short] = true;
+            foreach ($this->hostVariants($h['name']) as $variant) {
+                $checkmkLookup[$variant] = true;
+            }
             if (!empty($h['address'])) {
                 $checkmkLookup[trim($h['address'])] = true;
             }
@@ -131,12 +130,12 @@ class CheckMkCompareController extends Controller
 
         // CheckMK hosts not in IT-Cockpit
         $onlyInCheckMk = $hostsForImport->filter(function ($h) use ($itCockpitMap) {
-            $full  = strtolower(trim($h['name']));
-            $short = explode('.', $full)[0];
-            $ip    = trim($h['address'] ?? '');
-            return ! isset($itCockpitMap[$full])
-                && ! isset($itCockpitMap[$short])
-                && ($ip === '' || ! isset($itCockpitMap[$ip]));
+            $ip = trim($h['address'] ?? '');
+            foreach ($this->hostVariants($h['name']) as $variant) {
+                if (isset($itCockpitMap[$variant])) return false;
+            }
+            if ($ip !== '' && isset($itCockpitMap[$ip])) return false;
+            return true;
         })->map(function ($h) use ($deviceTypes) {
             $tagValues = collect($h['tags'] ?? [])->values()->map(fn($v) => strtolower((string) $v));
             $suggested = $deviceTypes->first() ?? '';
@@ -152,10 +151,9 @@ class CheckMkCompareController extends Controller
         $notMonitored = $servers->filter(function ($s) use ($checkmkLookup) {
             foreach ([$s->checkmk_alias, $s->dns_hostname, $s->name] as $identifier) {
                 if ($identifier !== null && $identifier !== '') {
-                    $lower = strtolower(trim($identifier));
-                    $short = explode('.', $lower)[0];
-                    if (isset($checkmkLookup[$lower]) || isset($checkmkLookup[$short])) return false;
-                }
+                    foreach ($this->hostVariants($identifier) as $variant) {
+                        if (isset($checkmkLookup[$variant])) return false;
+                    }
             }
             if (!empty($s->ip_address) && isset($checkmkLookup[trim($s->ip_address)])) return false;
             return true;
@@ -226,6 +224,39 @@ class CheckMkCompareController extends Controller
 
         return redirect()->route('server.checkmk.compare', ['direction' => 'checkmk_to_cockpit'])
             ->with('success', $msg);
+    }
+
+    /**
+     * Erzeugt alle normalisierten Hostname-Varianten für den Abgleich:
+     * - Alles lowercase
+     * - FQDN (z.B. adfs-01.lra.lan)
+     * - Kurzname ohne Domain (adfs-01)
+     * - Mit .lra.lan angehängt falls noch nicht vorhanden
+     * - Ohne .lra.lan falls vorhanden
+     */
+    private function hostVariants(string $hostname): array
+    {
+        $hostname = strtolower(trim($hostname));
+        if ($hostname === '') return [];
+
+        $variants   = [];
+        $variants[] = $hostname;
+
+        // Kurzname (vor erstem Punkt)
+        $short = explode('.', $hostname)[0];
+        $variants[] = $short;
+
+        // Mit .lra.lan wenn noch nicht dran
+        if (!str_ends_with($hostname, '.lra.lan')) {
+            $variants[] = $short . '.lra.lan';
+        }
+
+        // Ohne .lra.lan wenn dran
+        if (str_ends_with($hostname, '.lra.lan')) {
+            $variants[] = str_replace('.lra.lan', '', $hostname);
+        }
+
+        return array_unique(array_filter($variants));
     }
 
     /**
