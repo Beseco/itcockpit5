@@ -84,6 +84,7 @@ class CheckMkCompareController extends Controller
         }
 
         $servers = Server::select('id', 'name', 'dns_hostname', 'checkmk_alias', 'ip_address', 'status', 'type')
+            ->where('status', 'produktiv')
             ->orderBy('name')
             ->get();
 
