@@ -117,7 +117,6 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         <a href="{{ $sortLink('ping_ms') }}" class="hover:text-gray-700">Ping {!! $sortIcon('ping_ms') !!}</a>
                                     </th>
-                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Server</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kommentar</th>
                                 </tr>
                             </thead>
@@ -127,7 +126,19 @@
                                         <td class="px-4 py-2 whitespace-nowrap font-mono text-sm">
                                             <a href="{{ route('network.ip-addresses.show', $ip) }}" class="text-indigo-600 hover:text-indigo-900">{{ $ip->ip_address }}</a>
                                         </td>
-                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{{ $ip->dns_name ?? '-' }}</td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-700">
+                                            @php $srv = $serverMap[$ip->ip_address] ?? null; @endphp
+                                            @if($srv)
+                                                <a href="{{ route('server.show', $srv) }}" class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-900" title="Server: {{ $srv->name }}">
+                                                    <svg class="w-3.5 h-3.5 shrink-0 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/>
+                                                    </svg>
+                                                    {{ $ip->dns_name ?: $srv->name }}
+                                                </a>
+                                            @else
+                                                {{ $ip->dns_name ?? '-' }}
+                                            @endif
+                                        </td>
                                         <td class="px-4 py-2 whitespace-nowrap font-mono text-xs text-gray-500">{{ $ip->mac_address ?? '-' }}</td>
                                         <td class="px-4 py-2 whitespace-nowrap">
                                             @if($ip->last_scanned_at === null)
@@ -140,19 +151,10 @@
                                         </td>
                                         <td class="px-4 py-2 whitespace-nowrap text-xs text-gray-500">{{ $ip->last_scanned_at ? $ip->last_scanned_at->diffForHumans() : '-' }}</td>
                                         <td class="px-4 py-2 whitespace-nowrap text-xs text-gray-500">{{ $ip->is_online && $ip->ping_ms ? number_format($ip->ping_ms, 1).' ms' : '-' }}</td>
-                                        <td class="px-4 py-2 whitespace-nowrap text-xs">
-                                            @php $srv = $serverMap[$ip->ip_address] ?? null; @endphp
-                                            @if($srv)
-                                                <a href="{{ route('server.show', $srv) }}"
-                                                   class="text-indigo-600 hover:text-indigo-900 font-medium">{{ $srv->name }}</a>
-                                            @else
-                                                <span class="text-gray-300">—</span>
-                                            @endif
-                                        </td>
                                         <td class="px-4 py-2 text-xs text-gray-500">{{ $ip->comment ? Str::limit($ip->comment, 40) : '-' }}</td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="8" class="px-4 py-6 text-center text-gray-400">Keine IP-Adressen gefunden.</td></tr>
+                                    <tr><td colspan="7" class="px-4 py-6 text-center text-gray-400">Keine IP-Adressen gefunden.</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -208,16 +210,18 @@ function statusBadge(ip) {
     return '<span class="px-2 py-0.5 text-xs rounded-full bg-gray-300 text-gray-700">Offline</span>';
 }
 
-function serverCell(ip) {
+function dnsCell(ip) {
+    const label = ip.dns_name || (ip.server_name || '-');
     if (ip.server_id && ip.server_name) {
-        return `<a href="${serverBase}${ip.server_id}" class="text-indigo-600 hover:text-indigo-900 font-medium text-xs">${ip.server_name}</a>`;
+        const icon = `<svg class="w-3.5 h-3.5 shrink-0 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/></svg>`;
+        return `<a href="${serverBase}${ip.server_id}" class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-900" title="Server: ${ip.server_name}">${icon}${label}</a>`;
     }
-    return '<span class="text-gray-300">—</span>';
+    return ip.dns_name || '-';
 }
 
 function renderRows(data) {
     if (!data.length) {
-        tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-6 text-center text-gray-400">Keine Ergebnisse.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-6 text-center text-gray-400">Keine Ergebnisse.</td></tr>';
         countEl.textContent = '0 Ergebnisse';
         return;
     }
@@ -226,12 +230,11 @@ function renderRows(data) {
             <td class="px-4 py-2 whitespace-nowrap font-mono text-sm">
                 <a href="${detailBase}${ip.id}" class="text-indigo-600 hover:text-indigo-900">${ip.ip_address}</a>
             </td>
-            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-700">${ip.dns_name ?? '-'}</td>
+            <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-700">${dnsCell(ip)}</td>
             <td class="px-4 py-2 whitespace-nowrap font-mono text-xs text-gray-500">${ip.mac_address ?? '-'}</td>
             <td class="px-4 py-2 whitespace-nowrap">${statusBadge(ip)}</td>
             <td class="px-4 py-2 whitespace-nowrap text-xs text-gray-500">${timeAgo(ip.last_scanned_at)}</td>
             <td class="px-4 py-2 whitespace-nowrap text-xs text-gray-500">${ip.is_online && ip.ping_ms ? ip.ping_ms.toFixed(1)+' ms' : '-'}</td>
-            <td class="px-4 py-2 whitespace-nowrap">${serverCell(ip)}</td>
             <td class="px-4 py-2 text-xs text-gray-500">${ip.comment ? ip.comment.substring(0, 40) : '-'}</td>
         </tr>
     `).join('');
