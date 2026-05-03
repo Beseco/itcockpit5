@@ -117,6 +117,7 @@
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         <a href="{{ $sortLink('ping_ms') }}" class="hover:text-gray-700">Ping {!! $sortIcon('ping_ms') !!}</a>
                                     </th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Server</th>
                                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kommentar</th>
                                 </tr>
                             </thead>
@@ -139,10 +140,19 @@
                                         </td>
                                         <td class="px-4 py-2 whitespace-nowrap text-xs text-gray-500">{{ $ip->last_scanned_at ? $ip->last_scanned_at->diffForHumans() : '-' }}</td>
                                         <td class="px-4 py-2 whitespace-nowrap text-xs text-gray-500">{{ $ip->is_online && $ip->ping_ms ? number_format($ip->ping_ms, 1).' ms' : '-' }}</td>
+                                        <td class="px-4 py-2 whitespace-nowrap text-xs">
+                                            @php $srv = $serverMap[$ip->ip_address] ?? null; @endphp
+                                            @if($srv)
+                                                <a href="{{ route('server.show', $srv) }}"
+                                                   class="text-indigo-600 hover:text-indigo-900 font-medium">{{ $srv->name }}</a>
+                                            @else
+                                                <span class="text-gray-300">—</span>
+                                            @endif
+                                        </td>
                                         <td class="px-4 py-2 text-xs text-gray-500">{{ $ip->comment ? Str::limit($ip->comment, 40) : '-' }}</td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="7" class="px-4 py-6 text-center text-gray-400">Keine IP-Adressen gefunden.</td></tr>
+                                    <tr><td colspan="8" class="px-4 py-6 text-center text-gray-400">Keine IP-Adressen gefunden.</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -171,8 +181,9 @@
     </div>
 
 <script>
-const searchUrl = '{{ route('network.vlans.ips.search', $vlan) }}';
+const searchUrl  = '{{ route('network.vlans.ips.search', $vlan) }}';
 const detailBase = '{{ url('network/ip-addresses') }}/';
+const serverBase = '{{ url('server') }}/';
 let debounceTimer = null;
 
 const input      = document.getElementById('live-search');
@@ -197,9 +208,16 @@ function statusBadge(ip) {
     return '<span class="px-2 py-0.5 text-xs rounded-full bg-gray-300 text-gray-700">Offline</span>';
 }
 
+function serverCell(ip) {
+    if (ip.server_id && ip.server_name) {
+        return `<a href="${serverBase}${ip.server_id}" class="text-indigo-600 hover:text-indigo-900 font-medium text-xs">${ip.server_name}</a>`;
+    }
+    return '<span class="text-gray-300">—</span>';
+}
+
 function renderRows(data) {
     if (!data.length) {
-        tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-6 text-center text-gray-400">Keine Ergebnisse.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="px-4 py-6 text-center text-gray-400">Keine Ergebnisse.</td></tr>';
         countEl.textContent = '0 Ergebnisse';
         return;
     }
@@ -213,6 +231,7 @@ function renderRows(data) {
             <td class="px-4 py-2 whitespace-nowrap">${statusBadge(ip)}</td>
             <td class="px-4 py-2 whitespace-nowrap text-xs text-gray-500">${timeAgo(ip.last_scanned_at)}</td>
             <td class="px-4 py-2 whitespace-nowrap text-xs text-gray-500">${ip.is_online && ip.ping_ms ? ip.ping_ms.toFixed(1)+' ms' : '-'}</td>
+            <td class="px-4 py-2 whitespace-nowrap">${serverCell(ip)}</td>
             <td class="px-4 py-2 text-xs text-gray-500">${ip.comment ? ip.comment.substring(0, 40) : '-'}</td>
         </tr>
     `).join('');

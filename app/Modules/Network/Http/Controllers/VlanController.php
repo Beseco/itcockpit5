@@ -261,7 +261,15 @@ class VlanController extends Controller
 
         $ipAddresses = $query->paginate(100)->withQueryString();
 
-        return view('network::vlans.ips', compact('vlan', 'ipAddresses', 'search', 'sortColumn', 'sortDirection'));
+        $serverMap = collect();
+        if (class_exists(\App\Modules\Server\Models\Server::class)) {
+            $pageIps = $ipAddresses->pluck('ip_address')->toArray();
+            $serverMap = \App\Modules\Server\Models\Server::whereIn('ip_address', $pageIps)
+                ->get(['id', 'name', 'status', 'ip_address'])
+                ->keyBy('ip_address');
+        }
+
+        return view('network::vlans.ips', compact('vlan', 'ipAddresses', 'search', 'sortColumn', 'sortDirection', 'serverMap'));
     }
 
     /**
@@ -285,7 +293,20 @@ class VlanController extends Controller
         $query->orderByRaw("INET_ATON(ip_address) asc");
         $results = $query->limit(200)->get(['id', 'ip_address', 'dns_name', 'mac_address', 'is_online', 'last_scanned_at', 'ping_ms', 'comment']);
 
-        return response()->json($results);
+        if (class_exists(\App\Modules\Server\Models\Server::class)) {
+            $ips = $results->pluck('ip_address')->toArray();
+            $serverMap = \App\Modules\Server\Models\Server::whereIn('ip_address', $ips)
+                ->get(['id', 'name', 'ip_address'])
+                ->keyBy('ip_address');
+            $results = $results->map(function ($ip) use ($serverMap) {
+                $srv = $serverMap[$ip->ip_address] ?? null;
+                $ip->server_id   = $srv?->id;
+                $ip->server_name = $srv?->name;
+                return $ip;
+            });
+        }
+
+        return response()->json($results->values());
     }
 
     /**

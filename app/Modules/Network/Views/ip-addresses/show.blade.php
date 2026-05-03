@@ -151,6 +151,33 @@
                 </div>
             </div>
 
+            @if($server)
+            <!-- Server Card -->
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
+                    <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">Server</h3>
+                </div>
+                <div class="p-6 flex items-center gap-4 flex-wrap">
+                    <div>
+                        <a href="{{ route('server.show', $server) }}"
+                           class="text-base font-semibold text-indigo-600 hover:text-indigo-900">
+                            {{ $server->name }}
+                        </a>
+                        @if($server->dns_hostname && $server->dns_hostname !== $server->name)
+                            <p class="text-xs text-gray-400 mt-0.5">{{ $server->dns_hostname }}</p>
+                        @endif
+                    </div>
+                    <span class="px-2 py-0.5 text-xs font-semibold rounded-full
+                        {{ \App\Modules\Server\Models\Server::STATUS_COLORS[$server->status] ?? 'bg-gray-100 text-gray-600' }}">
+                        {{ \App\Modules\Server\Models\Server::STATUS_LABELS[$server->status] ?? $server->status }}
+                    </span>
+                    @if($server->type)
+                        <span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">{{ $server->type }}</span>
+                    @endif
+                </div>
+            </div>
+            @endif
+
             <!-- VLAN Information Card -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6">

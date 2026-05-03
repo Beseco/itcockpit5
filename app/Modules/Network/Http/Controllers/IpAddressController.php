@@ -30,11 +30,19 @@ class IpAddressController extends Controller
         // Determine DHCP range membership
         $isInDhcpRange = $ipAddress->isInDhcpRange();
 
+        // Server-Verknüpfung über IP-Adresse (optional, Server-Modul muss aktiv sein)
+        $server = null;
+        if (class_exists(\App\Modules\Server\Models\Server::class)) {
+            $server = \App\Modules\Server\Models\Server::where('ip_address', $ipAddress->ip_address)
+                ->first(['id', 'name', 'status', 'type', 'dns_hostname']);
+        }
+
         return view('network::ip-addresses.show', compact(
             'ipAddress',
             'previousIp',
             'nextIp',
-            'isInDhcpRange'
+            'isInDhcpRange',
+            'server'
         ));
     }
 
