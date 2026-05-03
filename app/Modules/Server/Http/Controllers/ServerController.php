@@ -295,7 +295,7 @@ class ServerController extends Controller
             'bemerkungen'      => ['nullable', 'string'],
             'doc_url'          => ['nullable', 'url', 'max:500'],
             'status'           => ['required', 'in:produktiv,testsystem,ausgeschaltet,im_aufbau,ausgemustert'],
-            'type'             => ['nullable', 'in:vm,bare_metal'],
+            'type'             => ['nullable', 'string', 'in:' . Server::getTypeOptions()->implode(',')],
             'os_type_id'       => ['nullable', 'integer', 'exists:server_options,id'],
             'role_id'          => ['nullable', 'integer', 'exists:server_options,id'],
             'backup_level_id'  => ['nullable', 'integer', 'exists:server_options,id'],
