@@ -27,7 +27,7 @@ class CheckMkService
      */
     public function getHostData(string $hostname): array
     {
-        $hostname = strtolower(trim($hostname));
+        $hostname = trim($hostname);
         try {
             $hostState = $this->fetchHostState($hostname);
             $services  = $this->fetchServices($hostname);
