@@ -204,6 +204,7 @@ class CheckMkCompareController extends Controller
                 'ip_address'    => $ip ?: null,
                 'type'          => $host['type'],
                 'status'        => 'produktiv',
+                'revision_date' => now()->addMonths(12),
                 'abteilung_id'  => $host['abteilung_id'] ?? null,
                 'admin_user_id' => $host['admin_user_id'] ?? null,
             ], fn($v) => $v !== null));

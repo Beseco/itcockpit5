@@ -218,7 +218,7 @@ class ServerController extends Controller
 
         foreach ($servers as $server) {
             $server->update([
-                'revision_date' => now()->addDays(rand(1, 365)),
+                'revision_date' => now()->addMonths(12),
             ]);
             $count++;
         }
