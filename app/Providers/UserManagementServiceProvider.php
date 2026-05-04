@@ -22,14 +22,6 @@ class UserManagementServiceProvider extends ServiceProvider
     {
         $hookManager = app(HookManager::class);
 
-        // Register sidebar navigation item
-        $hookManager->registerSidebarItem('users', [
-            'label' => 'Benutzerverwaltung',
-            'route' => 'users.index',
-            'icon' => 'heroicon-o-users',
-            'permission' => 'base.users.view',
-        ]);
-
         // Register permissions
         $hookManager->registerPermission('users', 'view', 'Benutzerverwaltung anzeigen');
         $hookManager->registerPermission('users', 'create', 'Benutzer anlegen');
