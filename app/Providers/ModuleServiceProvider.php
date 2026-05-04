@@ -104,6 +104,17 @@ class ModuleServiceProvider extends ServiceProvider
 
             Log::info('Module routes registered', ['slug' => $slug]);
         }
+
+        $apiRoutesPath = $modulePath . '/Routes/api.php';
+
+        if (File::exists($apiRoutesPath)) {
+            Route::middleware('api')
+                ->prefix('api/v1/' . $slug)
+                ->name("api.v1.{$slug}.")
+                ->group($apiRoutesPath);
+
+            Log::info('Module API routes registered', ['slug' => $slug]);
+        }
     }
 
     /**

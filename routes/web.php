@@ -27,6 +27,7 @@ use App\Http\Controllers\StelleController;
 use App\Http\Controllers\ApplikationRevisionSettingsController;
 use App\Http\Controllers\AbteilungRevisionSettingsController;
 use App\Http\Controllers\RevisionController;
+use App\Http\Controllers\ApiTokenController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -81,6 +82,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/cost-centers/help',         fn() => view('cost-centers.help'))->name('cost-centers.help');
     Route::get('/account-codes/help',        fn() => view('account-codes.help'))->name('account-codes.help');
     Route::get('/audit-logs/help',           fn() => view('audit-logs.help'))->name('audit-logs.help');
+
+    // API-Token management
+    Route::get('/api-tokens',            [ApiTokenController::class, 'index'])->name('api-tokens.index');
+    Route::post('/api-tokens',           [ApiTokenController::class, 'store'])->name('api-tokens.store');
+    Route::delete('/api-tokens/{token}', [ApiTokenController::class, 'destroy'])->name('api-tokens.destroy');
 
     // User management routes
     Route::post('/users/send-onboarding-mails', [UserController::class, 'sendOnboardingMails'])->name('users.send-onboarding-mails');

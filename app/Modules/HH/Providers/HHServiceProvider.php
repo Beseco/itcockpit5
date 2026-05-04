@@ -3,7 +3,6 @@
 namespace App\Modules\HH\Providers;
 
 use App\Services\HookManager;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 class HHServiceProvider extends ServiceProvider
@@ -27,9 +26,6 @@ class HHServiceProvider extends ServiceProvider
         // Load views
         $this->loadViewsFrom(__DIR__ . '/../Views', 'hh');
 
-        // Load API routes (web routes are loaded by ModuleServiceProvider)
-        $this->loadApiRoutes();
-
         // Register sidebar navigation item
         $hookManager = app(HookManager::class);
         $hookManager->registerSidebarItem('hh', [
@@ -42,17 +38,4 @@ class HHServiceProvider extends ServiceProvider
         ]);
     }
 
-    /**
-     * Register the HH module API routes under /api/hh with Sanctum auth.
-     */
-    protected function loadApiRoutes(): void
-    {
-        $apiRoutesPath = __DIR__ . '/../Routes/api.php';
-
-        if (file_exists($apiRoutesPath)) {
-            Route::middleware('api')
-                ->prefix('api')
-                ->group($apiRoutesPath);
-        }
-    }
 }
