@@ -93,7 +93,7 @@
                         <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">E-Mail</th>
                         <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Gruppen</th>
                         <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Letzter Login</th>
+                        <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider" title="Letzter Login (Hover für Details)">Zuletzt aktiv</th>
                         <th class="px-4 py-3"></th>
                     </tr>
                 </thead>
@@ -131,7 +131,17 @@
                                 </span>
                             </td>
                             <td class="px-4 py-3 text-gray-500 text-xs whitespace-nowrap">
-                                {{ $user->last_login_at ? $user->last_login_at->format('d.m.Y H:i') : '—' }}
+                                @if($user->last_active_at)
+                                    <span title="Login: {{ $user->last_login_at?->format('d.m.Y H:i') ?? '—' }}">
+                                        {{ $user->last_active_at->format('d.m.Y H:i') }}
+                                    </span>
+                                @elseif($user->last_login_at)
+                                    <span title="Nur Login-Zeitpunkt bekannt">
+                                        {{ $user->last_login_at->format('d.m.Y H:i') }}
+                                    </span>
+                                @else
+                                    —
+                                @endif
                             </td>
                             <td class="px-4 py-3 text-right whitespace-nowrap">
                                 <div class="flex items-center justify-end gap-1">
