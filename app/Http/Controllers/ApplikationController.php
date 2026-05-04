@@ -80,7 +80,7 @@ class ApplikationController extends Controller
         }
 
         if ($filterAbteilungId !== '')     $query->where('abteilung_id', $filterAbteilungId);
-        if ($filterBaustein !== '')        $query->where('baustein', $filterBaustein);
+        if ($filterBaustein !== '')        $query->where('baustein', 'like', '%"' . $filterBaustein . '"%');
         if ($filterAdminUserId === 'none') {
             $query->whereNull('admin_user_id');
         } elseif ($filterAdminUserId !== '') {
@@ -249,7 +249,8 @@ class ApplikationController extends Controller
             'confidentiality'  => ['required', 'in:A,B,C'],
             'integrity'        => ['required', 'in:A,B,C'],
             'availability'     => ['required', 'in:A,B,C'],
-            'baustein'         => ['nullable', 'string', 'max:50'],
+            'baustein'         => ['nullable', 'array'],
+            'baustein.*'       => ['string'],
             'abteilung_id'             => ['nullable', 'integer', 'exists:abteilungen,id'],
             'verantwortlich_sg'        => ['sometimes', 'nullable', 'string', 'max:255'],
             'verantwortlich_ad_user_id'=> ['nullable', 'integer', 'exists:adusers,id'],

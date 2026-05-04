@@ -14,7 +14,7 @@ class ApplikationResource extends JsonResource
             'sg'            => $this->sg,
             'einsatzzweck'  => $this->einsatzzweck,
             'hersteller'    => $this->hersteller,
-            'baustein'      => $this->baustein,
+            'baustein'      => (array) ($this->baustein ?? []),
             'confidentiality'=> $this->confidentiality,
             'integrity'     => $this->integrity,
             'availability'  => $this->availability,

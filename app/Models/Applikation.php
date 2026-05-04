@@ -39,6 +39,7 @@ class Applikation extends Model
     }
 
     protected $casts = [
+        'baustein'               => 'array',
         'revision_date'          => 'date',
         'revision_notified_at'   => 'datetime',
         'revision_completed_at'  => 'datetime',

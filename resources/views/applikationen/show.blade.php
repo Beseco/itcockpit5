@@ -62,8 +62,12 @@
         <div class="bg-white shadow rounded-lg overflow-hidden">
             <div class="px-5 py-3 bg-gray-50 border-b border-gray-100 flex items-center justify-between">
                 <h3 class="text-xs font-semibold text-gray-700 uppercase tracking-wide">Stammdaten</h3>
-                @if($app->baustein)
-                    <span class="px-2 py-0.5 text-xs font-semibold rounded bg-indigo-100 text-indigo-800">{{ $app->baustein }}</span>
+                @if(!empty($app->baustein))
+                    <div class="flex flex-wrap gap-1">
+                        @foreach((array) $app->baustein as $b)
+                            <span class="px-2 py-0.5 text-xs font-semibold rounded bg-indigo-100 text-indigo-800">{{ $b }}</span>
+                        @endforeach
+                    </div>
                 @endif
             </div>
             <div class="p-5 grid grid-cols-1 sm:grid-cols-2 gap-5">

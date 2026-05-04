@@ -46,8 +46,12 @@
                             @endif
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap">
-                            @if ($app->baustein)
-                                <span class="px-2 py-0.5 text-xs font-semibold rounded bg-indigo-100 text-indigo-800">{{ $app->baustein }}</span>
+                            @if (!empty($app->baustein))
+                                <div class="flex flex-wrap gap-1">
+                                    @foreach((array) $app->baustein as $b)
+                                        <span class="px-2 py-0.5 text-xs font-semibold rounded bg-indigo-100 text-indigo-800">{{ $b }}</span>
+                                    @endforeach
+                                </div>
                             @else
                                 <span class="text-gray-300">–</span>
                             @endif

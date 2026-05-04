@@ -22,16 +22,21 @@
             </div>
 
             <div>
-                <x-input-label for="baustein" value="Baustein / Typ" />
-                <select id="baustein" name="baustein"
-                        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
-                    <option value="">– Bitte wählen –</option>
+                <x-input-label value="Baustein / Typ" />
+                @php
+                    $selectedBausteine = old('baustein', $app->baustein ?? []);
+                    if (is_string($selectedBausteine)) $selectedBausteine = array_filter([$selectedBausteine]);
+                @endphp
+                <div class="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-1.5 p-3 border border-gray-300 rounded-md bg-white">
                     @foreach ($bausteine as $key => $label)
-                        <option value="{{ $key }}" {{ old('baustein', $app->baustein ?? '') === $key ? 'selected' : '' }}>
+                        <label class="flex items-start gap-2 cursor-pointer text-sm text-gray-700 hover:text-gray-900">
+                            <input type="checkbox" name="baustein[]" value="{{ $key }}"
+                                   @checked(in_array($key, (array) $selectedBausteine))
+                                   class="mt-0.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
                             {{ $label }}
-                        </option>
+                        </label>
                     @endforeach
-                </select>
+                </div>
                 <x-input-error :messages="$errors->get('baustein')" class="mt-2" />
             </div>
 
