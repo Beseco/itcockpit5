@@ -83,6 +83,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/audit-logs/help',           fn() => view('audit-logs.help'))->name('audit-logs.help');
 
     // User management routes
+    Route::post('/users/send-onboarding-mails', [UserController::class, 'sendOnboardingMails'])->name('users.send-onboarding-mails');
+    Route::get('/users/mail-settings',          [UserController::class, 'mailSettings'])->name('users.mail-settings');
+    Route::post('/users/mail-settings',         [UserController::class, 'updateMailSettings'])->name('users.mail-settings.update');
+    Route::post('/users/test-mail/{type}',      [UserController::class, 'sendTestMail'])->name('users.test-mail');
     Route::resource('users', UserController::class);
     Route::post('/users/{user}/toggle-active', [UserController::class, 'toggleActive'])->name('users.toggle-active');
     Route::post('/users/{user}/impersonate', [ImpersonationController::class, 'impersonate'])->name('users.impersonate');

@@ -1,19 +1,50 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between flex-wrap gap-2">
             <div class="flex items-center gap-2">
                 <h2 class="text-xl font-semibold text-gray-800">Benutzerverwaltung</h2>
                 <a href="{{ route('users.help') }}" title="Hilfe & Anleitung" class="inline-flex items-center justify-center w-7 h-7 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg></a>
             </div>
-            @can('base.users.create')
-                <a href="{{ route('users.create') }}"
-                   class="inline-flex items-center px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-md hover:bg-gray-700">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                    </svg>
-                    Neuer Benutzer
-                </a>
-            @endcan
+            <div class="flex items-center gap-2 flex-wrap">
+                @can('base.users.edit')
+                    {{-- Onboarding-Mail --}}
+                    @if($neverLoggedInCount > 0)
+                        <form action="{{ route('users.send-onboarding-mails') }}" method="POST"
+                              onsubmit="return confirm('Onboarding-Mail an {{ $neverLoggedInCount }} Benutzer senden, die sich noch nie angemeldet haben?')">
+                            @csrf
+                            <button type="submit"
+                                    class="inline-flex items-center px-3 py-2 bg-amber-50 border border-amber-300 text-amber-800 text-sm font-medium rounded-md hover:bg-amber-100">
+                                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                                Onboarding-Mail ({{ $neverLoggedInCount }})
+                            </button>
+                        </form>
+                    @endif
+
+                    {{-- Mail-Einstellungen --}}
+                    <a href="{{ route('users.mail-settings') }}"
+                       class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50">
+                        <svg class="w-4 h-4 mr-1.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        Mail-Einstellungen
+                        @if($mailSettings->missing_mail_enabled)
+                            <span class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">aktiv</span>
+                        @endif
+                    </a>
+                @endcan
+
+                @can('base.users.create')
+                    <a href="{{ route('users.create') }}"
+                       class="inline-flex items-center px-4 py-2 bg-gray-800 text-white text-sm font-medium rounded-md hover:bg-gray-700">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Neuer Benutzer
+                    </a>
+                @endcan
+            </div>
         </div>
     </x-slot>
 
@@ -84,16 +115,26 @@
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
-                            <a href="{{ request()->fullUrlWithQuery(['sort' => $sortDir === 'asc' ? 'desc' : 'asc']) }}"
+                            <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'name', 'sort' => ($sortBy === 'name' && $sortDir === 'asc') ? 'desc' : 'asc']) }}"
                                class="inline-flex items-center gap-1 hover:text-gray-800">
                                 Name
-                                <span class="text-gray-400">{{ $sortDir === 'asc' ? '↑' : '↓' }}</span>
+                                @if($sortBy === 'name')
+                                    <span class="text-gray-400">{{ $sortDir === 'asc' ? '↑' : '↓' }}</span>
+                                @endif
                             </a>
                         </th>
                         <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">E-Mail</th>
                         <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Gruppen</th>
                         <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider" title="Letzter Login (Hover für Details)">Zuletzt aktiv</th>
+                        <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                            <a href="{{ request()->fullUrlWithQuery(['sort_by' => 'last_active_at', 'sort' => ($sortBy === 'last_active_at' && $sortDir === 'asc') ? 'desc' : 'asc']) }}"
+                               class="inline-flex items-center gap-1 hover:text-gray-800" title="Zuletzt aktiv / Angemeldet">
+                                Zuletzt aktiv
+                                @if($sortBy === 'last_active_at')
+                                    <span class="text-gray-400">{{ $sortDir === 'asc' ? '↑' : '↓' }}</span>
+                                @endif
+                            </a>
+                        </th>
                         <th class="px-4 py-3"></th>
                     </tr>
                 </thead>

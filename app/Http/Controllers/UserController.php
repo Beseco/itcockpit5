@@ -2,15 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\UserMissingMail;
+use App\Mail\UserOnboardingMail;
 use App\Models\Gruppe;
 use App\Models\Stelle;
 use App\Models\User;
+use App\Models\UserNotificationSettings;
 use App\Services\AuditLogger;
 use App\Services\GruppeService;
 use App\Services\PasswordGeneratorService;
 use App\Services\UserMailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Password as PasswordBroker;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
@@ -42,6 +47,7 @@ class UserController extends Controller
 
         $search   = $request->input('search', '');
         $gruppeId = $request->input('gruppe_id', '');
+        $sortBy   = in_array($request->input('sort_by'), ['name', 'last_active_at']) ? $request->input('sort_by') : 'name';
         $sortDir  = $request->input('sort', 'asc') === 'desc' ? 'desc' : 'asc';
 
         $query = User::with(['gruppen', 'roles'])
@@ -57,10 +63,22 @@ class UserController extends Controller
             ->when($gruppeId, fn($q) => $q->whereHas('gruppen', fn($q2) => $q2->where('gruppen.id', $gruppeId)));
 
         $perPage = in_array((int) $request->get('per_page', 25), [25, 50, 100, 250]) ? (int) $request->get('per_page', 25) : 25;
-        $users   = $query->orderBy('name', $sortDir)->paginate($perPage)->withQueryString();
-        $gruppen = Gruppe::orderBy('name')->get();
 
-        return view('users.index', compact('users', 'gruppen', 'search', 'gruppeId', 'sortDir', 'perPage'));
+        if ($sortBy === 'last_active_at') {
+            // MySQL: push NULLs to end regardless of direction
+            $nullOrder = $sortDir === 'asc' ? 'DESC' : 'ASC';
+            $query->orderByRaw("CASE WHEN COALESCE(last_active_at, last_login_at) IS NULL THEN 1 ELSE 0 END {$nullOrder}")
+                  ->orderByRaw("COALESCE(last_active_at, last_login_at) {$sortDir}");
+        } else {
+            $query->orderBy('name', $sortDir);
+        }
+
+        $users    = $query->paginate($perPage)->withQueryString();
+        $gruppen  = Gruppe::orderBy('name')->get();
+        $neverLoggedInCount = User::whereNull('last_login_at')->count();
+        $mailSettings = UserNotificationSettings::getSingleton();
+
+        return view('users.index', compact('users', 'gruppen', 'search', 'gruppeId', 'sortDir', 'sortBy', 'perPage', 'neverLoggedInCount', 'mailSettings'));
     }
 
     /**
@@ -271,6 +289,77 @@ class UserController extends Controller
 
         return redirect()->route('users.index')
             ->with('success', 'User deleted successfully.');
+    }
+
+    /**
+     * Send onboarding mail to all users who have never logged in.
+     */
+    public function sendOnboardingMails(Request $request)
+    {
+        $this->authorize('base.users.edit');
+
+        $users = User::whereNull('last_login_at')->get();
+        $count = 0;
+
+        foreach ($users as $user) {
+            $token    = PasswordBroker::createToken($user);
+            $resetUrl = route('password.reset', ['token' => $token, 'email' => $user->email]);
+            Mail::send(new UserOnboardingMail($user, $resetUrl));
+            $count++;
+        }
+
+        return back()->with('success', "Onboarding-Mail an {$count} Benutzer gesendet.");
+    }
+
+    /**
+     * Show mail settings page.
+     */
+    public function mailSettings()
+    {
+        $this->authorize('base.users.edit');
+
+        $settings = UserNotificationSettings::getSingleton();
+        return view('users.mail-settings', compact('settings'));
+    }
+
+    /**
+     * Save mail settings.
+     */
+    public function updateMailSettings(Request $request)
+    {
+        $this->authorize('base.users.edit');
+
+        $validated = $request->validate([
+            'missing_mail_enabled' => ['required', 'boolean'],
+            'missing_mail_days'    => ['required', 'integer', 'min:1', 'max:365'],
+        ]);
+
+        $settings = UserNotificationSettings::getSingleton();
+        $settings->fill($validated)->save();
+
+        return back()->with('success', 'Einstellungen gespeichert.');
+    }
+
+    /**
+     * Send a test mail of the given type to the currently authenticated user.
+     */
+    public function sendTestMail(Request $request, string $type)
+    {
+        $this->authorize('base.users.edit');
+
+        $me = auth()->user();
+
+        if ($type === 'onboarding') {
+            $token    = PasswordBroker::createToken($me);
+            $resetUrl = route('password.reset', ['token' => $token, 'email' => $me->email]);
+            Mail::send(new UserOnboardingMail($me, $resetUrl));
+        } elseif ($type === 'missing') {
+            Mail::send(new UserMissingMail($me, 42));
+        } else {
+            return back()->with('error', 'Unbekannter Mail-Typ.');
+        }
+
+        return back()->with('success', 'Test-Mail wurde an ' . $me->email . ' gesendet.');
     }
 
     /**

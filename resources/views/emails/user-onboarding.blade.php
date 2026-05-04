@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ihr Zugang zum IT-Cockpit</title>
+</head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#374151;">
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:32px 0;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
+
+                    {{-- Header --}}
+                    <tr>
+                        <td style="background:#4f46e5;border-radius:8px 8px 0 0;padding:24px 32px;">
+                            <span style="font-size:11px;color:#c7d2fe;text-transform:uppercase;letter-spacing:1px;font-weight:600;">IT Cockpit · Zugang</span>
+                            <h1 style="margin:6px 0 0;font-size:20px;font-weight:700;color:#ffffff;line-height:1.3;">Ihr Zugang wartet auf Sie</h1>
+                        </td>
+                    </tr>
+
+                    {{-- Content --}}
+                    <tr>
+                        <td style="background:#ffffff;padding:32px;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;">
+
+                            <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f2937;">
+                                Hallo <strong>{{ $user->name }}</strong>,
+                            </p>
+                            <p style="margin:0 0 20px;line-height:1.7;color:#374151;">
+                                für Sie wurde ein Zugang im <strong>IT-Cockpit</strong> des Landratsamts Freising eingerichtet –
+                                bisher haben Sie sich noch nicht angemeldet. Das IT-Cockpit ist Ihre zentrale Plattform
+                                zur Verwaltung der IT-Infrastruktur.
+                            </p>
+
+                            {{-- Info-Box --}}
+                            <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
+                                <tr>
+                                    <td style="border-left:3px solid #4f46e5;padding:12px 16px;background:#f5f3ff;border-radius:0 4px 4px 0;font-size:14px;color:#374151;line-height:1.6;">
+                                        Das IT-Cockpit bietet Ihnen Zugriff auf Netzwerk- und VLAN-Übersichten,
+                                        Störungsmeldungen, IT-Bestellungen sowie organisatorische Informationen –
+                                        abgestimmt auf Ihre persönlichen Zugriffsrechte.
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin:0 0 6px;font-size:13px;line-height:1.7;color:#374151;">
+                                Ihre Anmeldedaten:
+                            </p>
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                   style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;margin:0 0 28px;">
+                                <tr>
+                                    <td style="padding:14px 20px;">
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding:4px 0;color:#9ca3af;width:140px;font-size:13px;">Benutzername</td>
+                                                <td style="padding:4px 0;font-size:13px;color:#1f2937;font-weight:600;">{{ $user->email }}</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            {{-- Anmelden Button --}}
+                            <table cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
+                                <tr>
+                                    <td style="background:#4f46e5;border-radius:6px;">
+                                        <a href="{{ config('app.url') . '/login' }}"
+                                           style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;">
+                                            Jetzt anmelden &rarr;
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            {{-- Passwort vergessen --}}
+                            <p style="margin:0 0 24px;font-size:13px;color:#6b7280;line-height:1.6;">
+                                Passwort vergessen oder noch kein Passwort gesetzt?
+                                <a href="{{ $resetUrl }}" style="color:#4f46e5;text-decoration:underline;">Passwort jetzt festlegen</a>
+                                (Link gültig für 60 Minuten).
+                            </p>
+
+                            {{-- Hinweis --}}
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td style="background:#fffbeb;border:1px solid #fcd34d;border-radius:6px;padding:14px 18px;">
+                                        <p style="margin:0;font-size:13px;color:#78350f;line-height:1.6;">
+                                            Falls Sie Fragen haben oder Hilfe benötigen, wenden Sie sich an Ihre IT-Abteilung.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+
+                    {{-- Footer --}}
+                    <tr>
+                        <td style="background:#f9fafb;border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;padding:16px 32px;">
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td style="font-size:12px;color:#9ca3af;">
+                                        Diese E-Mail wurde automatisch vom <strong style="color:#6b7280;">IT Cockpit</strong> versendet.
+                                    </td>
+                                    <td align="right" style="font-size:12px;color:#d1d5db;">
+                                        {{ now()->format('d.m.Y H:i') }} Uhr
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>
