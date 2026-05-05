@@ -221,7 +221,7 @@ class ApplikationExportService
         foreach ($apps as $idx => $app) {
             $name       = htmlspecialchars($app->name);
             $sachgebiet = htmlspecialchars(optional($app->abteilung)->anzeigename ?? $app->sg ?? '');
-            $baustein   = htmlspecialchars($app->baustein ?? '');
+            $baustein   = htmlspecialchars(implode(', ', (array) ($app->baustein ?? [])));
             $admin      = htmlspecialchars(optional($app->adminUser)->name ?? '');
             $verantw    = htmlspecialchars(optional($app->verantwortlichAdUser)->anzeigename ?? '');
             $hersteller = htmlspecialchars($app->hersteller ?? '');
