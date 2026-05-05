@@ -343,9 +343,9 @@
                             @elseif($app->sg)
                                 <span class="text-xs text-gray-400">{{ $app->sg }}</span>
                             @endif
-                            @if($app->baustein)
-                                <span class="px-1.5 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-700 rounded">{{ $app->baustein }}</span>
-                            @endif
+                            @foreach((array) ($app->baustein ?? []) as $b)
+                                <span class="px-1.5 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-700 rounded">{{ $b }}</span>
+                            @endforeach
                         </div>
                         @if($revFaellig)
                             <p class="text-xs text-red-600 mt-0.5 flex items-center gap-1">

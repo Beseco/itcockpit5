@@ -65,10 +65,10 @@
                         <dd class="text-gray-700">{{ $app->einsatzzweck }}</dd>
                     </div>
                     @endif
-                    @if($app->baustein)
+                    @if(!empty($app->baustein))
                     <div>
                         <dt class="text-xs font-medium text-gray-400 mb-0.5">Typ / Baustein</dt>
-                        <dd class="text-gray-700">{{ $app->baustein }}</dd>
+                        <dd class="text-gray-700">{{ implode(', ', (array) $app->baustein) }}</dd>
                     </div>
                     @endif
                     @if($app->hersteller)
