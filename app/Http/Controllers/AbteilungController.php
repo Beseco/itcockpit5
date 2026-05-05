@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Mail\AbteilungRevisionMail;
 use App\Models\Abteilung;
 use App\Modules\AdUsers\Models\AdUser;
+use App\Modules\AdUsers\Services\LdapConnectionService;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class AbteilungController extends Controller
@@ -125,11 +127,59 @@ class AbteilungController extends Controller
             ->with('success', "Test-Revisionsmail an {$recipient} gesendet.");
     }
 
+    /**
+     * AD-Mitarbeiterzahlen für alle OEs mit hinterlegtem AD-Pfad aktualisieren.
+     */
+    public function refreshAdCounts()
+    {
+        $this->authorize('abteilungen.edit');
+
+        $abteilungen = Abteilung::whereNotNull('ad_path')->where('ad_path', '!=', '')->get();
+
+        if ($abteilungen->isEmpty()) {
+            return back()->with('info', 'Keine Organisationseinheiten mit AD-Pfad gefunden.');
+        }
+
+        try {
+            $ldap    = new LdapConnectionService();
+            $updated = 0;
+            $errors  = 0;
+
+            foreach ($abteilungen as $abt) {
+                try {
+                    $users = $ldap->searchWithBaseDn(
+                        $abt->ad_path,
+                        '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))',
+                        ['samaccountname']
+                    );
+                    $abt->ad_member_count            = $users->count();
+                    $abt->ad_member_count_updated_at = now();
+                    $abt->saveQuietly();
+                    $updated++;
+                } catch (\Exception $e) {
+                    Log::warning("AD-Zählung fehlgeschlagen für OE {$abt->id} ({$abt->name}): " . $e->getMessage());
+                    $errors++;
+                }
+            }
+
+            $msg = "AD-Zählung abgeschlossen: {$updated} OE(s) aktualisiert.";
+            if ($errors > 0) {
+                $msg .= " {$errors} Fehler (Details im Log).";
+            }
+            return back()->with('success', $msg);
+
+        } catch (\Exception $e) {
+            return back()->with('error', 'AD-Verbindung fehlgeschlagen: ' . $e->getMessage());
+        }
+    }
+
     private function validateAbteilung(Request $request): array
     {
         return $request->validate([
             'name'                       => ['required', 'string', 'max:255'],
             'kurzzeichen'                => ['nullable', 'string', 'max:20'],
+            'kuerzel'                    => ['nullable', 'string', 'max:20'],
+            'ad_path'                    => ['nullable', 'string', 'max:500'],
             'parent_id'                  => ['nullable', 'integer', 'exists:abteilungen,id'],
             'sort_order'                 => ['nullable', 'integer', 'min:0'],
             'vorgesetzter_ad_user_id'    => ['nullable', 'integer', 'exists:adusers,id'],

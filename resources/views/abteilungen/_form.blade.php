@@ -19,6 +19,13 @@
         </div>
 
         <div>
+            <x-input-label for="kuerzel" value="Kürzel (z.B. IUK, PES)" />
+            <x-text-input id="kuerzel" name="kuerzel" type="text" class="mt-1 block w-full"
+                          placeholder="IUK" value="{{ old('kuerzel', $abteilung->kuerzel ?? '') }}" />
+            <x-input-error :messages="$errors->get('kuerzel')" class="mt-2" />
+        </div>
+
+        <div>
             <x-input-label for="sort_order" value="Reihenfolge" />
             <x-text-input id="sort_order" name="sort_order" type="number" min="0" class="mt-1 block w-full"
                           value="{{ old('sort_order', $abteilung->sort_order ?? 0) }}" />
@@ -26,7 +33,16 @@
         </div>
 
         <div class="sm:col-span-2">
-            <x-input-label for="parent_id" value="Übergeordnete Abteilung" />
+            <x-input-label for="ad_path" value="AD-Pfad (LDAP OU-Pfad, inkl. Unter-OUs)" />
+            <x-text-input id="ad_path" name="ad_path" type="text" class="mt-1 block w-full font-mono text-sm"
+                          placeholder="OU=SG14 IuK,OU=A1,OU=Benutzer,OU=LRA-FS,DC=lra,DC=lan"
+                          value="{{ old('ad_path', $abteilung->ad_path ?? '') }}" />
+            <p class="mt-1 text-xs text-gray-400">Wird für die automatische Zählung aktiver AD-Mitarbeiter verwendet (inkl. Unter-Ebenen).</p>
+            <x-input-error :messages="$errors->get('ad_path')" class="mt-2" />
+        </div>
+
+        <div class="sm:col-span-2">
+            <x-input-label for="parent_id" value="Übergeordnete OE" />
             <select id="parent_id" name="parent_id"
                     class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
                 <option value="">— keine (oberste Ebene) —</option>

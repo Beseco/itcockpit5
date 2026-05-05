@@ -12,6 +12,17 @@
                     {{ $abteilung->kurzzeichen }}
                 </span>
             @endif
+            @if($abteilung->kuerzel)
+                <span class="ml-1 px-1.5 py-0.5 text-xs font-mono bg-indigo-50 text-indigo-600 rounded">
+                    {{ $abteilung->kuerzel }}
+                </span>
+            @endif
+            @if($abteilung->ad_member_count !== null)
+                <span class="ml-1 px-1.5 py-0.5 text-xs bg-blue-50 text-blue-600 rounded"
+                      title="Aktive AD-Mitarbeiter{{ $abteilung->ad_member_count_updated_at ? ' – Stand: ' . $abteilung->ad_member_count_updated_at->format('d.m.Y H:i') : '' }}">
+                    👤 {{ $abteilung->ad_member_count }}
+                </span>
+            @endif
             @if($abteilung->revision_date)
                 <span class="ml-2 px-1.5 py-0.5 text-xs rounded
                     {{ $abteilung->revision_date->isPast() ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-500' }}"
@@ -37,7 +48,7 @@
         @can('abteilungen.create')
         <a href="{{ route('abteilungen.create', ['parent_id' => $abteilung->id]) }}"
            class="inline-flex items-center px-2 py-1 text-xs font-medium rounded bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200"
-           title="Untergeordnete Abteilung anlegen">
+           title="Untergeordnete OE anlegen">
             <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
@@ -66,7 +77,7 @@
                 <div class="flex items-center justify-center min-h-screen px-4">
                     <div class="fixed inset-0 bg-gray-500 bg-opacity-75"></div>
                     <div class="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-                        <h3 class="text-lg font-medium text-gray-900 mb-2">Abteilung löschen</h3>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">OE löschen</h3>
                         <p class="text-sm text-gray-500 mb-4">Soll <strong>{{ $abteilung->name }}</strong> wirklich gelöscht werden?</p>
                         <div class="flex justify-end gap-3">
                             <button @click="showDelete = false" type="button"

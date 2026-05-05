@@ -147,10 +147,13 @@ Route::middleware('auth')->group(function () {
     Route::post('/dienstleister-funktionen', [AnsprechpartnerFunktionController::class, 'store'])->name('dienstleister-funktionen.store');
     Route::delete('/dienstleister-funktionen/{funktion}', [AnsprechpartnerFunktionController::class, 'destroy'])->name('dienstleister-funktionen.destroy');
 
-    // Abteilungen / Sachgebiete
+    // Abteilungen / Sachgebiete (Organisationseinheiten)
     Route::post('/abteilungen/{abteilung}/revision-mail-test', [AbteilungController::class, 'sendRevisionMailTest'])
         ->middleware('can:abteilungen.edit')
         ->name('abteilungen.revision-mail-test');
+    Route::post('/abteilungen/refresh-ad-counts', [AbteilungController::class, 'refreshAdCounts'])
+        ->middleware('can:abteilungen.edit')
+        ->name('abteilungen.refresh-ad-counts');
     Route::get('/abteilungen/revision-settings', [AbteilungRevisionSettingsController::class, 'index'])
         ->middleware('can:abteilungen.edit')
         ->name('abteilungen.revision-settings');

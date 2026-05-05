@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Abteilung bearbeiten: {{ $abteilung->anzeigename }}</h2>
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight">Organisationseinheit bearbeiten: {{ $abteilung->anzeigename }}</h2>
     </x-slot>
 
     <div class="py-12">
@@ -28,7 +28,7 @@
                     <div class="flex items-center justify-between mt-6">
                         @can('abteilungen.delete')
                         <button type="button"
-                                onclick="if(confirm('Abteilung »{{ addslashes($abteilung->anzeigename) }}« wirklich löschen?')) document.getElementById('delete-form-{{ $abteilung->id }}').submit()"
+                                onclick="if(confirm('OE »{{ addslashes($abteilung->anzeigename) }}« wirklich löschen?')) document.getElementById('delete-form-{{ $abteilung->id }}').submit()"
                                 class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md text-sm font-semibold text-white hover:bg-red-700">
                             Löschen
                         </button>

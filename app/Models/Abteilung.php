@@ -13,15 +13,16 @@ class Abteilung extends Model
     protected $table = 'abteilungen';
 
     protected $fillable = [
-        'name', 'kurzzeichen', 'parent_id', 'sort_order',
+        'name', 'kurzzeichen', 'kuerzel', 'ad_path', 'parent_id', 'sort_order',
         'vorgesetzter_ad_user_id', 'stellvertreter_ad_user_id',
         'revision_date', 'revision_token', 'revision_notified_at', 'revision_completed_at',
     ];
 
     protected $casts = [
-        'revision_date'          => 'date',
-        'revision_notified_at'   => 'datetime',
-        'revision_completed_at'  => 'datetime',
+        'revision_date'               => 'date',
+        'revision_notified_at'        => 'datetime',
+        'revision_completed_at'       => 'datetime',
+        'ad_member_count_updated_at'  => 'datetime',
     ];
 
     public function parent(): BelongsTo
