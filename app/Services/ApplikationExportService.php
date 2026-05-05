@@ -133,7 +133,7 @@ class ApplikationExportService
             $values = [
                 $app->name,
                 optional($app->abteilung)->anzeigename ?? $app->sg ?? '',
-                $app->baustein ?? '',
+                implode(', ', (array) ($app->baustein ?? [])),
                 optional($app->adminUser)->name ?? '',
                 optional($app->verantwortlichAdUser)->anzeigename ?? '',
                 $app->hersteller ?? '',
