@@ -21,6 +21,50 @@
                 </div>
             @endif
 
+            {{-- AD-Zählung Ergebnis --}}
+            @if (session()->has('ad_refresh_updated'))
+                @php
+                    $adUpdated = session('ad_refresh_updated');
+                    $adMissing = session('ad_refresh_missing', []);
+                    $adFailed  = session('ad_refresh_failed', []);
+                    $hasIssues = count($adMissing) > 0 || count($adFailed) > 0;
+                @endphp
+                <div class="mb-4 rounded-lg border overflow-hidden {{ $hasIssues ? 'border-yellow-300' : 'border-green-300' }}">
+                    <div class="px-4 py-3 flex items-center gap-2 {{ $hasIssues ? 'bg-yellow-50 text-yellow-800' : 'bg-green-50 text-green-800' }}">
+                        @if($hasIssues)
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                            </svg>
+                        @else
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        @endif
+                        <span class="font-medium">AD-Zählung abgeschlossen: {{ $adUpdated }} OE(s) aktualisiert.</span>
+                    </div>
+                    @if(count($adFailed) > 0)
+                        <div class="px-4 py-3 bg-red-50 border-t border-red-200">
+                            <p class="text-xs font-semibold text-red-700 mb-1">Ungültiger AD-Pfad – Zählung fehlgeschlagen:</p>
+                            <ul class="text-xs text-red-700 space-y-0.5 list-disc list-inside">
+                                @foreach($adFailed as $name)
+                                    <li>{{ $name }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+                    @if(count($adMissing) > 0)
+                        <div class="px-4 py-3 bg-yellow-50 border-t border-yellow-200">
+                            <p class="text-xs font-semibold text-yellow-700 mb-1">Kein AD-Pfad hinterlegt:</p>
+                            <ul class="text-xs text-yellow-700 space-y-0.5 list-disc list-inside">
+                                @foreach($adMissing as $name)
+                                    <li>{{ $name }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+                </div>
+            @endif
+
             <div class="flex items-center justify-between mb-4">
                 <p class="text-sm text-gray-500">Hierarchische Verwaltung der Organisationseinheiten</p>
                 <div class="flex items-center gap-3">

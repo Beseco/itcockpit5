@@ -134,43 +134,42 @@ class AbteilungController extends Controller
     {
         $this->authorize('abteilungen.edit');
 
-        $abteilungen = Abteilung::whereNotNull('ad_path')->where('ad_path', '!=', '')->get();
+        $all         = Abteilung::orderBy('sort_order')->orderBy('name')->get();
+        $withPath    = $all->filter(fn($a) => !empty($a->ad_path));
+        $missingPath = $all->filter(fn($a) => empty($a->ad_path));
 
-        if ($abteilungen->isEmpty()) {
-            return back()->with('info', 'Keine Organisationseinheiten mit AD-Pfad gefunden.');
-        }
+        $updated      = 0;
+        $failedOes    = [];
 
-        try {
-            $ldap    = new LdapConnectionService();
-            $updated = 0;
-            $errors  = 0;
+        if ($withPath->isNotEmpty()) {
+            try {
+                $ldap = new LdapConnectionService();
 
-            foreach ($abteilungen as $abt) {
-                try {
-                    $users = $ldap->searchWithBaseDn(
-                        $abt->ad_path,
-                        '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))',
-                        ['samaccountname']
-                    );
-                    $abt->ad_member_count            = $users->count();
-                    $abt->ad_member_count_updated_at = now();
-                    $abt->saveQuietly();
-                    $updated++;
-                } catch (\Exception $e) {
-                    Log::warning("AD-Zählung fehlgeschlagen für OE {$abt->id} ({$abt->name}): " . $e->getMessage());
-                    $errors++;
+                foreach ($withPath as $abt) {
+                    try {
+                        $users = $ldap->searchWithBaseDn(
+                            $abt->ad_path,
+                            '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))',
+                            ['samaccountname']
+                        );
+                        $abt->ad_member_count            = $users->count();
+                        $abt->ad_member_count_updated_at = now();
+                        $abt->saveQuietly();
+                        $updated++;
+                    } catch (\Exception $e) {
+                        Log::warning("AD-Zählung fehlgeschlagen für OE {$abt->id} ({$abt->name}): " . $e->getMessage());
+                        $failedOes[] = $abt->anzeigename;
+                    }
                 }
+            } catch (\Exception $e) {
+                return back()->with('error', 'AD-Verbindung fehlgeschlagen: ' . $e->getMessage());
             }
-
-            $msg = "AD-Zählung abgeschlossen: {$updated} OE(s) aktualisiert.";
-            if ($errors > 0) {
-                $msg .= " {$errors} Fehler (Details im Log).";
-            }
-            return back()->with('success', $msg);
-
-        } catch (\Exception $e) {
-            return back()->with('error', 'AD-Verbindung fehlgeschlagen: ' . $e->getMessage());
         }
+
+        return back()
+            ->with('ad_refresh_updated', $updated)
+            ->with('ad_refresh_missing', $missingPath->pluck('anzeigename')->all())
+            ->with('ad_refresh_failed', $failedOes);
     }
 
     private function validateAbteilung(Request $request): array
