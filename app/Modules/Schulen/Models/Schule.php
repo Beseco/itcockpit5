@@ -11,7 +11,7 @@ class Schule extends Model
     protected $table = 'schulen';
 
     protected $fillable = [
-        'name', 'schultyp', 'strasse', 'plz', 'ort',
+        'name', 'kurzname', 'schultyp', 'strasse', 'plz', 'ort',
         'telefon', 'email', 'website', 'notizen', 'sort_order',
     ];
 

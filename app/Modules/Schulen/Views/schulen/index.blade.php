@@ -65,6 +65,9 @@
                                     <a href="{{ route('schulen.show', $schule) }}" class="hover:text-indigo-600">
                                         {{ $schule->name }}
                                     </a>
+                                    @if ($schule->kurzname)
+                                        <span class="ml-1 text-xs text-gray-400">({{ $schule->kurzname }})</span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-3">
                                     <span class="px-2 py-0.5 text-xs font-semibold rounded-full

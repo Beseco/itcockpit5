@@ -8,6 +8,15 @@
         </div>
 
         <div>
+            <x-input-label for="kurzname" value="Kurzname (Matrix-Spalte, max. 40 Zeichen)" />
+            <x-text-input id="kurzname" name="kurzname" type="text" class="mt-1 block w-full"
+                          value="{{ old('kurzname', $schule?->kurzname) }}" maxlength="40"
+                          placeholder="z.B. RS Moosburg" />
+            <p class="mt-1 text-xs text-gray-400">Wird in der Matrix-Kopfzeile angezeigt. Leer = voller Name.</p>
+            <x-input-error :messages="$errors->get('kurzname')" class="mt-1" />
+        </div>
+
+        <div>
             <x-input-label for="schultyp" value="Schultyp *" />
             <select id="schultyp" name="schultyp" required
                     class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">

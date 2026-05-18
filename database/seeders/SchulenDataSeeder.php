@@ -164,32 +164,36 @@ class SchulenDataSeeder extends Seeder
     {
         $defs = [
             // Realschulen (sort 1-5)
-            ['name' => 'Realschule Karl-Meichelbeck', 'typ' => 'realschule', 'ort' => 'Freising',              'sort' => 1],
-            ['name' => 'Realschule Gute Änger',        'typ' => 'realschule', 'ort' => 'Freising',              'sort' => 2],
-            ['name' => 'Realschule Moosburg',          'typ' => 'realschule', 'ort' => 'Moosburg a.d. Isar',    'sort' => 3],
-            ['name' => 'Realschule Eching',            'typ' => 'realschule', 'ort' => 'Eching',                'sort' => 4],
-            ['name' => 'Realschule Au in der Hallertau','typ'=> 'realschule', 'ort' => 'Au in der Hallertau',   'sort' => 5],
+            ['name' => 'Realschule Karl-Meichelbeck',  'kurz' => 'RS Meichelbeck', 'typ' => 'realschule', 'ort' => 'Freising',             'sort' => 1],
+            ['name' => 'Realschule Gute Änger',         'kurz' => 'RS Gute Änger',  'typ' => 'realschule', 'ort' => 'Freising',             'sort' => 2],
+            ['name' => 'Realschule Moosburg',           'kurz' => 'RS Moosburg',    'typ' => 'realschule', 'ort' => 'Moosburg a.d. Isar',   'sort' => 3],
+            ['name' => 'Realschule Eching',             'kurz' => 'RS Eching',      'typ' => 'realschule', 'ort' => 'Eching',               'sort' => 4],
+            ['name' => 'Realschule Au in der Hallertau','kurz' => 'RS Au',          'typ' => 'realschule', 'ort' => 'Au in der Hallertau',  'sort' => 5],
 
             // Gymnasien (sort 1-5)
-            ['name' => 'Gymnasium Camerloher',         'typ' => 'gymnasium',  'ort' => 'Freising',              'sort' => 1],
-            ['name' => 'Gymnasium DOM',                'typ' => 'gymnasium',  'ort' => 'Freising',              'sort' => 2],
-            ['name' => 'Gymnasium Josef-Hofmiller',    'typ' => 'gymnasium',  'ort' => 'Freising',              'sort' => 3],
-            ['name' => 'Gymnasium Moosburg',           'typ' => 'gymnasium',  'ort' => 'Moosburg a.d. Isar',    'sort' => 4],
-            ['name' => 'Gymnasium Neufahrn',           'typ' => 'gymnasium',  'ort' => 'Neufahrn b. Freising',  'sort' => 5],
+            ['name' => 'Gymnasium Camerloher',         'kurz' => 'Gym Camerloher',  'typ' => 'gymnasium',  'ort' => 'Freising',             'sort' => 1],
+            ['name' => 'Gymnasium DOM',                'kurz' => 'Gym DOM',         'typ' => 'gymnasium',  'ort' => 'Freising',             'sort' => 2],
+            ['name' => 'Gymnasium Josef-Hofmiller',    'kurz' => 'Gym J-Hofmiller', 'typ' => 'gymnasium',  'ort' => 'Freising',             'sort' => 3],
+            ['name' => 'Gymnasium Moosburg',           'kurz' => 'Gym Moosburg',    'typ' => 'gymnasium',  'ort' => 'Moosburg a.d. Isar',   'sort' => 4],
+            ['name' => 'Gymnasium Neufahrn',           'kurz' => 'Gym Neufahrn',    'typ' => 'gymnasium',  'ort' => 'Neufahrn b. Freising', 'sort' => 5],
 
             // Sonstige (sort 1-4)
-            ['name' => 'Berufsschule Freising',                    'typ' => 'sonstige', 'ort' => 'Freising', 'sort' => 1],
-            ['name' => 'FOS / BOS Freising',                       'typ' => 'sonstige', 'ort' => 'Freising', 'sort' => 2],
-            ['name' => 'Wirtschaftsschule',                        'typ' => 'sonstige', 'ort' => 'Freising', 'sort' => 3],
-            ['name' => 'Sonderpädagogisches Förderzentrum',        'typ' => 'sonstige', 'ort' => 'Freising', 'sort' => 4],
+            ['name' => 'Berufsschule Freising',              'kurz' => 'BS Freising', 'typ' => 'sonstige', 'ort' => 'Freising', 'sort' => 1],
+            ['name' => 'FOS / BOS Freising',                 'kurz' => 'FOS/BOS',     'typ' => 'sonstige', 'ort' => 'Freising', 'sort' => 2],
+            ['name' => 'Wirtschaftsschule',                  'kurz' => 'Wirtschaftssch.','typ'=>'sonstige', 'ort' => 'Freising', 'sort' => 3],
+            ['name' => 'Sonderpädagogisches Förderzentrum',  'kurz' => 'SPF',         'typ' => 'sonstige', 'ort' => 'Freising', 'sort' => 4],
         ];
 
         $result = [];
         foreach ($defs as $d) {
             $obj = Schule::firstOrCreate(
                 ['name' => $d['name']],
-                ['schultyp' => $d['typ'], 'ort' => $d['ort'], 'sort_order' => $d['sort']]
+                ['kurzname' => $d['kurz'], 'schultyp' => $d['typ'], 'ort' => $d['ort'], 'sort_order' => $d['sort']]
             );
+            // Kurzname nachträglich setzen falls Schule bereits existiert
+            if (!$obj->kurzname) {
+                $obj->update(['kurzname' => $d['kurz']]);
+            }
             $result[$d['name']] = $obj;
         }
         return $result;

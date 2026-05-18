@@ -130,9 +130,10 @@
                                         @foreach ($schulen as $schule)
                                             <th class="border border-gray-200 px-2 py-1 text-center font-medium text-gray-700 w-[90px]">
                                                 <a href="{{ route('schulen.show', $schule) }}"
+                                                   title="{{ $schule->name }}"
                                                    class="hover:text-indigo-600 block"
                                                    style="writing-mode: vertical-lr; transform: rotate(180deg); height: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                                    {{ $schule->name }}
+                                                    {{ $schule->kurzname ?: $schule->name }}
                                                 </a>
                                             </th>
                                         @endforeach

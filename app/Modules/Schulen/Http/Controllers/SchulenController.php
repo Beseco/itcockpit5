@@ -184,6 +184,7 @@ class SchulenController extends Controller
     {
         return $request->validate([
             'name'       => ['required', 'string', 'max:255'],
+            'kurzname'   => ['nullable', 'string', 'max:40'],
             'schultyp'   => ['required', 'in:realschule,gymnasium,sonstige'],
             'strasse'    => ['nullable', 'string', 'max:255'],
             'plz'        => ['nullable', 'string', 'max:10'],
