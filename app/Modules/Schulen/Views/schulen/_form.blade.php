@@ -17,15 +17,15 @@
         </div>
 
         <div>
-            <x-input-label for="schultyp" value="Schultyp *" />
-            <select id="schultyp" name="schultyp" required
+            <x-input-label for="schul_typ_id" value="Schultyp *" />
+            <select id="schul_typ_id" name="schul_typ_id" required
                     class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                 <option value="">— Bitte wählen —</option>
-                @foreach (\App\Modules\Schulen\Models\Schule::SCHULTYP_LABELS as $val => $label)
-                    <option value="{{ $val }}" @selected(old('schultyp', $schule?->schultyp) === $val)>{{ $label }}</option>
+                @foreach ($schulTypen as $typ)
+                    <option value="{{ $typ->id }}" @selected(old('schul_typ_id', $schule?->schul_typ_id) == $typ->id)>{{ $typ->name }}</option>
                 @endforeach
             </select>
-            <x-input-error :messages="$errors->get('schultyp')" class="mt-1" />
+            <x-input-error :messages="$errors->get('schul_typ_id')" class="mt-1" />
         </div>
 
         <div>

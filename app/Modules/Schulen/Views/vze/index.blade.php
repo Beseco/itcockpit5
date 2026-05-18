@@ -56,9 +56,8 @@
                                         </a>
                                     </td>
                                     <td class="px-6 py-3">
-                                        <span class="px-2 py-0.5 text-xs font-semibold rounded-full
-                                            {{ \App\Modules\Schulen\Models\Schule::SCHULTYP_COLORS[$row['schule']->schultyp] ?? '' }}">
-                                            {{ \App\Modules\Schulen\Models\Schule::SCHULTYP_LABELS[$row['schule']->schultyp] ?? $row['schule']->schultyp }}
+                                        <span class="px-2 py-0.5 text-xs font-semibold rounded-full {{ $row['schule']->typFarbe() }}">
+                                            {{ $row['schule']->typLabel() }}
                                         </span>
                                     </td>
                                     <td class="px-6 py-3 text-right text-gray-600">

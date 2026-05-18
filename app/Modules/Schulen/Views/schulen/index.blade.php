@@ -35,8 +35,8 @@
                         <select name="filter_typ" onchange="document.getElementById('schule-filter').submit()"
                                 class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                             <option value="">Alle Typen</option>
-                            @foreach (\App\Modules\Schulen\Models\Schule::SCHULTYP_LABELS as $val => $label)
-                                <option value="{{ $val }}" @selected($filterTyp === $val)>{{ $label }}</option>
+                            @foreach ($schulTypen as $typ)
+                                <option value="{{ $typ->id }}" @selected($filterTyp == $typ->id)>{{ $typ->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -70,9 +70,8 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-3">
-                                    <span class="px-2 py-0.5 text-xs font-semibold rounded-full
-                                        {{ \App\Modules\Schulen\Models\Schule::SCHULTYP_COLORS[$schule->schultyp] ?? 'bg-gray-100 text-gray-600' }}">
-                                        {{ \App\Modules\Schulen\Models\Schule::SCHULTYP_LABELS[$schule->schultyp] ?? $schule->schultyp }}
+                                    <span class="px-2 py-0.5 text-xs font-semibold rounded-full {{ $schule->typFarbe() }}">
+                                        {{ $schule->typLabel() }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-3 text-gray-600">{{ $schule->ort ?? '—' }}</td>

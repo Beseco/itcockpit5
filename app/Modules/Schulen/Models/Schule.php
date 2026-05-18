@@ -3,6 +3,7 @@
 namespace App\Modules\Schulen\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
@@ -11,21 +12,14 @@ class Schule extends Model
     protected $table = 'schulen';
 
     protected $fillable = [
-        'name', 'kurzname', 'schultyp', 'strasse', 'plz', 'ort',
+        'name', 'kurzname', 'schul_typ_id', 'strasse', 'plz', 'ort',
         'telefon', 'email', 'website', 'notizen', 'sort_order',
     ];
 
-    const SCHULTYP_LABELS = [
-        'realschule' => 'Realschule',
-        'gymnasium'  => 'Gymnasium',
-        'sonstige'   => 'Sonstige Schule',
-    ];
-
-    const SCHULTYP_COLORS = [
-        'realschule' => 'bg-blue-100 text-blue-800',
-        'gymnasium'  => 'bg-purple-100 text-purple-800',
-        'sonstige'   => 'bg-gray-100 text-gray-800',
-    ];
+    public function schulTyp(): BelongsTo
+    {
+        return $this->belongsTo(SchulTyp::class, 'schul_typ_id');
+    }
 
     public function kontakte(): HasMany
     {
@@ -40,9 +34,14 @@ class Schule extends Model
             ->withTimestamps();
     }
 
-    public function schultyplabel(): string
+    public function typLabel(): string
     {
-        return self::SCHULTYP_LABELS[$this->schultyp] ?? $this->schultyp;
+        return $this->schulTyp?->name ?? '—';
+    }
+
+    public function typFarbe(): string
+    {
+        return $this->schulTyp?->farbe_klassen ?? 'bg-gray-100 text-gray-800';
     }
 
     public function aktiveDienstleistungenCount(): int

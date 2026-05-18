@@ -1,12 +1,25 @@
 <?php
 
 use App\Modules\Schulen\Http\Controllers\DienstleistungenController;
+use App\Modules\Schulen\Http\Controllers\EinstellungenController;
 use App\Modules\Schulen\Http\Controllers\KontaktController;
 use App\Modules\Schulen\Http\Controllers\MatrixController;
 use App\Modules\Schulen\Http\Controllers\SchulenController;
 use Illuminate\Support\Facades\Route;
 
 // Spezifische Routen vor parametrisierten Routen
+
+Route::middleware(['auth', 'module.permission:schulen,config'])->group(function () {
+    Route::get('/einstellungen',                          [EinstellungenController::class, 'index'])->name('einstellungen');
+    // Schultypen
+    Route::post('/einstellungen/typen',                  [EinstellungenController::class, 'storeTyp'])->name('einstellungen.typen.store');
+    Route::put('/einstellungen/typen/{schulTyp}',        [EinstellungenController::class, 'updateTyp'])->name('einstellungen.typen.update');
+    Route::delete('/einstellungen/typen/{schulTyp}',     [EinstellungenController::class, 'destroyTyp'])->name('einstellungen.typen.destroy');
+    // Kategorien (über Einstellungen)
+    Route::post('/einstellungen/kategorien',             [EinstellungenController::class, 'storeKategorie'])->name('einstellungen.kategorien.store');
+    Route::put('/einstellungen/kategorien/{kategorie}',  [EinstellungenController::class, 'updateKategorie'])->name('einstellungen.kategorien.update');
+    Route::delete('/einstellungen/kategorien/{kategorie}',[EinstellungenController::class, 'destroyKategorie'])->name('einstellungen.kategorien.destroy');
+});
 
 Route::middleware(['auth', 'module.permission:schulen,edit'])->group(function () {
     // Dienstleistungen CRUD (vor /{schule} platziert)

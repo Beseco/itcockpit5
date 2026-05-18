@@ -12,9 +12,15 @@
                     Dienstleistungen
                 </a>
                 <a href="{{ route('schulen.vze') }}"
-                   class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md text-xs font-medium text-white hover:bg-indigo-700">
+                   class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50">
                     VZE-Rechner
                 </a>
+                @can('schulen.config')
+                <a href="{{ route('schulen.einstellungen') }}"
+                   class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md text-xs font-medium text-white hover:bg-indigo-700">
+                    Einstellungen
+                </a>
+                @endcan
             </div>
         </div>
     </x-slot>
@@ -37,8 +43,8 @@
                         <select name="filter_typ" onchange="this.form.submit()"
                                 class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                             <option value="">Alle Schultypen</option>
-                            @foreach (\App\Modules\Schulen\Models\Schule::SCHULTYP_LABELS as $val => $label)
-                                <option value="{{ $val }}" @selected($filterTyp === $val)>{{ $label }}</option>
+                            @foreach ($schulTypen as $typ)
+                                <option value="{{ $typ->id }}" @selected($filterTyp == $typ->id)>{{ $typ->name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -111,13 +117,12 @@
                                     {{-- Schultyp-Gruppenköpfe --}}
                                     <tr class="bg-gray-50 sticky top-0 z-20">
                                         <th class="sticky left-0 z-30 bg-gray-50 border border-gray-200 px-3 py-2 text-left text-gray-500 min-w-[220px]"></th>
-                                        @foreach (\App\Modules\Schulen\Models\Schule::SCHULTYP_LABELS as $typ => $typLabel)
-                                            @php $gruppe = $schulenGruppen->get($typ, collect()) @endphp
+                                        @foreach ($schulTypen as $typ)
+                                            @php $gruppe = $schulenGruppen->get($typ->id, collect()) @endphp
                                             @if ($gruppe->isNotEmpty())
                                                 <th colspan="{{ $gruppe->count() }}"
-                                                    class="border border-gray-200 px-3 py-2 text-center font-semibold text-gray-700
-                                                           {{ $typ === 'realschule' ? 'bg-blue-50' : ($typ === 'gymnasium' ? 'bg-purple-50' : 'bg-gray-50') }}">
-                                                    {{ $typLabel }} ({{ $gruppe->count() }})
+                                                    class="border border-gray-200 px-3 py-2 text-center font-semibold text-gray-700 {{ $typ->farbe_klassen }}">
+                                                    {{ $typ->name }} ({{ $gruppe->count() }})
                                                 </th>
                                             @endif
                                         @endforeach

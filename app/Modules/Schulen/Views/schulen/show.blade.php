@@ -3,9 +3,8 @@
         <div class="flex items-center gap-3 flex-wrap">
             <a href="{{ route('schulen.index') }}" class="text-gray-400 hover:text-gray-600">← Schulen</a>
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ $schule->name }}</h2>
-            <span class="px-2 py-0.5 text-xs font-semibold rounded-full
-                {{ \App\Modules\Schulen\Models\Schule::SCHULTYP_COLORS[$schule->schultyp] ?? 'bg-gray-100 text-gray-600' }}">
-                {{ \App\Modules\Schulen\Models\Schule::SCHULTYP_LABELS[$schule->schultyp] ?? $schule->schultyp }}
+            <span class="px-2 py-0.5 text-xs font-semibold rounded-full {{ $schule->typFarbe() }}">
+                {{ $schule->typLabel() }}
             </span>
             <div class="ml-auto flex gap-2">
                 @can('schulen.edit')
@@ -41,9 +40,8 @@
                 <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div><span class="font-medium text-gray-500">Name:</span> <span class="ml-2 text-gray-900">{{ $schule->name }}</span></div>
                     <div><span class="font-medium text-gray-500">Typ:</span>
-                        <span class="ml-2 px-2 py-0.5 text-xs font-semibold rounded-full
-                            {{ \App\Modules\Schulen\Models\Schule::SCHULTYP_COLORS[$schule->schultyp] ?? '' }}">
-                            {{ \App\Modules\Schulen\Models\Schule::SCHULTYP_LABELS[$schule->schultyp] ?? $schule->schultyp }}
+                        <span class="ml-2 px-2 py-0.5 text-xs font-semibold rounded-full {{ $schule->typFarbe() }}">
+                            {{ $schule->typLabel() }}
                         </span>
                     </div>
                     @if ($schule->strasse || $schule->ort)

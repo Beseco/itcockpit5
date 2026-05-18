@@ -6,6 +6,7 @@ use App\Modules\Schulen\Models\DienstKategorie;
 use App\Modules\Schulen\Models\Dienstleistung;
 use App\Modules\Schulen\Models\Schule;
 use App\Modules\Schulen\Models\SchuleDienstleistung;
+use App\Modules\Schulen\Models\SchulTyp;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -19,9 +20,9 @@ class MatrixController extends Controller
         $filterTyp       = $request->get('filter_typ', '');
         $filterKategorie = $request->get('filter_kategorie', '');
 
-        $schulenQuery = Schule::orderBy('schultyp')->orderBy('sort_order')->orderBy('name');
+        $schulenQuery = Schule::with('schulTyp')->orderBy('schul_typ_id')->orderBy('sort_order')->orderBy('name');
         if (filled($filterTyp)) {
-            $schulenQuery->where('schultyp', $filterTyp);
+            $schulenQuery->where('schul_typ_id', (int) $filterTyp);
         }
         $schulen = $schulenQuery->get();
 
@@ -38,17 +39,18 @@ class MatrixController extends Controller
             ->get()
             ->groupBy('schule_id');
 
-        $kategorien = DienstKategorie::orderBy('sort_order')->orderBy('name')->get();
+        $kategorien  = DienstKategorie::orderBy('sort_order')->orderBy('name')->get();
+        $schulTypen  = SchulTyp::orderBy('sort_order')->orderBy('name')->get();
 
         // Schulen nach Typ gruppieren
-        $schulenGruppen = $schulen->groupBy('schultyp');
+        $schulenGruppen = $schulen->groupBy('schul_typ_id');
 
         // Dienstleistungen nach Kategorie gruppieren
         $diensteGruppen = $dienstleistungen->groupBy('dienst_kategorie_id');
 
         return view('schulen::matrix.index', compact(
             'schulen', 'dienstleistungen', 'pivots',
-            'kategorien', 'schulenGruppen', 'diensteGruppen',
+            'kategorien', 'schulTypen', 'schulenGruppen', 'diensteGruppen',
             'filterTyp', 'filterKategorie'
         ));
     }

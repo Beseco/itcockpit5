@@ -6,6 +6,7 @@ use App\Modules\Schulen\Models\Dienstleistung;
 use App\Modules\Schulen\Models\DienstKategorie;
 use App\Modules\Schulen\Models\Schule;
 use App\Modules\Schulen\Models\SchuleDienstleistung;
+use App\Modules\Schulen\Models\SchulTyp;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -21,7 +22,7 @@ class SchulenController extends Controller
 
         $query = Schule::withCount(['dienstleistungen as aktive_dienste_count' => function ($q) {
             $q->where('schule_dienstleistung.status', 'aktiv');
-        }])->orderBy('schultyp')->orderBy('sort_order')->orderBy('name');
+        }])->orderBy('schul_typ_id')->orderBy('sort_order')->orderBy('name');
 
         if (filled($search)) {
             $query->where(function ($q) use ($search) {
@@ -30,12 +31,13 @@ class SchulenController extends Controller
             });
         }
         if (filled($filterTyp)) {
-            $query->where('schultyp', $filterTyp);
+            $query->where('schul_typ_id', (int) $filterTyp);
         }
 
-        $schulen = $query->paginate(25)->withQueryString();
+        $schulen    = $query->paginate(25)->withQueryString();
+        $schulTypen = SchulTyp::orderBy('sort_order')->orderBy('name')->get();
 
-        return view('schulen::schulen.index', compact('schulen', 'search', 'filterTyp'));
+        return view('schulen::schulen.index', compact('schulen', 'search', 'filterTyp', 'schulTypen'));
     }
 
     public function show(Schule $schule)
@@ -55,7 +57,8 @@ class SchulenController extends Controller
 
     public function create()
     {
-        return view('schulen::schulen.create', ['schule' => null]);
+        $schulTypen = SchulTyp::orderBy('sort_order')->orderBy('name')->get();
+        return view('schulen::schulen.create', ['schule' => null, 'schulTypen' => $schulTypen]);
     }
 
     public function store(Request $request)
@@ -74,7 +77,8 @@ class SchulenController extends Controller
 
     public function edit(Schule $schule)
     {
-        return view('schulen::schulen.edit', compact('schule'));
+        $schulTypen = SchulTyp::orderBy('sort_order')->orderBy('name')->get();
+        return view('schulen::schulen.edit', compact('schule', 'schulTypen'));
     }
 
     public function update(Request $request, Schule $schule)
@@ -104,9 +108,9 @@ class SchulenController extends Controller
 
     public function vze()
     {
-        $schulen = Schule::with(['dienstleistungen' => function ($q) {
+        $schulen = Schule::with(['schulTyp', 'dienstleistungen' => function ($q) {
             $q->aktiv();
-        }])->orderBy('schultyp')->orderBy('sort_order')->orderBy('name')->get();
+        }])->orderBy('schul_typ_id')->orderBy('sort_order')->orderBy('name')->get();
 
         $dienstleistungen = Dienstleistung::aktiv()->get();
 
@@ -183,17 +187,17 @@ class SchulenController extends Controller
     private function validateSchule(Request $request): array
     {
         return $request->validate([
-            'name'       => ['required', 'string', 'max:255'],
-            'kurzname'   => ['nullable', 'string', 'max:40'],
-            'schultyp'   => ['required', 'in:realschule,gymnasium,sonstige'],
-            'strasse'    => ['nullable', 'string', 'max:255'],
-            'plz'        => ['nullable', 'string', 'max:10'],
-            'ort'        => ['nullable', 'string', 'max:255'],
-            'telefon'    => ['nullable', 'string', 'max:100'],
-            'email'      => ['nullable', 'email', 'max:255'],
-            'website'    => ['nullable', 'url', 'max:500'],
-            'notizen'    => ['nullable', 'string'],
-            'sort_order' => ['nullable', 'integer'],
+            'name'         => ['required', 'string', 'max:255'],
+            'kurzname'     => ['nullable', 'string', 'max:40'],
+            'schul_typ_id' => ['required', 'exists:schul_typen,id'],
+            'strasse'      => ['nullable', 'string', 'max:255'],
+            'plz'          => ['nullable', 'string', 'max:10'],
+            'ort'          => ['nullable', 'string', 'max:255'],
+            'telefon'      => ['nullable', 'string', 'max:100'],
+            'email'        => ['nullable', 'email', 'max:255'],
+            'website'      => ['nullable', 'url', 'max:500'],
+            'notizen'      => ['nullable', 'string'],
+            'sort_order'   => ['nullable', 'integer'],
         ]);
     }
 }

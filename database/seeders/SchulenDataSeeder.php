@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Modules\Schulen\Models\DienstKategorie;
 use App\Modules\Schulen\Models\Dienstleistung;
 use App\Modules\Schulen\Models\Schule;
+use App\Modules\Schulen\Models\SchulTyp;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -184,11 +185,18 @@ class SchulenDataSeeder extends Seeder
             ['name' => 'Sonderpädagogisches Förderzentrum',  'kurz' => 'SPF',         'typ' => 'sonstige', 'ort' => 'Freising', 'sort' => 4],
         ];
 
+        // Map old enum values → SchulTyp IDs
+        $typMap = [
+            'realschule' => SchulTyp::where('name', 'Realschule')->value('id'),
+            'gymnasium'  => SchulTyp::where('name', 'Gymnasium')->value('id'),
+            'sonstige'   => SchulTyp::where('name', 'Sonstige Schule')->value('id'),
+        ];
+
         $result = [];
         foreach ($defs as $d) {
             $obj = Schule::firstOrCreate(
                 ['name' => $d['name']],
-                ['kurzname' => $d['kurz'], 'schultyp' => $d['typ'], 'ort' => $d['ort'], 'sort_order' => $d['sort']]
+                ['kurzname' => $d['kurz'], 'schul_typ_id' => $typMap[$d['typ']], 'ort' => $d['ort'], 'sort_order' => $d['sort']]
             );
             // Kurzname nachträglich setzen falls Schule bereits existiert
             if (!$obj->kurzname) {
