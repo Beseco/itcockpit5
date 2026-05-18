@@ -347,7 +347,7 @@ class SslCertsController extends Controller
                 ->withErrors(['cert_url' => 'Das Zertifikat konnte nicht exportiert werden.']);
         }
 
-        return $this->saveCertificate($request, $certPem, null);
+        return $this->saveCertificate($request, $certPem, null, $url);
     }
 
     private function storeFromP12(Request $request)
@@ -406,7 +406,7 @@ class SslCertsController extends Controller
         return $this->saveCertificate($request, $certPem, $privateKey);
     }
 
-    private function saveCertificate(Request $request, string $certPem, ?string $privateKey)
+    private function saveCertificate(Request $request, string $certPem, ?string $privateKey, ?string $sourceUrl = null)
     {
         $parsed = openssl_x509_parse($certPem);
 
@@ -450,6 +450,7 @@ class SslCertsController extends Controller
             'fingerprint_sha256'  => $sha256,
             'cert_pem'            => $certPem,
             'private_key'         => $privateKey,
+            'source_url'          => $sourceUrl,
         ]);
 
         $cert->servers()->sync($request->input('servers', []));

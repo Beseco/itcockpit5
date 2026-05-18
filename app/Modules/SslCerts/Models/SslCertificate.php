@@ -15,6 +15,7 @@ class SslCertificate extends Model
 
     protected $fillable = [
         'name', 'description', 'responsible_user_id', 'doc_url', 'urls',
+        'source_url', 'last_auto_check_at',
         'subject_cn', 'subject_o', 'subject_ou',
         'issuer_cn', 'issuer_o', 'serial_number',
         'valid_from', 'valid_to', 'san',
@@ -31,6 +32,7 @@ class SslCertificate extends Model
         'notified_30_at'     => 'datetime',
         'notified_14_at'     => 'datetime',
         'notified_daily_at'  => 'datetime',
+        'last_auto_check_at' => 'datetime',
     ];
 
     // ─── Relationships ────────────────────────────────────────────────────────
