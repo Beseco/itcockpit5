@@ -162,6 +162,11 @@
                                                 <td class="sticky left-0 z-10 bg-white border border-gray-200 px-3 py-1.5 text-gray-800 font-medium min-w-[220px]">
                                                     <a href="{{ route('schulen.dienste.show', $dienst) }}"
                                                        class="hover:text-indigo-600">{{ $dienst->name }}</a>
+                                                    @if ($dienst->dokumentation_url)
+                                                        <a href="{{ $dienst->dokumentation_url }}" target="_blank" rel="noopener"
+                                                           title="Dokumentation öffnen"
+                                                           class="ml-1 text-gray-400 hover:text-indigo-600">📖</a>
+                                                    @endif
                                                 </td>
                                                 @foreach ($schulen as $schule)
                                                     @php
@@ -200,6 +205,11 @@
                                                 <td class="sticky left-0 z-10 bg-white border border-gray-200 px-3 py-1.5 text-gray-800 font-medium">
                                                     <a href="{{ route('schulen.dienste.show', $dienst) }}"
                                                        class="hover:text-indigo-600">{{ $dienst->name }}</a>
+                                                    @if ($dienst->dokumentation_url)
+                                                        <a href="{{ $dienst->dokumentation_url }}" target="_blank" rel="noopener"
+                                                           title="Dokumentation öffnen"
+                                                           class="ml-1 text-gray-400 hover:text-indigo-600">📖</a>
+                                                    @endif
                                                 </td>
                                                 @foreach ($schulen as $schule)
                                                     @php
