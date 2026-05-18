@@ -130,6 +130,9 @@
                                                 </th>
                                             @endif
                                         @endforeach
+                                        <th colspan="3" class="border border-gray-200 px-3 py-2 text-center font-semibold text-gray-600 bg-violet-50">
+                                            VZE
+                                        </th>
                                     </tr>
                                     {{-- Schul-Namen --}}
                                     <tr class="bg-white sticky z-20" style="top: 37px;">
@@ -146,6 +149,9 @@
                                                 </a>
                                             </th>
                                         @endforeach
+                                        <th class="border border-gray-200 px-2 py-2 text-center text-xs font-medium text-gray-500 bg-violet-50 w-[70px]">1 Schule</th>
+                                        <th class="border border-gray-200 px-2 py-2 text-center text-xs font-medium text-gray-500 bg-violet-50 w-[70px]">Aktiv</th>
+                                        <th class="border border-gray-200 px-2 py-2 text-center text-xs font-medium text-gray-500 bg-violet-50 w-[70px]">Alle</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -156,12 +162,23 @@
 
                                     @foreach ($sortedKats as $kat)
                                         <tr class="bg-indigo-50">
-                                            <td colspan="{{ $schulen->count() + 1 }}"
+                                            <td colspan="{{ $schulen->count() + 4 }}"
                                                 class="sticky left-0 border border-gray-200 px-3 py-1.5 font-semibold text-indigo-700 text-xs uppercase tracking-wide">
                                                 {{ $kat->name }}
                                             </td>
                                         </tr>
                                         @foreach ($diensteGruppen->get($kat->id, collect()) as $dienst)
+                                            @php
+                                                $h = $dienst->jahresstunden();
+                                                $vzeBase = \App\Modules\Schulen\Models\Dienstleistung::VZE_JAHRESSTUNDEN;
+                                                $istStunden = 0;
+                                                foreach ($schulen as $s) {
+                                                    $p = $pivots->get($s->id)?->firstWhere('dienstleistung_id', $dienst->id);
+                                                    if ($p && $p->status === 'aktiv') {
+                                                        $istStunden += $p->stunden_override ?? $h ?? 0;
+                                                    }
+                                                }
+                                            @endphp
                                             <tr class="hover:bg-gray-50">
                                                 <td class="sticky left-0 z-10 bg-white border border-gray-200 px-3 py-1.5 text-gray-800 font-medium min-w-[220px]">
                                                     <a href="{{ route('schulen.dienste.show', $dienst) }}"
@@ -193,18 +210,39 @@
                                                         @endcan
                                                     </td>
                                                 @endforeach
+                                                {{-- VZE-Spalten --}}
+                                                <td class="border border-gray-200 px-2 py-1 text-center bg-violet-50 text-xs text-violet-700 font-medium whitespace-nowrap">
+                                                    {{ $h !== null ? number_format($h / $vzeBase, 3, ',', '.') : '—' }}
+                                                </td>
+                                                <td class="border border-gray-200 px-2 py-1 text-center bg-violet-50 text-xs font-semibold text-green-700 whitespace-nowrap">
+                                                    {{ $istStunden > 0 ? number_format($istStunden / $vzeBase, 3, ',', '.') : '—' }}
+                                                </td>
+                                                <td class="border border-gray-200 px-2 py-1 text-center bg-violet-50 text-xs text-violet-600 whitespace-nowrap">
+                                                    {{ $h !== null ? number_format(($schulen->count() * $h) / $vzeBase, 3, ',', '.') : '—' }}
+                                                </td>
                                             </tr>
                                         @endforeach
                                     @endforeach
 
                                     @if ($ohneKat->isNotEmpty())
                                         <tr class="bg-gray-50">
-                                            <td colspan="{{ $schulen->count() + 1 }}"
+                                            <td colspan="{{ $schulen->count() + 4 }}"
                                                 class="sticky left-0 border border-gray-200 px-3 py-1.5 font-semibold text-gray-500 text-xs uppercase tracking-wide">
                                                 Ohne Kategorie
                                             </td>
                                         </tr>
                                         @foreach ($ohneKat as $dienst)
+                                            @php
+                                                $h = $dienst->jahresstunden();
+                                                $vzeBase = \App\Modules\Schulen\Models\Dienstleistung::VZE_JAHRESSTUNDEN;
+                                                $istStunden = 0;
+                                                foreach ($schulen as $s) {
+                                                    $p = $pivots->get($s->id)?->firstWhere('dienstleistung_id', $dienst->id);
+                                                    if ($p && $p->status === 'aktiv') {
+                                                        $istStunden += $p->stunden_override ?? $h ?? 0;
+                                                    }
+                                                }
+                                            @endphp
                                             <tr class="hover:bg-gray-50">
                                                 <td class="sticky left-0 z-10 bg-white border border-gray-200 px-3 py-1.5 text-gray-800 font-medium">
                                                     <a href="{{ route('schulen.dienste.show', $dienst) }}"
@@ -236,6 +274,16 @@
                                                         @endcan
                                                     </td>
                                                 @endforeach
+                                                {{-- VZE-Spalten --}}
+                                                <td class="border border-gray-200 px-2 py-1 text-center bg-violet-50 text-xs text-violet-700 font-medium whitespace-nowrap">
+                                                    {{ $h !== null ? number_format($h / $vzeBase, 3, ',', '.') : '—' }}
+                                                </td>
+                                                <td class="border border-gray-200 px-2 py-1 text-center bg-violet-50 text-xs font-semibold text-green-700 whitespace-nowrap">
+                                                    {{ $istStunden > 0 ? number_format($istStunden / $vzeBase, 3, ',', '.') : '—' }}
+                                                </td>
+                                                <td class="border border-gray-200 px-2 py-1 text-center bg-violet-50 text-xs text-violet-600 whitespace-nowrap">
+                                                    {{ $h !== null ? number_format(($schulen->count() * $h) / $vzeBase, 3, ',', '.') : '—' }}
+                                                </td>
                                             </tr>
                                         @endforeach
                                     @endif
