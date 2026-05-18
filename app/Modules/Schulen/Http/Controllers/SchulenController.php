@@ -40,11 +40,13 @@ class SchulenController extends Controller
         return view('schulen::schulen.index', compact('schulen', 'search', 'filterTyp', 'schulTypen'));
     }
 
-    public function show(Schule $schule)
+    public function show(Schule $schule, Request $request)
     {
+        $filterStatus = $request->get('filter_status', 'relevant');
+
         $schule->load(['kontakte', 'dienstleistungen.kategorie']);
 
-        $dienstleistungen = Dienstleistung::with('kategorie')
+        $alleDienstleistungen = Dienstleistung::with('kategorie')
             ->aktiv()
             ->orderBy('sort_order')
             ->orderBy('name')
@@ -52,7 +54,16 @@ class SchulenController extends Controller
 
         $pivotMap = $schule->dienstleistungen->keyBy('id');
 
-        return view('schulen::schulen.show', compact('schule', 'dienstleistungen', 'pivotMap'));
+        $dienstleistungen = $alleDienstleistungen->filter(function ($dienst) use ($pivotMap, $filterStatus) {
+            $status = $pivotMap->get($dienst->id)?->pivot->status ?? 'nicht_vorhanden';
+            return match ($filterStatus) {
+                'alle'     => true,
+                'relevant' => $status !== 'nicht_vorhanden',
+                default    => $status === $filterStatus,
+            };
+        });
+
+        return view('schulen::schulen.show', compact('schule', 'dienstleistungen', 'pivotMap', 'filterStatus'));
     }
 
     public function create()

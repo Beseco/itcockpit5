@@ -27,8 +27,34 @@ class DienstleistungenController extends Controller
     public function show(Dienstleistung $dienstleistung)
     {
         $dienstleistung->load('kategorie');
-        $schulenAktiv = $dienstleistung->schulen()->wherePivot('status', 'aktiv')->count();
-        return view('schulen::dienstleistungen.show', compact('dienstleistung', 'schulenAktiv'));
+
+        $schulenGesamt = \App\Modules\Schulen\Models\Schule::count();
+        $jahresstunden = $dienstleistung->jahresstunden();
+
+        // Aktive Schulen mit Pivot laden
+        $aktivePivots = $dienstleistung->schulen()
+            ->wherePivot('status', 'aktiv')
+            ->withPivot('stunden_override', 'notizen')
+            ->orderBy('name')
+            ->get();
+
+        $schulenAktiv    = $aktivePivots->count();
+        $istStundenGesamt = $aktivePivots->sum(function ($schule) use ($jahresstunden) {
+            return $schule->pivot->stunden_override ?? $jahresstunden ?? 0;
+        });
+
+        $vzeJahresstunden = \App\Modules\Schulen\Models\Dienstleistung::VZE_JAHRESSTUNDEN;
+
+        $vze = [
+            'pro_schule'    => $jahresstunden !== null ? round($jahresstunden / $vzeJahresstunden, 3) : null,
+            'ist_gesamt'    => round($istStundenGesamt / $vzeJahresstunden, 3),
+            'alle_schulen'  => $jahresstunden !== null ? round($schulenGesamt * $jahresstunden / $vzeJahresstunden, 3) : null,
+            'ist_stunden'   => $istStundenGesamt,
+        ];
+
+        return view('schulen::dienstleistungen.show', compact(
+            'dienstleistung', 'schulenAktiv', 'schulenGesamt', 'vze', 'aktivePivots'
+        ));
     }
 
     public function create()

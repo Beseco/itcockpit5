@@ -234,11 +234,36 @@
 
             {{-- Dienstleistungen dieser Schule --}}
             <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-                    <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">Dienstleistungen</h3>
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between flex-wrap gap-3">
+                    <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                        Dienstleistungen
+                        <span class="ml-1 text-xs font-normal text-gray-400 normal-case">({{ $dienstleistungen->count() }} angezeigt)</span>
+                    </h3>
                     <a href="{{ route('schulen.matrix') }}" class="text-xs text-indigo-600 hover:text-indigo-800">
                         In Matrix anzeigen →
                     </a>
+                </div>
+                {{-- Filter --}}
+                <div class="px-6 py-3 border-b border-gray-100 bg-gray-50 flex flex-wrap gap-1.5">
+                    @php
+                        $filterOptions = [
+                            'relevant' => 'Aktiv / Geplant / Nicht möglich',
+                            'aktiv'    => '✅ Aktiv',
+                            'geplant'  => '📌 Geplant',
+                            'nicht_gewuenscht' => '🚫 Nicht gewünscht',
+                            'nicht_moeglich'   => '⛔ Nicht möglich',
+                            'alle'     => 'Alle',
+                        ];
+                    @endphp
+                    @foreach ($filterOptions as $val => $label)
+                        <a href="{{ route('schulen.show', [$schule, 'filter_status' => $val]) }}"
+                           class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium transition
+                               {{ $filterStatus === $val
+                                   ? 'bg-indigo-600 text-white'
+                                   : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50' }}">
+                            {{ $label }}
+                        </a>
+                    @endforeach
                 </div>
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-100 text-sm">
