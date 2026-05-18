@@ -20,7 +20,7 @@ class SchulenController extends Controller
         $filterTyp   = $request->get('filter_typ', '');
 
         $query = Schule::withCount(['dienstleistungen as aktive_dienste_count' => function ($q) {
-            $q->wherePivot('status', 'aktiv');
+            $q->where('schule_dienstleistung.status', 'aktiv');
         }])->orderBy('schultyp')->orderBy('sort_order')->orderBy('name');
 
         if (filled($search)) {
