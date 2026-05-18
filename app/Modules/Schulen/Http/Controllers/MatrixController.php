@@ -2,6 +2,7 @@
 
 namespace App\Modules\Schulen\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Modules\Schulen\Models\DienstKategorie;
 use App\Modules\Schulen\Models\Dienstleistung;
 use App\Modules\Schulen\Models\Schule;
@@ -63,14 +64,22 @@ class MatrixController extends Controller
             'notizen'         => ['nullable', 'string', 'max:500'],
         ]);
 
+        $oldPivot  = SchuleDienstleistung::where('schule_id', $schule->id)
+            ->where('dienstleistung_id', $dienstleistung->id)
+            ->first();
+        $oldStatus = $oldPivot?->status ?? 'nicht_vorhanden';
+
         $schule->dienstleistungen()->syncWithoutDetaching([
             $dienstleistung->id => $validated,
         ]);
 
         $this->auditLogger->logModuleAction('Schulen', 'Matrix-Status geändert', [
-            'schule'   => $schule->name,
-            'dienst'   => $dienstleistung->name,
-            'status'   => $validated['status'],
+            'schule_id'  => $schule->id,
+            'schule'     => $schule->name,
+            'dienst_id'  => $dienstleistung->id,
+            'dienst'     => $dienstleistung->name,
+            'alt'        => $oldStatus,
+            'neu'        => $validated['status'],
         ]);
 
         if ($request->expectsJson()) {
@@ -79,5 +88,31 @@ class MatrixController extends Controller
 
         return redirect()->route('schulen.matrix')
             ->with('success', 'Status aktualisiert.');
+    }
+
+    public function protokoll(Request $request)
+    {
+        $filterSchule  = $request->get('schule_id', '');
+        $filterDienst  = $request->get('dienst_id', '');
+
+        $query = AuditLog::with('user')
+            ->where('module', 'Schulen')
+            ->where('action', 'Matrix-Status geändert')
+            ->orderByDesc('created_at');
+
+        if (filled($filterSchule)) {
+            $query->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.schule_id')) = ?", [$filterSchule]);
+        }
+        if (filled($filterDienst)) {
+            $query->whereRaw("JSON_UNQUOTE(JSON_EXTRACT(payload, '$.dienst_id')) = ?", [$filterDienst]);
+        }
+
+        $eintraege    = $query->paginate(50)->withQueryString();
+        $schulen      = Schule::orderBy('name')->get();
+        $dienste      = Dienstleistung::orderBy('name')->get();
+
+        return view('schulen::protokoll.index', compact(
+            'eintraege', 'schulen', 'dienste', 'filterSchule', 'filterDienst'
+        ));
     }
 }

@@ -239,9 +239,13 @@
                         Dienstleistungen
                         <span class="ml-1 text-xs font-normal text-gray-400 normal-case">({{ $dienstleistungen->count() }} angezeigt)</span>
                     </h3>
-                    <a href="{{ route('schulen.matrix') }}" class="text-xs text-indigo-600 hover:text-indigo-800">
-                        In Matrix anzeigen →
-                    </a>
+                    <div class="flex gap-3">
+                        <a href="{{ route('schulen.protokoll', ['schule_id' => $schule->id]) }}"
+                           class="text-xs text-gray-500 hover:text-indigo-600">Protokoll →</a>
+                        <a href="{{ route('schulen.matrix') }}" class="text-xs text-indigo-600 hover:text-indigo-800">
+                            In Matrix anzeigen →
+                        </a>
+                    </div>
                 </div>
                 {{-- Filter --}}
                 <div class="px-6 py-3 border-b border-gray-100 bg-gray-50 flex flex-wrap gap-1.5">

@@ -15,6 +15,10 @@
                    class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50">
                     VZE-Rechner
                 </a>
+                <a href="{{ route('schulen.protokoll') }}"
+                   class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50">
+                    Protokoll
+                </a>
                 @can('schulen.config')
                 <a href="{{ route('schulen.einstellungen') }}"
                    class="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md text-xs font-medium text-white hover:bg-indigo-700">

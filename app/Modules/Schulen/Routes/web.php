@@ -54,10 +54,11 @@ Route::middleware(['auth', 'module.permission:schulen,delete'])->group(function 
 });
 
 Route::middleware(['auth', 'module.permission:schulen,view'])->group(function () {
-    Route::get('/',          [MatrixController::class, 'index'])->name('matrix');
-    Route::get('/liste',     [SchulenController::class, 'index'])->name('index');
-    Route::get('/vze',       [SchulenController::class, 'vze'])->name('vze');
-    Route::get('/dienste',   [DienstleistungenController::class, 'index'])->name('dienste.index');
+    Route::get('/',            [MatrixController::class, 'index'])->name('matrix');
+    Route::get('/protokoll',   [MatrixController::class, 'protokoll'])->name('protokoll');
+    Route::get('/liste',       [SchulenController::class, 'index'])->name('index');
+    Route::get('/vze',         [SchulenController::class, 'vze'])->name('vze');
+    Route::get('/dienste',     [DienstleistungenController::class, 'index'])->name('dienste.index');
     Route::get('/dienste/{dienstleistung}', [DienstleistungenController::class, 'show'])->name('dienste.show');
-    Route::get('/{schule}',  [SchulenController::class, 'show'])->name('show');
+    Route::get('/{schule}',    [SchulenController::class, 'show'])->name('show');
 });

@@ -150,13 +150,15 @@
 
             {{-- Schulen die den Dienst nutzen --}}
             <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
                     <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">
                         Schulen mit aktivem Einsatz
                         @if ($schulenAktiv > 0)
                             <span class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">{{ $schulenAktiv }}</span>
                         @endif
                     </h3>
+                    <a href="{{ route('schulen.protokoll', ['dienst_id' => $dienstleistung->id]) }}"
+                       class="text-xs text-gray-500 hover:text-indigo-600">Protokoll →</a>
                 </div>
                 @if ($aktivePivots->isEmpty())
                     <div class="px-6 py-5 text-sm text-gray-400">Keine Schule nutzt diesen Dienst aktuell aktiv.</div>
