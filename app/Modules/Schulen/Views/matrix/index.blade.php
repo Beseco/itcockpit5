@@ -288,6 +288,43 @@
                                         @endforeach
                                     @endif
                                 </tbody>
+                                @php
+                                    $vzeBase       = \App\Modules\Schulen\Models\Dienstleistung::VZE_JAHRESSTUNDEN;
+                                    $sumEin        = 0;
+                                    $sumIst        = 0;
+                                    $sumAlle       = 0;
+                                    foreach ($dienstleistungen as $d) {
+                                        $dh = $d->jahresstunden();
+                                        if ($dh === null) continue;
+                                        $sumEin  += $dh;
+                                        $sumAlle += $schulen->count() * $dh;
+                                        foreach ($schulen as $s) {
+                                            $p = $pivots->get($s->id)?->firstWhere('dienstleistung_id', $d->id);
+                                            if ($p && $p->status === 'aktiv') {
+                                                $sumIst += $p->stunden_override ?? $dh;
+                                            }
+                                        }
+                                    }
+                                @endphp
+                                <tfoot>
+                                    <tr class="bg-gray-100 font-semibold text-xs border-t-2 border-gray-300">
+                                        <td class="sticky left-0 z-10 bg-gray-100 border border-gray-300 px-3 py-2 text-gray-700 uppercase tracking-wide">
+                                            Gesamt
+                                        </td>
+                                        <td colspan="{{ $schulen->count() }}" class="border border-gray-200 px-2 py-2 text-center text-gray-400 text-xs italic">
+                                            {{ $dienstleistungen->count() }} Dienstleistungen
+                                        </td>
+                                        <td class="border border-gray-300 px-2 py-2 text-center bg-violet-100 text-violet-800 whitespace-nowrap">
+                                            {{ number_format($sumEin / $vzeBase, 3, ',', '.') }} VZE
+                                        </td>
+                                        <td class="border border-gray-300 px-2 py-2 text-center bg-violet-100 text-green-800 whitespace-nowrap">
+                                            {{ number_format($sumIst / $vzeBase, 3, ',', '.') }} VZE
+                                        </td>
+                                        <td class="border border-gray-300 px-2 py-2 text-center bg-violet-100 text-violet-800 whitespace-nowrap">
+                                            {{ number_format($sumAlle / $vzeBase, 3, ',', '.') }} VZE
+                                        </td>
+                                    </tr>
+                                </tfoot>
                             </table>
                         </div>
                     </div>
