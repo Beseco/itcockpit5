@@ -51,6 +51,7 @@ class FetchWidAdvisories extends Command
         try {
             $response = Http::withHeaders(['X-Api-Key' => $settings->api_key])
                 ->timeout(15)
+                ->withoutVerifying()
                 ->get("{$settings->api_url}/public/securityAdvisory", [
                     'sort' => 'published,desc',
                     'size' => 3,

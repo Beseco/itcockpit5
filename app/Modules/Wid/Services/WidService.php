@@ -33,6 +33,7 @@ class WidService
         try {
             $response = Http::withHeaders(['X-Api-Key' => $this->settings->api_key])
                 ->timeout(15)
+                ->withoutVerifying()
                 ->get("{$this->settings->api_url}/public/securityAdvisory", [
                     'sort' => 'published,desc',
                     'size' => $this->settings->max_items,
