@@ -11,16 +11,17 @@ class WidAdvisory extends Model
 
     protected $fillable = [
         'uuid', 'name', 'title', 'classification', 'temporal_score',
-        'published', 'status', 'no_patch', 'exploit', 'fetched_at',
+        'published', 'published_original', 'status', 'no_patch', 'exploit', 'fetched_at',
         'description', 'detail_fetched',
     ];
 
     protected $casts = [
-        'published'      => 'datetime',
-        'fetched_at'     => 'datetime',
-        'no_patch'       => 'boolean',
-        'exploit'        => 'boolean',
-        'detail_fetched' => 'boolean',
+        'published'          => 'datetime',
+        'published_original' => 'datetime',
+        'fetched_at'         => 'datetime',
+        'no_patch'           => 'boolean',
+        'exploit'            => 'boolean',
+        'detail_fetched'     => 'boolean',
     ];
 
     /** Direktlink zum WID-Portal (Internet-URL) */

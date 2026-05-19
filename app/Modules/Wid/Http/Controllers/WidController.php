@@ -11,15 +11,19 @@ class WidController extends Controller
 {
     public function index(Request $request)
     {
-        $settings       = WidSettings::getInstance();
-        $minClass       = $settings->min_classification;
-        $search         = $request->get('search', '');
-        $filterClass    = $request->get('classification', '');
+        $settings    = WidSettings::getInstance();
+        $search      = $request->get('search', '');
+        $filterClass = $request->get('classification', '');
+        $filterPeriod = $request->get('period', '');   // today, week, ''
+        $minCvss     = $request->get('min_cvss', '');
+        $sortBy      = $request->get('sort', 'published');
+        $sortDir     = $request->get('dir', 'desc');
 
-        $query = WidAdvisory::query()
-            ->aboveMinClassification($minClass)
-            ->orderByRaw("FIELD(classification, 'kritisch','hoch','mittel','niedrig','keine')")
-            ->orderByDesc('published');
+        $allowedSorts = ['published', 'published_original', 'temporal_score', 'classification', 'name'];
+        $sortBy  = in_array($sortBy, $allowedSorts) ? $sortBy : 'published';
+        $sortDir = $sortDir === 'asc' ? 'asc' : 'desc';
+
+        $query = WidAdvisory::query()->aboveMinClassification($settings->min_classification);
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -32,8 +36,31 @@ class WidController extends Controller
             $query->where('classification', $filterClass);
         }
 
+        if ($filterPeriod === 'today') {
+            $query->whereDate('published', today());
+        } elseif ($filterPeriod === 'week') {
+            $query->where('published', '>=', now()->startOfWeek());
+        }
+
+        if ($minCvss !== '' && is_numeric($minCvss)) {
+            $query->where('temporal_score', '>=', (float) $minCvss);
+        }
+
+        if ($sortBy === 'classification') {
+            // Schwere absteigend = kritisch zuerst
+            $classOrder = $sortDir === 'desc'
+                ? "FIELD(classification, 'kritisch','hoch','mittel','niedrig','keine')"
+                : "FIELD(classification, 'keine','niedrig','mittel','hoch','kritisch')";
+            $query->orderByRaw($classOrder);
+        } else {
+            $query->orderBy($sortBy, $sortDir);
+        }
+
         $advisories = $query->paginate(50)->withQueryString();
 
-        return view('wid::index', compact('advisories', 'settings', 'search', 'filterClass'));
+        return view('wid::index', compact(
+            'advisories', 'settings', 'search', 'filterClass',
+            'filterPeriod', 'minCvss', 'sortBy', 'sortDir'
+        ));
     }
 }

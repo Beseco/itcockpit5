@@ -127,9 +127,21 @@ class WidService
 
                 $description = $detail['description'] ?? null;
 
+                // Original-Datum: verschiedene mögliche Feldnamen probieren
+                $originalDate = null;
+                foreach (['initialPublished', 'publishedDate', 'releaseDate', 'firstPublished', 'initialRelease', 'datum', 'originalPublished', 'created'] as $field) {
+                    if (!empty($detail[$field])) {
+                        try {
+                            $originalDate = \Carbon\Carbon::parse($detail[$field]);
+                        } catch (\Exception) {}
+                        break;
+                    }
+                }
+
                 $advisory->update([
-                    'description'    => $description,
-                    'detail_fetched' => true,
+                    'description'        => $description,
+                    'published_original' => $originalDate,
+                    'detail_fetched'     => true,
                 ]);
 
                 $count++;

@@ -47,61 +47,89 @@
             </div>
         @endif
 
-        {{-- Filter --}}
-        <div class="bg-white shadow rounded-lg p-4">
-            <form method="GET" action="{{ route('wid.index') }}" class="flex flex-wrap gap-3 items-end">
-                <div class="flex-1 min-w-48">
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Suche</label>
-                    <input type="text" name="search" value="{{ $search }}"
-                           placeholder="Name oder Titel…"
-                           class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+        {{-- Filter-Panel --}}
+        <div class="bg-white shadow rounded-lg p-4 space-y-3">
+            <form method="GET" action="{{ route('wid.index') }}" class="space-y-3">
+                <input type="hidden" name="sort" value="{{ $sortBy }}">
+                <input type="hidden" name="dir"  value="{{ $sortDir }}">
+
+                {{-- Zeile 1: Suche + CVSS --}}
+                <div class="flex flex-wrap gap-3 items-end">
+                    <div class="flex-1 min-w-48">
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Suche</label>
+                        <input type="text" name="search" value="{{ $search }}"
+                               placeholder="Name oder Titel…"
+                               class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div class="w-32">
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Min. CVSS</label>
+                        <select name="min_cvss"
+                                class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">Alle</option>
+                            <option value="4" {{ $minCvss == '4' ? 'selected' : '' }}>≥ 4.0 (mittel)</option>
+                            <option value="7" {{ $minCvss == '7' ? 'selected' : '' }}>≥ 7.0 (hoch)</option>
+                            <option value="9" {{ $minCvss == '9' ? 'selected' : '' }}>≥ 9.0 (kritisch)</option>
+                        </select>
+                    </div>
+                    <div class="w-36">
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Klassifizierung</label>
+                        <select name="classification"
+                                class="w-full rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
+                            <option value="">Alle</option>
+                            @foreach(\App\Modules\Wid\Models\WidAdvisory::CLASSIFICATIONS as $cls)
+                                <option value="{{ $cls }}" {{ $filterClass === $cls ? 'selected' : '' }}>
+                                    {{ ucfirst($cls) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="flex gap-2 items-end">
+                        <button type="submit"
+                                class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
+                            Filtern
+                        </button>
+                        @if($search || $filterClass || $filterPeriod || $minCvss !== '')
+                            <a href="{{ route('wid.index') }}"
+                               class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200">
+                                Zurücksetzen
+                            </a>
+                        @endif
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Klassifizierung</label>
-                    <select name="classification"
-                            class="rounded-md border-gray-300 shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                        <option value="">Alle</option>
-                        @foreach(\App\Modules\Wid\Models\WidAdvisory::CLASSIFICATIONS as $cls)
-                            <option value="{{ $cls }}" {{ $filterClass === $cls ? 'selected' : '' }}>
-                                {{ ucfirst($cls) }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="flex gap-2">
-                    <button type="submit"
-                            class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700">
-                        Filtern
-                    </button>
-                    @if($search || $filterClass)
-                        <a href="{{ route('wid.index') }}"
-                           class="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200">
-                            Zurücksetzen
-                        </a>
-                    @endif
+
+                {{-- Zeile 2: Zeitraum-Chips + Klassifizierungs-Chips --}}
+                <div class="flex flex-wrap gap-2 items-center">
+                    <span class="text-xs text-gray-400 font-medium mr-1">Zeitraum:</span>
+                    @foreach(['' => 'Alle', 'today' => 'Heute', 'week' => 'Diese Woche'] as $val => $label)
+                        <button type="submit" name="period" value="{{ $val }}"
+                                class="px-3 py-1 rounded-full text-xs font-medium border transition
+                                    {{ $filterPeriod === $val
+                                        ? 'bg-indigo-600 text-white border-indigo-600'
+                                        : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50' }}">
+                            {{ $label }}
+                        </button>
+                    @endforeach
+
+                    <span class="text-xs text-gray-300 mx-2">|</span>
+                    <span class="text-xs text-gray-400 font-medium mr-1">Schwere:</span>
+                    @foreach(\App\Modules\Wid\Models\WidAdvisory::CLASSIFICATIONS as $cls)
+                        @php $c = ['keine'=>'gray','niedrig'=>'blue','mittel'=>'yellow','hoch'=>'orange','kritisch'=>'red'][$cls] ?? 'gray'; @endphp
+                        <button type="submit" name="classification" value="{{ $filterClass === $cls ? '' : $cls }}"
+                                class="px-3 py-1 rounded-full text-xs font-medium transition
+                                    {{ $filterClass === $cls
+                                        ? "bg-{$c}-600 text-white"
+                                        : "bg-{$c}-100 text-{$c}-800 hover:bg-{$c}-200" }}">
+                            {{ ucfirst($cls) }}
+                        </button>
+                    @endforeach
                 </div>
             </form>
         </div>
 
-        {{-- Klassifizierungs-Chips --}}
-        <div class="flex gap-2 flex-wrap">
-            <a href="{{ route('wid.index', array_merge(request()->except('classification', 'page'), [])) }}"
-               class="px-3 py-1 rounded-full text-xs font-medium {{ !$filterClass ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                Alle
-            </a>
-            @foreach(\App\Modules\Wid\Models\WidAdvisory::CLASSIFICATIONS as $cls)
-                @php
-                    $chipColors = ['keine' => 'gray', 'niedrig' => 'blue', 'mittel' => 'yellow', 'hoch' => 'orange', 'kritisch' => 'red'];
-                    $c = $chipColors[$cls] ?? 'gray';
-                @endphp
-                <a href="{{ route('wid.index', array_merge(request()->except('classification', 'page'), ['classification' => $cls])) }}"
-                   class="px-3 py-1 rounded-full text-xs font-medium
-                       {{ $filterClass === $cls
-                           ? "bg-{$c}-600 text-white"
-                           : "bg-{$c}-100 text-{$c}-800 hover:bg-{$c}-200" }}">
-                    {{ ucfirst($cls) }}
-                </a>
-            @endforeach
+        {{-- Ergebnis-Info --}}
+        <div class="flex items-center justify-between text-xs text-gray-500">
+            <span>{{ $advisories->total() }} Meldungen gefunden</span>
+            <span>Seite {{ $advisories->currentPage() }} von {{ $advisories->lastPage() }}</span>
         </div>
 
         {{-- Tabelle --}}
@@ -111,23 +139,75 @@
                     Keine Sicherheitswarnungen gefunden.
                 </div>
             @else
-                <table class="min-w-full divide-y divide-gray-200 text-sm">
-                    <thead class="bg-gray-50">
+                @php
+                    function widSortUrl(string $col, string $current, string $dir, array $params): string {
+                        $newDir = ($col === $current && $dir === 'desc') ? 'asc' : 'desc';
+                        return request()->fullUrlWithQuery(array_merge($params, ['sort' => $col, 'dir' => $newDir]));
+                    }
+                    $qp = request()->except(['sort','dir','page']);
+                @endphp
+                <table class="min-w-full text-sm">
+                    <thead class="bg-gray-50 border-b border-gray-200">
                         <tr>
                             <th class="w-6 px-3 py-3"></th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Klassifizierung</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                            {{-- Status --}}
+                            <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Status</th>
+                            {{-- Klassifizierung --}}
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <a href="{{ widSortUrl('classification', $sortBy, $sortDir, $qp) }}" class="flex items-center gap-1 hover:text-gray-800">
+                                    Schwere
+                                    @if($sortBy === 'classification')
+                                        <span class="text-indigo-500">{{ $sortDir === 'desc' ? '↓' : '↑' }}</span>
+                                    @else
+                                        <span class="text-gray-300">↕</span>
+                                    @endif
+                                </a>
+                            </th>
+                            {{-- Name --}}
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                <a href="{{ widSortUrl('name', $sortBy, $sortDir, $qp) }}" class="flex items-center gap-1 hover:text-gray-800">
+                                    Name
+                                    @if($sortBy === 'name') <span class="text-indigo-500">{{ $sortDir === 'desc' ? '↓' : '↑' }}</span>
+                                    @else <span class="text-gray-300">↕</span> @endif
+                                </a>
+                            </th>
+                            {{-- Titel --}}
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Titel</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16 text-right">CVSS</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Stand</th>
-                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Flags</th>
-                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Portal</th>
+                            {{-- CVSS --}}
+                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
+                                <a href="{{ widSortUrl('temporal_score', $sortBy, $sortDir, $qp) }}" class="flex items-center justify-end gap-1 hover:text-gray-800">
+                                    CVSS
+                                    @if($sortBy === 'temporal_score') <span class="text-indigo-500">{{ $sortDir === 'desc' ? '↓' : '↑' }}</span>
+                                    @else <span class="text-gray-300">↕</span> @endif
+                                </a>
+                            </th>
+                            {{-- Datum (original) --}}
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                                <a href="{{ widSortUrl('published_original', $sortBy, $sortDir, $qp) }}" class="flex items-center gap-1 hover:text-gray-800">
+                                    Datum
+                                    @if($sortBy === 'published_original') <span class="text-indigo-500">{{ $sortDir === 'desc' ? '↓' : '↑' }}</span>
+                                    @else <span class="text-gray-300">↕</span> @endif
+                                </a>
+                            </th>
+                            {{-- Stand --}}
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                                <a href="{{ widSortUrl('published', $sortBy, $sortDir, $qp) }}" class="flex items-center gap-1 hover:text-gray-800">
+                                    Stand
+                                    @if($sortBy === 'published') <span class="text-indigo-500">{{ $sortDir === 'desc' ? '↓' : '↑' }}</span>
+                                    @else <span class="text-gray-300">↕</span> @endif
+                                </a>
+                            </th>
+                            {{-- Flags --}}
+                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Flags</th>
+                            {{-- Portal --}}
+                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-12"></th>
                         </tr>
                     </thead>
+
                     @foreach($advisories as $advisory)
                         <tbody x-data="{ open: false }" class="border-b border-gray-100">
-                            <tr class="hover:bg-gray-50 cursor-pointer"
-                                @click="open = !open">
+                            <tr class="hover:bg-gray-50 cursor-pointer" @click="open = !open">
+                                {{-- Expand --}}
                                 <td class="px-3 py-3 text-gray-400">
                                     <svg x-show="!open" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
@@ -136,29 +216,62 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                                     </svg>
                                 </td>
+                                {{-- Status-Badge --}}
+                                <td class="px-3 py-3">
+                                    @if($advisory->status === 'NEW')
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                            <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                            </svg>
+                                            NEU
+                                        </span>
+                                    @elseif($advisory->status === 'UPDATE')
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                            </svg>
+                                            UPDATE
+                                        </span>
+                                    @else
+                                        <span class="text-xs text-gray-400">{{ $advisory->status ?? '–' }}</span>
+                                    @endif
+                                </td>
+                                {{-- Klassifizierung --}}
                                 <td class="px-4 py-3">
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $advisory->getColorClass() }}">
                                         {{ $advisory->classification }}
                                     </span>
                                 </td>
+                                {{-- Name --}}
                                 <td class="px-4 py-3 font-mono text-xs text-gray-800 whitespace-nowrap">
                                     {{ $advisory->name }}
                                 </td>
-                                <td class="px-4 py-3 text-gray-700">
+                                {{-- Titel --}}
+                                <td class="px-4 py-3 text-gray-700 max-w-xs">
                                     {{ $advisory->title ?? '–' }}
                                 </td>
+                                {{-- CVSS --}}
                                 <td class="px-4 py-3 text-right tabular-nums">
                                     @if($advisory->temporal_score !== null)
-                                        <span class="font-medium {{ $advisory->temporal_score >= 7 ? 'text-red-600' : ($advisory->temporal_score >= 4 ? 'text-yellow-600' : 'text-gray-600') }}">
+                                        <span class="font-semibold {{ $advisory->temporal_score >= 9 ? 'text-red-700' : ($advisory->temporal_score >= 7 ? 'text-red-500' : ($advisory->temporal_score >= 4 ? 'text-yellow-600' : 'text-gray-500')) }}">
                                             {{ number_format($advisory->temporal_score, 1) }}
                                         </span>
                                     @else
                                         <span class="text-gray-300">–</span>
                                     @endif
                                 </td>
-                                <td class="px-4 py-3 text-gray-500 whitespace-nowrap">
-                                    {{ $advisory->published?->format('d.m.Y') ?? '–' }}
+                                {{-- Datum (Erstveröffentlichung) --}}
+                                <td class="px-4 py-3 text-gray-500 whitespace-nowrap text-xs">
+                                    {{ $advisory->published_original?->format('d.m.Y') ?? '–' }}
                                 </td>
+                                {{-- Stand --}}
+                                <td class="px-4 py-3 whitespace-nowrap text-xs">
+                                    <span class="{{ $advisory->status === 'UPDATE' ? 'text-amber-600 font-medium' : 'text-gray-500' }}">
+                                        {{ $advisory->published?->format('d.m.Y') ?? '–' }}
+                                    </span>
+                                </td>
+                                {{-- Flags --}}
                                 <td class="px-4 py-3 text-center text-base" @click.stop>
                                     @if($advisory->no_patch)
                                         <span title="Kein Patch verfügbar" class="text-orange-500">⚠</span>
@@ -167,14 +280,15 @@
                                         <span title="Exploit bekannt" class="text-red-600">💣</span>
                                     @endif
                                     @if(!$advisory->no_patch && !$advisory->exploit)
-                                        <span class="text-gray-300 text-xs">–</span>
+                                        <span class="text-gray-200 text-xs">–</span>
                                     @endif
                                 </td>
+                                {{-- Portal-Link --}}
                                 <td class="px-4 py-3 text-center" @click.stop>
                                     <a href="{{ $advisory->getPortalUrl() }}"
                                        target="_blank"
                                        title="Im WID-Portal öffnen"
-                                       class="inline-flex items-center justify-center text-indigo-500 hover:text-indigo-700">
+                                       class="inline-flex items-center justify-center text-indigo-400 hover:text-indigo-700">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                   d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
@@ -184,31 +298,28 @@
                             </tr>
                             {{-- Detail-Zeile --}}
                             <tr x-show="open" x-cloak class="bg-gray-50">
-                                <td colspan="8" class="px-8 py-4">
-                                    <div class="text-sm text-gray-700 space-y-2">
-                                        <div class="flex items-center gap-4 text-xs text-gray-500">
-                                            <span>Status: <strong class="text-gray-700">{{ $advisory->status ?? '–' }}</strong></span>
-                                            @if($advisory->no_patch)
-                                                <span class="text-orange-600 font-medium">⚠ Kein Patch verfügbar</span>
-                                            @endif
-                                            @if($advisory->exploit)
-                                                <span class="text-red-600 font-medium">💣 Exploit bekannt</span>
-                                            @endif
-                                        </div>
+                                <td colspan="10" class="px-8 py-4">
+                                    <div class="text-sm text-gray-700 space-y-2 max-w-4xl">
                                         @if($advisory->description)
-                                            <div class="prose prose-sm max-w-none text-gray-700 leading-relaxed whitespace-pre-line">{{ $advisory->description }}</div>
+                                            <div class="text-gray-700 leading-relaxed whitespace-pre-line text-sm">{{ $advisory->description }}</div>
                                         @else
                                             <p class="text-xs text-gray-400 italic">Beschreibung noch nicht geladen.</p>
                                         @endif
-                                        <div class="pt-1">
+                                        <div class="pt-1 flex items-center gap-4">
                                             <a href="{{ $advisory->getPortalUrl() }}" target="_blank"
                                                class="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium">
                                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                           d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
                                                 </svg>
-                                                Im WID-Portal ansehen ({{ $advisory->name }})
+                                                Vollständige Meldung im WID-Portal ({{ $advisory->name }})
                                             </a>
+                                            @if($advisory->no_patch)
+                                                <span class="text-xs text-orange-600 font-medium">⚠ Kein Patch verfügbar</span>
+                                            @endif
+                                            @if($advisory->exploit)
+                                                <span class="text-xs text-red-600 font-medium">💣 Exploit bekannt</span>
+                                            @endif
                                         </div>
                                     </div>
                                 </td>
