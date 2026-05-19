@@ -88,6 +88,24 @@ class FetchWidAdvisories extends Command
                 $detailJson = $detail->json();
                 if (is_array($detailJson)) {
                     $this->line("JSON-Keys: " . implode(', ', array_keys($detailJson)));
+
+                    // Datums-Felder gezielt ausgeben
+                    $dateKeys = array_filter(array_keys($detailJson), fn($k) =>
+                        str_contains(strtolower($k), 'date') ||
+                        str_contains(strtolower($k), 'publish') ||
+                        str_contains(strtolower($k), 'release') ||
+                        str_contains(strtolower($k), 'created') ||
+                        str_contains(strtolower($k), 'datum') ||
+                        str_contains(strtolower($k), 'stand') ||
+                        str_contains(strtolower($k), 'updated')
+                    );
+                    if ($dateKeys) {
+                        $this->line("\nDatums-Felder:");
+                        foreach ($dateKeys as $k) {
+                            $this->line("  {$k}: " . json_encode($detailJson[$k]));
+                        }
+                    }
+
                     $this->line("\nVollständige Detail-Antwort:");
                     $this->line(json_encode($detailJson, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
                 } else {

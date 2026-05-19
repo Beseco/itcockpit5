@@ -37,8 +37,11 @@
                             <div class="text-xs text-gray-500 truncate">{{ $advisory->title }}</div>
                         @endif
                     </div>
-                    <div class="text-xs text-gray-400 shrink-0 ml-auto">
-                        {{ $advisory->published?->format('d.m.') }}
+                    <div class="text-right shrink-0 ml-auto">
+                        @if($advisory->status === 'UPDATE')
+                            <span class="block text-xs text-amber-600 font-medium">UPDATE</span>
+                        @endif
+                        <span class="text-xs text-gray-400">{{ $advisory->published?->format('d.m.') }}</span>
                     </div>
                 </div>
             @endforeach
