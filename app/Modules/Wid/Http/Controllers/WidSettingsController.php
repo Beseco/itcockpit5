@@ -24,6 +24,7 @@ class WidSettingsController extends Controller
             'api_url'            => ['required', 'url', 'max:500'],
             'api_key'            => ['nullable', 'string', 'max:500'],
             'enabled'            => ['boolean'],
+            'abo_filter'         => ['boolean'],
             'max_items'          => ['required', 'integer', 'min:1', 'max:200'],
             'min_classification' => ['required', 'in:keine,niedrig,mittel,hoch,kritisch'],
         ]);
@@ -35,7 +36,8 @@ class WidSettingsController extends Controller
             unset($data['api_key']);
         }
 
-        $data['enabled'] = $request->boolean('enabled');
+        $data['enabled']    = $request->boolean('enabled');
+        $data['abo_filter'] = $request->boolean('abo_filter');
         $settings->fill($data);
         $settings->save();
 

@@ -27,18 +27,21 @@ class WidService
         });
     }
 
-    /** Führt den eigentlichen API-Abruf durch und gibt die rohen Items zurück. */
     public function doFetch(): Collection
     {
         try {
-            $response = Http::withHeaders(['X-Api-Key' => $this->settings->api_key])
-                ->timeout(15)
-                ->withoutVerifying()
-                ->get("{$this->settings->api_url}/public/securityAdvisory", [
-                    'sort' => 'published,desc',
-                    'size' => $this->settings->max_items,
-                    'page' => 0,
-                ]);
+            $params = [
+                'sort' => 'published,desc',
+                'size' => $this->settings->max_items,
+                'page' => 0,
+            ];
+
+            if ($this->settings->abo_filter) {
+                $params['aboFilter'] = 'true';
+            }
+
+            $response = $this->http()
+                ->get("{$this->settings->api_url}/public/securityAdvisory", $params);
 
             if (!$response->successful()) {
                 Log::warning('WID API Fehler: HTTP ' . $response->status() . ' – ' . $response->body());
@@ -47,7 +50,6 @@ class WidService
 
             $body = $response->json();
 
-            // API liefert entweder {content:[...]} oder direkt ein Array
             if (isset($body['content'])) {
                 return collect($body['content']);
             }
@@ -100,5 +102,49 @@ class WidService
         Cache::forget('wid_advisories_raw');
 
         return ['created' => $created, 'updated' => $updated, 'total' => $created + $updated];
+    }
+
+    /**
+     * Lädt die Beschreibung für alle Einträge nach, die noch keine haben.
+     * Gibt die Anzahl der nachgeladenen Descriptions zurück.
+     */
+    public function fetchMissingDetails(): int
+    {
+        $missing = WidAdvisory::where('detail_fetched', false)->get();
+        $count   = 0;
+
+        foreach ($missing as $advisory) {
+            try {
+                $response = $this->http()
+                    ->get("{$this->settings->api_url}/public/securityAdvisory/{$advisory->uuid}");
+
+                if (!$response->successful()) {
+                    $advisory->update(['detail_fetched' => true]); // nicht nochmal versuchen
+                    continue;
+                }
+
+                $detail = $response->json();
+
+                $description = $detail['description'] ?? null;
+
+                $advisory->update([
+                    'description'    => $description,
+                    'detail_fetched' => true,
+                ]);
+
+                $count++;
+            } catch (\Exception $e) {
+                Log::warning("WID Detail-Fehler für {$advisory->name}: " . $e->getMessage());
+            }
+        }
+
+        return $count;
+    }
+
+    private function http()
+    {
+        return Http::withHeaders(['X-Api-Key' => $this->settings->api_key])
+            ->timeout(15)
+            ->withoutVerifying();
     }
 }

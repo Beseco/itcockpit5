@@ -10,11 +10,12 @@ class WidSettings extends Model
     protected $table = 'wid_settings';
 
     protected $fillable = [
-        'api_key', 'api_url', 'enabled', 'max_items', 'min_classification',
+        'api_key', 'api_url', 'enabled', 'max_items', 'min_classification', 'abo_filter',
     ];
 
     protected $casts = [
-        'enabled' => 'boolean',
+        'enabled'    => 'boolean',
+        'abo_filter' => 'boolean',
     ];
 
     public static function getInstance(): self
@@ -25,6 +26,7 @@ class WidSettings extends Model
             'enabled'            => false,
             'max_items'          => 20,
             'min_classification' => 'keine',
+            'abo_filter'         => false,
         ]);
     }
 

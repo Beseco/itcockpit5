@@ -91,8 +91,8 @@
             </a>
             @foreach(\App\Modules\Wid\Models\WidAdvisory::CLASSIFICATIONS as $cls)
                 @php
-                    $colors = ['keine' => 'gray', 'niedrig' => 'blue', 'mittel' => 'yellow', 'hoch' => 'orange', 'kritisch' => 'red'];
-                    $c = $colors[$cls] ?? 'gray';
+                    $chipColors = ['keine' => 'gray', 'niedrig' => 'blue', 'mittel' => 'yellow', 'hoch' => 'orange', 'kritisch' => 'red'];
+                    $c = $chipColors[$cls] ?? 'gray';
                 @endphp
                 <a href="{{ route('wid.index', array_merge(request()->except('classification', 'page'), ['classification' => $cls])) }}"
                    class="px-3 py-1 rounded-full text-xs font-medium
@@ -114,17 +114,29 @@
                 <table class="min-w-full divide-y divide-gray-200 text-sm">
                     <thead class="bg-gray-50">
                         <tr>
+                            <th class="w-6 px-3 py-3"></th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Klassifizierung</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Titel</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">CVSS</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16 text-right">CVSS</th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Veröffentlicht</th>
-                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Flags</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Flags</th>
+                            <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Portal</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100">
+                    <tbody class="divide-y divide-gray-100" x-data>
                         @foreach($advisories as $advisory)
-                            <tr class="hover:bg-gray-50">
+                            <tr class="hover:bg-gray-50 cursor-pointer"
+                                x-data="{ open: false }"
+                                @click="open = !open">
+                                <td class="px-3 py-3 text-gray-400">
+                                    <svg x-show="!open" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                    </svg>
+                                    <svg x-show="open" x-cloak class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                    </svg>
+                                </td>
                                 <td class="px-4 py-3">
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $advisory->getColorClass() }}">
                                         {{ $advisory->classification }}
@@ -133,10 +145,10 @@
                                 <td class="px-4 py-3 font-mono text-xs text-gray-800 whitespace-nowrap">
                                     {{ $advisory->name }}
                                 </td>
-                                <td class="px-4 py-3 text-gray-700 max-w-xs">
+                                <td class="px-4 py-3 text-gray-700">
                                     {{ $advisory->title ?? '–' }}
                                 </td>
-                                <td class="px-4 py-3 text-gray-700 text-right tabular-nums">
+                                <td class="px-4 py-3 text-right tabular-nums">
                                     @if($advisory->temporal_score !== null)
                                         <span class="font-medium {{ $advisory->temporal_score >= 7 ? 'text-red-600' : ($advisory->temporal_score >= 4 ? 'text-yellow-600' : 'text-gray-600') }}">
                                             {{ number_format($advisory->temporal_score, 1) }}
@@ -148,7 +160,7 @@
                                 <td class="px-4 py-3 text-gray-500 whitespace-nowrap">
                                     {{ $advisory->published?->format('d.m.Y') ?? '–' }}
                                 </td>
-                                <td class="px-4 py-3 text-center">
+                                <td class="px-4 py-3 text-center text-base" @click.stop>
                                     @if($advisory->no_patch)
                                         <span title="Kein Patch verfügbar" class="text-orange-500">⚠</span>
                                     @endif
@@ -158,6 +170,48 @@
                                     @if(!$advisory->no_patch && !$advisory->exploit)
                                         <span class="text-gray-300 text-xs">–</span>
                                     @endif
+                                </td>
+                                <td class="px-4 py-3 text-center" @click.stop>
+                                    <a href="{{ $advisory->getPortalUrl() }}"
+                                       target="_blank"
+                                       title="Im WID-Portal öffnen"
+                                       class="inline-flex items-center justify-center text-indigo-500 hover:text-indigo-700">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                                        </svg>
+                                    </a>
+                                </td>
+                            </tr>
+                            {{-- Detail-Zeile --}}
+                            <tr x-show="open" x-cloak class="bg-gray-50">
+                                <td colspan="8" class="px-8 py-4">
+                                    <div class="text-sm text-gray-700 space-y-2">
+                                        <div class="flex items-center gap-4 text-xs text-gray-500">
+                                            <span>Status: <strong class="text-gray-700">{{ $advisory->status ?? '–' }}</strong></span>
+                                            @if($advisory->no_patch)
+                                                <span class="text-orange-600 font-medium">⚠ Kein Patch verfügbar</span>
+                                            @endif
+                                            @if($advisory->exploit)
+                                                <span class="text-red-600 font-medium">💣 Exploit bekannt</span>
+                                            @endif
+                                        </div>
+                                        @if($advisory->description)
+                                            <div class="prose prose-sm max-w-none text-gray-700 leading-relaxed whitespace-pre-line">{{ $advisory->description }}</div>
+                                        @else
+                                            <p class="text-xs text-gray-400 italic">Beschreibung noch nicht geladen.</p>
+                                        @endif
+                                        <div class="pt-1">
+                                            <a href="{{ $advisory->getPortalUrl() }}" target="_blank"
+                                               class="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium">
+                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                                                </svg>
+                                                Im WID-Portal ansehen ({{ $advisory->name }})
+                                            </a>
+                                        </div>
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach

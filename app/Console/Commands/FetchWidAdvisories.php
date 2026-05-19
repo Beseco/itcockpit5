@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Http;
 
 class FetchWidAdvisories extends Command
 {
-    protected $signature   = 'wid:fetch-advisories {--debug : Zeigt die rohe API-Antwort}';
+    protected $signature   = 'wid:fetch-advisories {--debug : Zeigt die rohe API-Antwort} {--no-details : Detail-Abruf überspringen}';
     protected $description = 'WID-Portal Sicherheitswarnungen abrufen und in der Datenbank speichern';
 
     public function handle(): int
@@ -21,25 +21,30 @@ class FetchWidAdvisories extends Command
             return self::SUCCESS;
         }
 
-        $this->line("URL: {$settings->api_url}/public/securityAdvisory");
-
         if ($this->option('debug')) {
             return $this->runDebug($settings);
         }
 
+        $this->line("URL: {$settings->api_url}/public/securityAdvisory");
         $this->line('Rufe WID-Sicherheitswarnungen ab...');
 
         $service = new WidService();
         $items   = $service->doFetch();
 
         if ($items->isEmpty()) {
-            $this->warn('Keine Einträge von der WID-API erhalten. Tipp: --debug für Details.');
+            $this->warn('Keine Einträge von der WID-API erhalten.');
             return self::SUCCESS;
         }
 
         $result = $service->syncToDatabase($items);
+        $this->info("Liste: {$result['created']} neu, {$result['updated']} aktualisiert ({$result['total']} gesamt).");
 
-        $this->info("Fertig: {$result['created']} neu, {$result['updated']} aktualisiert ({$result['total']} gesamt).");
+        if (!$this->option('no-details')) {
+            $this->line('Lade Descriptions nach...');
+            $detailCount = $service->fetchMissingDetails();
+            $this->info("Details: {$detailCount} Descriptions geladen.");
+        }
+
         return self::SUCCESS;
     }
 
@@ -52,7 +57,6 @@ class FetchWidAdvisories extends Command
             ->timeout(15)
             ->withoutVerifying();
 
-        // 1) Liste abrufen
         $this->line("\n--- Schritt 1: Liste ---");
         try {
             $response = $http->get("{$settings->api_url}/public/securityAdvisory", [
@@ -71,7 +75,6 @@ class FetchWidAdvisories extends Command
                 }
             }
 
-            // 2) Detail des ersten Eintrags abrufen
             $firstUuid = $json['content'][0]['uuid'] ?? null;
             $firstName = $json['content'][0]['name'] ?? null;
 
@@ -88,7 +91,6 @@ class FetchWidAdvisories extends Command
                     $this->line("\nVollständige Detail-Antwort:");
                     $this->line(json_encode($detailJson, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
                 } else {
-                    $this->line("Antwort (erste 2000 Zeichen):");
                     $this->line(substr($detail->body(), 0, 2000));
                 }
             }

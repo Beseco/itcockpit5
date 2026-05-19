@@ -89,6 +89,19 @@
                     <label for="enabled" class="text-sm text-gray-700">WID-Abruf aktivieren</label>
                 </div>
 
+                {{-- Abo-Filter --}}
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" name="abo_filter" id="abo_filter" value="1"
+                           {{ old('abo_filter', $settings->abo_filter) ? 'checked' : '' }}
+                           class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
+                    <label for="abo_filter" class="text-sm text-gray-700">
+                        Nur abonnierte Meldungen anzeigen
+                    </label>
+                </div>
+                <p class="text-xs text-gray-400 -mt-2 ml-6">
+                    Nur sinnvoll wenn im WID-Portal Abonnements konfiguriert sind. Ohne Abonnements → keine Ergebnisse.
+                </p>
+
                 {{-- Max Items --}}
                 <div>
                     <label for="max_items" class="block text-sm font-medium text-gray-700 mb-1">
