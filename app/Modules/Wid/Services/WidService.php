@@ -23,27 +23,43 @@ class WidService
         if (!$this->settings->isConfigured()) return collect();
 
         return Cache::remember('wid_advisories_raw', 300, function () {
-            try {
-                $response = Http::withHeaders(['X-Api-Key' => $this->settings->api_key])
-                    ->timeout(15)
-                    ->get("{$this->settings->api_url}/public/securityAdvisory", [
-                        'sort'      => 'published,desc',
-                        'size'      => $this->settings->max_items,
-                        'page'      => 0,
-                        'aboFilter' => 'true',
-                    ]);
+            return $this->doFetch();
+        });
+    }
 
-                if (!$response->successful()) {
-                    Log::warning('WID API Fehler: HTTP ' . $response->status());
-                    return collect();
-                }
+    /** Führt den eigentlichen API-Abruf durch und gibt die rohen Items zurück. */
+    public function doFetch(): Collection
+    {
+        try {
+            $response = Http::withHeaders(['X-Api-Key' => $this->settings->api_key])
+                ->timeout(15)
+                ->get("{$this->settings->api_url}/public/securityAdvisory", [
+                    'sort' => 'published,desc',
+                    'size' => $this->settings->max_items,
+                    'page' => 0,
+                ]);
 
-                return collect($response->json('content') ?? []);
-            } catch (\Exception $e) {
-                Log::error('WID API Exception: ' . $e->getMessage());
+            if (!$response->successful()) {
+                Log::warning('WID API Fehler: HTTP ' . $response->status() . ' – ' . $response->body());
                 return collect();
             }
-        });
+
+            $body = $response->json();
+
+            // API liefert entweder {content:[...]} oder direkt ein Array
+            if (isset($body['content'])) {
+                return collect($body['content']);
+            }
+            if (is_array($body) && array_is_list($body)) {
+                return collect($body);
+            }
+
+            Log::warning('WID API: Unerwartete Antwortstruktur', ['keys' => array_keys($body ?? [])]);
+            return collect();
+        } catch (\Exception $e) {
+            Log::error('WID API Exception: ' . $e->getMessage());
+            return collect();
+        }
     }
 
     public function syncToDatabase(Collection $items): array
