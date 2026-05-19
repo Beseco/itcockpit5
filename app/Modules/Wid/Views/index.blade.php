@@ -124,10 +124,9 @@
                             <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Portal</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100" x-data>
-                        @foreach($advisories as $advisory)
+                    @foreach($advisories as $advisory)
+                        <tbody x-data="{ open: false }" class="border-b border-gray-100">
                             <tr class="hover:bg-gray-50 cursor-pointer"
-                                x-data="{ open: false }"
                                 @click="open = !open">
                                 <td class="px-3 py-3 text-gray-400">
                                     <svg x-show="!open" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -214,8 +213,8 @@
                                     </div>
                                 </td>
                             </tr>
-                        @endforeach
-                    </tbody>
+                        </tbody>
+                    @endforeach
                 </table>
 
                 @if($advisories->hasPages())
