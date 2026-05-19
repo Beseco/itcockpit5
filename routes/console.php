@@ -40,3 +40,6 @@ Schedule::command('server:vsphere-sync')->dailyAt('03:00');
 
 // Benutzer-Inaktivitäts-Erinnerung täglich um 09:00 Uhr
 Schedule::command('users:send-missing-mail')->dailyAt('09:00');
+
+// WID-Sicherheitswarnungen täglich um 06:00 abrufen
+Schedule::command('wid:fetch-advisories')->dailyAt('06:00');
