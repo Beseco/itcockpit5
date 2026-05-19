@@ -48,32 +48,48 @@ class FetchWidAdvisories extends Command
         $this->line('=== DEBUG-MODUS ===');
         $this->line("API-Key: " . substr($settings->api_key, 0, 12) . '...');
 
+        $http = Http::withHeaders(['X-Api-Key' => $settings->api_key])
+            ->timeout(15)
+            ->withoutVerifying();
+
+        // 1) Liste abrufen
+        $this->line("\n--- Schritt 1: Liste ---");
         try {
-            $response = Http::withHeaders(['X-Api-Key' => $settings->api_key])
-                ->timeout(15)
-                ->withoutVerifying()
-                ->get("{$settings->api_url}/public/securityAdvisory", [
-                    'sort' => 'published,desc',
-                    'size' => 3,
-                    'page' => 0,
-                ]);
+            $response = $http->get("{$settings->api_url}/public/securityAdvisory", [
+                'sort' => 'published,desc',
+                'size' => 2,
+                'page' => 0,
+            ]);
 
             $this->line("HTTP-Status: " . $response->status());
-            $this->line("Content-Type: " . $response->header('Content-Type'));
-
-            $body = $response->body();
-            $this->line("Antwort-Länge: " . strlen($body) . " Bytes");
-            $this->line("Antwort (erste 1000 Zeichen):");
-            $this->line(substr($body, 0, 1000));
-
             $json = $response->json();
+
             if (is_array($json)) {
-                $this->line("\nJSON-Keys auf oberster Ebene: " . implode(', ', array_keys($json)));
-                if (isset($json['content'])) {
-                    $this->line("Anzahl Einträge in 'content': " . count($json['content']));
-                }
+                $this->line("JSON-Keys: " . implode(', ', array_keys($json)));
                 if (isset($json['totalElements'])) {
                     $this->line("totalElements: " . $json['totalElements']);
+                }
+            }
+
+            // 2) Detail des ersten Eintrags abrufen
+            $firstUuid = $json['content'][0]['uuid'] ?? null;
+            $firstName = $json['content'][0]['name'] ?? null;
+
+            if ($firstUuid) {
+                $this->line("\n--- Schritt 2: Detail für {$firstName} ({$firstUuid}) ---");
+
+                $detail = $http->get("{$settings->api_url}/public/securityAdvisory/{$firstUuid}");
+                $this->line("HTTP-Status: " . $detail->status());
+                $this->line("Antwort-Länge: " . strlen($detail->body()) . " Bytes");
+
+                $detailJson = $detail->json();
+                if (is_array($detailJson)) {
+                    $this->line("JSON-Keys: " . implode(', ', array_keys($detailJson)));
+                    $this->line("\nVollständige Detail-Antwort:");
+                    $this->line(json_encode($detailJson, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+                } else {
+                    $this->line("Antwort (erste 2000 Zeichen):");
+                    $this->line(substr($detail->body(), 0, 2000));
                 }
             }
         } catch (\Exception $e) {
