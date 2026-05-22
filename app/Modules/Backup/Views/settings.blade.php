@@ -59,6 +59,12 @@
                                    class="rounded border-gray-300 text-indigo-600">
                             <label for="backup_files" class="text-sm text-gray-700">Dateien (storage/app/public, tar.gz)</label>
                         </div>
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" id="backup_exports" name="backup_exports" value="1"
+                                   @checked(old('backup_exports', $settings->backup_exports))
+                                   class="rounded border-gray-300 text-indigo-600">
+                            <label for="backup_exports" class="text-sm text-gray-700">Schulen-Exporte (storage/app/exports, tar.gz)</label>
+                        </div>
                     </div>
 
                     <div class="pt-2 border-t border-gray-100 flex justify-end">

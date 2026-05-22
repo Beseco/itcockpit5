@@ -36,11 +36,18 @@ class BackupCreateCommand extends Command
                 $this->info('  ✓ Dateien gesichert');
             }
 
+            if ($settings->backup_exports) {
+                $this->info('  → Schulen-Exporte sichern…');
+                $this->backupExports($dir);
+                $this->info('  ✓ Schulen-Exporte gesichert');
+            }
+
             file_put_contents("{$dir}/info.json", json_encode([
-                'name'       => $name,
-                'created_at' => now()->toIso8601String(),
-                'backup_db'  => $settings->backup_db,
-                'backup_files' => $settings->backup_files,
+                'name'           => $name,
+                'created_at'     => now()->toIso8601String(),
+                'backup_db'      => $settings->backup_db,
+                'backup_files'   => $settings->backup_files,
+                'backup_exports' => $settings->backup_exports,
             ], JSON_PRETTY_PRINT));
 
             $this->cleanupOldBackups($settings->retention_count);
@@ -119,6 +126,25 @@ class BackupCreateCommand extends Command
 
         if ($ret !== 0) {
             throw new \RuntimeException("tar-Archivierung der Dateien fehlgeschlagen (Exit-Code {$ret}).");
+        }
+    }
+
+    private function backupExports(string $dir): void
+    {
+        $exportsDir = storage_path('app/exports');
+
+        if (!is_dir($exportsDir)) {
+            $this->warn('  storage/app/exports nicht gefunden – überspringe Export-Backup.');
+            return;
+        }
+
+        $outFile = escapeshellarg("{$dir}/exports.tar.gz");
+        $srcBase = escapeshellarg(storage_path('app'));
+
+        exec("tar -czf {$outFile} -C {$srcBase} exports 2>/dev/null", $output, $ret);
+
+        if ($ret !== 0) {
+            throw new \RuntimeException("tar-Archivierung der Exporte fehlgeschlagen (Exit-Code {$ret}).");
         }
     }
 

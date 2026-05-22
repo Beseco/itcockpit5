@@ -57,7 +57,7 @@
                         Aufbewahrung: {{ $settings->retention_count }} Backup{{ $settings->retention_count !== 1 ? 's' : '' }}
                         &nbsp;·&nbsp;
                         Inhalt:
-                        {{ collect(['Datenbank' => $settings->backup_db, 'Dateien' => $settings->backup_files])->filter()->keys()->implode(', ') ?: '–' }}
+                        {{ collect(['Datenbank' => $settings->backup_db, 'Dateien' => $settings->backup_files, 'Exporte' => $settings->backup_exports])->filter()->keys()->implode(', ') ?: '–' }}
                     </div>
                 </div>
             </div>
@@ -70,6 +70,7 @@
                             <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider text-xs">Datum</th>
                             <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider text-xs">Datenbank</th>
                             <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider text-xs">Dateien</th>
+                            <th class="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider text-xs">Exporte</th>
                             <th class="px-4 py-3"></th>
                         </tr>
                     </thead>
@@ -107,6 +108,20 @@
                                     <span class="text-gray-300">–</span>
                                 @endif
                             </td>
+                            <td class="px-4 py-3">
+                                @if($backup['has_exports'])
+                                    <a href="{{ route('backup.download', [$backup['name'], 'exports']) }}"
+                                       class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                        </svg>
+                                        {{ number_format($backup['exports_size'] / 1024 / 1024, 1) }} MB
+                                    </a>
+                                @else
+                                    <span class="text-gray-300">–</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3 text-right">
                                 <form method="POST"
                                       action="{{ route('backup.destroy', $backup['name']) }}"
@@ -122,7 +137,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="4" class="px-4 py-8 text-center text-gray-400">
+                            <td colspan="5" class="px-4 py-8 text-center text-gray-400">
                                 Noch keine Backups vorhanden. Erstelle jetzt das erste Backup.
                             </td>
                         </tr>

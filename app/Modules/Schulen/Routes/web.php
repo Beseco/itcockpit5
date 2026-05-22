@@ -2,6 +2,7 @@
 
 use App\Modules\Schulen\Http\Controllers\DienstleistungenController;
 use App\Modules\Schulen\Http\Controllers\EinstellungenController;
+use App\Modules\Schulen\Http\Controllers\ExportController;
 use App\Modules\Schulen\Http\Controllers\KontaktController;
 use App\Modules\Schulen\Http\Controllers\MatrixController;
 use App\Modules\Schulen\Http\Controllers\SchulenController;
@@ -60,5 +61,8 @@ Route::middleware(['auth', 'module.permission:schulen,view'])->group(function ()
     Route::get('/vze',         [SchulenController::class, 'vze'])->name('vze');
     Route::get('/dienste',     [DienstleistungenController::class, 'index'])->name('dienste.index');
     Route::get('/dienste/{dienstleistung}', [DienstleistungenController::class, 'show'])->name('dienste.show');
+    Route::get('/export/{type}/{format}',   [ExportController::class, 'download'])->name('export')
+        ->where('type',   'matrix|dienstleistungen|schulen-liste')
+        ->where('format', 'pdf|xlsx|docx');
     Route::get('/{schule}',    [SchulenController::class, 'show'])->name('show');
 });

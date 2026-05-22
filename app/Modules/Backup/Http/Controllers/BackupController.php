@@ -38,22 +38,26 @@ class BackupController extends Controller
     {
         $this->validateBackupName($name);
 
-        if (!in_array($type, ['db', 'files'])) {
+        if (!in_array($type, ['db', 'files', 'exports'])) {
             abort(404);
         }
 
         $dir  = storage_path("app/backups/{$name}");
-        $file = $type === 'db'
-            ? "{$dir}/database.sql.gz"
-            : "{$dir}/storage.tar.gz";
+        $file = match ($type) {
+            'db'      => "{$dir}/database.sql.gz",
+            'files'   => "{$dir}/storage.tar.gz",
+            'exports' => "{$dir}/exports.tar.gz",
+        };
 
         if (!file_exists($file)) {
             abort(404);
         }
 
-        $filename = $type === 'db'
-            ? "{$name}_database.sql.gz"
-            : "{$name}_storage.tar.gz";
+        $filename = match ($type) {
+            'db'      => "{$name}_database.sql.gz",
+            'files'   => "{$name}_storage.tar.gz",
+            'exports' => "{$name}_exports.tar.gz",
+        };
 
         return response()->download($file, $filename);
     }
@@ -95,18 +99,21 @@ class BackupController extends Controller
                 $info = json_decode(file_get_contents("{$dir}/info.json"), true) ?? [];
             }
 
-            $dbFile    = "{$dir}/database.sql.gz";
-            $filesFile = "{$dir}/storage.tar.gz";
+            $dbFile      = "{$dir}/database.sql.gz";
+            $filesFile   = "{$dir}/storage.tar.gz";
+            $exportsFile = "{$dir}/exports.tar.gz";
 
             $backups[] = [
-                'name'       => $name,
-                'created_at' => isset($info['created_at'])
+                'name'          => $name,
+                'created_at'    => isset($info['created_at'])
                     ? \Carbon\Carbon::parse($info['created_at'])
                     : null,
-                'has_db'     => file_exists($dbFile),
-                'has_files'  => file_exists($filesFile),
-                'db_size'    => file_exists($dbFile)    ? filesize($dbFile)    : 0,
-                'files_size' => file_exists($filesFile) ? filesize($filesFile) : 0,
+                'has_db'        => file_exists($dbFile),
+                'has_files'     => file_exists($filesFile),
+                'has_exports'   => file_exists($exportsFile),
+                'db_size'       => file_exists($dbFile)      ? filesize($dbFile)      : 0,
+                'files_size'    => file_exists($filesFile)   ? filesize($filesFile)   : 0,
+                'exports_size'  => file_exists($exportsFile) ? filesize($exportsFile) : 0,
             ];
         }
 

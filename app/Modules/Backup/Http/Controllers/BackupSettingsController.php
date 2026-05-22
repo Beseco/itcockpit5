@@ -22,6 +22,7 @@ class BackupSettingsController extends Controller
             'retention_count' => ['required', 'integer', 'min:1', 'max:365'],
             'backup_db'       => ['nullable', 'boolean'],
             'backup_files'    => ['nullable', 'boolean'],
+            'backup_exports'  => ['nullable', 'boolean'],
         ]);
 
         $settings = BackupSettings::getSingleton();
@@ -30,6 +31,7 @@ class BackupSettingsController extends Controller
             'retention_count' => $request->retention_count,
             'backup_db'       => $request->boolean('backup_db'),
             'backup_files'    => $request->boolean('backup_files'),
+            'backup_exports'  => $request->boolean('backup_exports'),
         ]);
         $settings->save();
 

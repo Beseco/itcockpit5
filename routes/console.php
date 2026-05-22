@@ -43,3 +43,6 @@ Schedule::command('users:send-missing-mail')->dailyAt('09:00');
 
 // WID-Sicherheitswarnungen stündlich abrufen
 Schedule::command('wid:fetch-advisories')->hourly();
+
+// Schulen-Exporte nächtlich um 04:00 Uhr erstellen
+Schedule::command('schulen:export-nightly')->dailyAt('04:00');

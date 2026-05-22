@@ -13,11 +13,13 @@ class BackupSettings extends Model
         'retention_count',
         'backup_db',
         'backup_files',
+        'backup_exports',
     ];
 
     protected $casts = [
-        'backup_db'    => 'boolean',
-        'backup_files' => 'boolean',
+        'backup_db'      => 'boolean',
+        'backup_files'   => 'boolean',
+        'backup_exports' => 'boolean',
     ];
 
     public static function getSingleton(): self
@@ -27,6 +29,7 @@ class BackupSettings extends Model
             'retention_count' => 7,
             'backup_db'       => true,
             'backup_files'    => true,
+            'backup_exports'  => true,
         ]);
     }
 }
