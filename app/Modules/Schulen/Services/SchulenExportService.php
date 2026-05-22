@@ -89,7 +89,7 @@ class SchulenExportService
 
     private function matrixXlsx(): Response
     {
-        ['schulen' => $schulen, 'dienstleistungen' => $dienste, 'pivots' => $pivots,
+        ['schulen' => $schulen, 'dienste' => $dienste, 'pivots' => $pivots,
          'schulenGruppen' => $schulenGruppen, 'diensteGruppen' => $diensteGruppen,
          'schulTypen' => $schulTypen, 'kategorien' => $kategorien] = $this->loadMatrixData();
 
@@ -272,7 +272,7 @@ class SchulenExportService
 
     private function matrixPdf(): Response
     {
-        ['schulen' => $schulen, 'dienstleistungen' => $dienste, 'pivots' => $pivots,
+        ['schulen' => $schulen, 'dienste' => $dienste, 'pivots' => $pivots,
          'diensteGruppen' => $diensteGruppen, 'kategorien' => $kategorien] = $this->loadMatrixData();
 
         $date     = now()->format('d.m.Y');
