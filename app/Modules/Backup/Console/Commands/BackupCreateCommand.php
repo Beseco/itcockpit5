@@ -149,7 +149,7 @@ class BackupCreateCommand extends Command
 
     private function backupAllExports(string $dir, BackupSettings $settings): array
     {
-        $exportDir = "{$dir}/exports";
+        $exportDir = "{$dir}/_exports_tmp";
         if (!mkdir($exportDir, 0755, true) && !is_dir($exportDir)) {
             throw new \RuntimeException("Export-Verzeichnis konnte nicht erstellt werden.");
         }
@@ -166,14 +166,27 @@ class BackupCreateCommand extends Command
             // Rückwärtskompatibel: bestehende Schulen-Exporte aus storage/app/exports kopieren
             $schulenSrc = storage_path('app/exports');
             if (is_dir($schulenSrc)) {
+                $schulenDst = "{$exportDir}/schulen";
+                @mkdir($schulenDst, 0755, true);
                 exec(
-                    "cp -r " . escapeshellarg($schulenSrc) . "/. " . escapeshellarg("{$exportDir}/schulen") . " 2>/dev/null",
+                    "cp -r " . escapeshellarg($schulenSrc) . "/. " . escapeshellarg($schulenDst) . " 2>/dev/null",
                     $cpOut, $cpRet
                 );
                 if ($cpRet === 0) {
                     $generated[] = 'Schulen (archiviert)';
                 }
             }
+        }
+
+        // Exportverzeichnis als exports.tar.gz archivieren (erwartet von BackupController)
+        $outFile = escapeshellarg("{$dir}/exports.tar.gz");
+        exec("tar -czf {$outFile} -C " . escapeshellarg($dir) . " _exports_tmp 2>/dev/null", $tarOut, $tarRet);
+
+        // Temporäres Verzeichnis aufräumen
+        $this->exec("rm -rf " . escapeshellarg($exportDir));
+
+        if ($tarRet !== 0) {
+            throw new \RuntimeException("tar-Archivierung der Exporte fehlgeschlagen (Exit-Code {$tarRet}).");
         }
 
         return $generated ?: ['(keine Exporte vorhanden)'];
