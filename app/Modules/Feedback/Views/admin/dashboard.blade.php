@@ -77,6 +77,25 @@
             </div>
 
             {{-- Charts --}}
+            {{-- Umfrage-Link --}}
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Umfrage-Link</p>
+                <div class="flex items-center gap-2">
+                    <input id="feedbackUrl" type="text" readonly
+                           value="{{ route('feedback.form') }}"
+                           class="flex-1 border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-700 focus:ring-indigo-400 focus:border-indigo-400">
+                    <button type="button"
+                            onclick="navigator.clipboard.writeText(document.getElementById('feedbackUrl').value).then(() => { this.textContent = '✓ Kopiert'; setTimeout(() => this.textContent = 'Kopieren', 2000); })"
+                            class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition whitespace-nowrap">
+                        Kopieren
+                    </button>
+                    <a href="{{ route('feedback.form') }}" target="_blank"
+                       class="px-3 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-xs font-semibold rounded-lg transition whitespace-nowrap">
+                        Öffnen ↗
+                    </a>
+                </div>
+            </div>
+
             @if($summary['total'] > 0)
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {{-- Trend-Chart --}}
@@ -101,6 +120,85 @@
                     <p>Noch keine Bewertungen im gewählten Zeitraum.</p>
                 </div>
             @endif
+
+            {{-- Einladung versenden --}}
+            <div x-data="feedbackInvite()" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">Feedback-Einladung versenden</p>
+
+                @if(session('invite_success'))
+                    <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)"
+                         class="mb-4 bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-xl">
+                        {{ session('invite_success') }}
+                    </div>
+                @endif
+
+                <form action="{{ route('feedback.admin.invite') }}" method="POST" @submit="submitting = true">
+                    @csrf
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                        {{-- Name / AD-Suche --}}
+                        <div class="relative">
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Name <span class="text-gray-400">(optional / AD-Suche)</span></label>
+                            <input
+                                type="text"
+                                name="recipient_name"
+                                x-model="nameQuery"
+                                @input.debounce.300ms="search()"
+                                @keydown.escape="suggestions = []"
+                                @keydown.arrow-down.prevent="focusSuggestion(1)"
+                                @keydown.arrow-up.prevent="focusSuggestion(-1)"
+                                autocomplete="off"
+                                placeholder="Name eingeben oder suchen…"
+                                class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg text-sm"
+                            >
+                            {{-- Dropdown --}}
+                            <div x-show="suggestions.length > 0" x-cloak
+                                 @click.away="suggestions = []"
+                                 class="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+                                <template x-for="(user, i) in suggestions" :key="user.email">
+                                    <button type="button"
+                                            @click="selectUser(user)"
+                                            class="w-full text-left px-4 py-2.5 hover:bg-indigo-50 transition-colors text-sm border-b border-gray-50 last:border-0">
+                                        <span class="font-medium text-gray-800" x-text="user.name"></span>
+                                        <span x-show="user.abteilung" class="ml-1.5 text-xs text-gray-400" x-text="user.abteilung"></span>
+                                        <br>
+                                        <span class="text-xs text-gray-500" x-text="user.email"></span>
+                                    </button>
+                                </template>
+                                <div x-show="loading" class="px-4 py-2 text-xs text-gray-400">Suche…</div>
+                            </div>
+                        </div>
+
+                        {{-- E-Mail --}}
+                        <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">E-Mail-Adresse <span class="text-red-400">*</span></label>
+                            <input
+                                type="email"
+                                name="recipient_email"
+                                x-model="email"
+                                required
+                                placeholder="empfaenger@beispiel.de"
+                                class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg text-sm"
+                            >
+                            @error('recipient_email')
+                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
+
+                    <div class="mt-4 flex items-center gap-3">
+                        <button type="submit"
+                                :disabled="submitting || !email"
+                                class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                            </svg>
+                            <span x-text="submitting ? 'Sende…' : 'Einladung senden'"></span>
+                        </button>
+                        <p class="text-xs text-gray-400">Der Empfänger erhält eine E-Mail mit dem direkten Link zur Bewertung.</p>
+                    </div>
+                </form>
+            </div>
 
         </div>
     </div>
@@ -177,5 +275,38 @@
         });
     </script>
     @endif
+    <script>
+        function feedbackInvite() {
+            return {
+                nameQuery: '',
+                email: '',
+                suggestions: [],
+                loading: false,
+                submitting: false,
+                focused: -1,
+                async search() {
+                    if (this.nameQuery.length < 2) { this.suggestions = []; return; }
+                    this.loading = true;
+                    try {
+                        const res = await fetch('{{ route('feedback.admin.adusers') }}?q=' + encodeURIComponent(this.nameQuery), {
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+                        this.suggestions = await res.json();
+                    } catch (e) {
+                        this.suggestions = [];
+                    }
+                    this.loading = false;
+                },
+                selectUser(user) {
+                    this.nameQuery = user.name;
+                    this.email     = user.email;
+                    this.suggestions = [];
+                },
+                focusSuggestion(dir) {
+                    this.focused = Math.max(0, Math.min(this.suggestions.length - 1, this.focused + dir));
+                }
+            }
+        }
+    </script>
     @endpush
 </x-app-layout>

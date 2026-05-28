@@ -15,4 +15,6 @@ Route::middleware(['auth', 'module.permission:feedback,view'])->group(function (
     Route::get('/admin/bewertungen',              [FeedbackAdminController::class, 'index'])->name('admin.index');
     Route::delete('/admin/bewertungen/{feedback}',[FeedbackAdminController::class, 'destroy'])->name('admin.destroy');
     Route::get('/admin/kommentare',               [FeedbackAdminController::class, 'comments'])->name('admin.comments');
+    Route::get('/admin/adusers',                  [FeedbackAdminController::class, 'adUserSearch'])->name('admin.adusers');
+    Route::post('/admin/einladen',                [FeedbackAdminController::class, 'sendInvite'])->name('admin.invite');
 });

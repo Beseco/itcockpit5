@@ -3,10 +3,14 @@
 namespace App\Modules\Feedback\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Mail\FeedbackRequestMail;
+use App\Modules\AdUsers\Models\AdUser;
 use App\Modules\Feedback\Models\Feedback;
 use App\Modules\Feedback\Services\FeedbackStatisticsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Schema;
 
 class FeedbackAdminController extends Controller
 {
@@ -52,6 +56,53 @@ class FeedbackAdminController extends Controller
         $questionLabels = Feedback::questionLabels();
 
         return view('feedback::admin.index', compact('feedbacks', 'questionLabels', 'search', 'sort', 'dir'));
+    }
+
+    public function adUserSearch(Request $request)
+    {
+        $q = trim($request->get('q', ''));
+
+        if (strlen($q) < 2 || !Schema::hasTable('adusers')) {
+            return response()->json([]);
+        }
+
+        $users = AdUser::where('ad_aktiv', true)
+            ->where(function ($query) use ($q) {
+                $query->where('anzeigename', 'LIKE', "%{$q}%")
+                    ->orWhere('vorname',     'LIKE', "%{$q}%")
+                    ->orWhere('nachname',    'LIKE', "%{$q}%")
+                    ->orWhere('email',       'LIKE', "%{$q}%");
+            })
+            ->whereNotNull('email')
+            ->where('email', '!=', '')
+            ->orderBy('nachname')
+            ->limit(10)
+            ->get(['anzeigename', 'vorname', 'nachname', 'email', 'abteilung'])
+            ->map(fn($u) => [
+                'name'       => $u->anzeigenameOrName,
+                'email'      => $u->email,
+                'abteilung'  => $u->abteilung ?? '',
+            ]);
+
+        return response()->json($users);
+    }
+
+    public function sendInvite(Request $request)
+    {
+        $validated = $request->validate([
+            'recipient_name'  => 'nullable|string|max:150',
+            'recipient_email' => 'required|email|max:200',
+        ]);
+
+        $feedbackUrl = route('feedback.form');
+
+        Mail::to($validated['recipient_email'])
+            ->send(new FeedbackRequestMail(
+                recipientName: $validated['recipient_name'] ?? '',
+                feedbackUrl:   $feedbackUrl,
+            ));
+
+        return back()->with('invite_success', 'Einladung wurde an ' . $validated['recipient_email'] . ' gesendet.');
     }
 
     public function destroy(Feedback $feedback)
