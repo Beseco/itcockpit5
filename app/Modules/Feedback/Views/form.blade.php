@@ -31,11 +31,11 @@
                     'q5_competence'      => 'Wie bewerten Sie die fachliche Kompetenz unseres Supports?',
                 ];
                 $smileys = [
-                    1 => ['emoji' => '😠', 'label' => 'Sehr schlecht', 'color' => 'hover:bg-red-50 data-[active=true]:bg-red-100 data-[active=true]:ring-red-400'],
-                    2 => ['emoji' => '🙁', 'label' => 'Schlecht',      'color' => 'hover:bg-orange-50 data-[active=true]:bg-orange-100 data-[active=true]:ring-orange-400'],
-                    3 => ['emoji' => '😐', 'label' => 'Neutral',       'color' => 'hover:bg-yellow-50 data-[active=true]:bg-yellow-100 data-[active=true]:ring-yellow-400'],
-                    4 => ['emoji' => '🙂', 'label' => 'Gut',           'color' => 'hover:bg-lime-50 data-[active=true]:bg-lime-100 data-[active=true]:ring-lime-400'],
-                    5 => ['emoji' => '😄', 'label' => 'Sehr gut',      'color' => 'hover:bg-green-50 data-[active=true]:bg-green-100 data-[active=true]:ring-green-400'],
+                    1 => ['emoji' => '😠', 'label' => 'Sehr schlecht', 'on' => 'ring-red-500 bg-red-50',    'hover' => 'hover:bg-red-50'],
+                    2 => ['emoji' => '🙁', 'label' => 'Schlecht',      'on' => 'ring-orange-400 bg-orange-50', 'hover' => 'hover:bg-orange-50'],
+                    3 => ['emoji' => '😐', 'label' => 'Neutral',       'on' => 'ring-yellow-400 bg-yellow-50', 'hover' => 'hover:bg-yellow-50'],
+                    4 => ['emoji' => '🙂', 'label' => 'Gut',           'on' => 'ring-lime-500 bg-lime-50',  'hover' => 'hover:bg-lime-50'],
+                    5 => ['emoji' => '😄', 'label' => 'Sehr gut',      'on' => 'ring-green-500 bg-green-50', 'hover' => 'hover:bg-green-50'],
                 ];
             @endphp
 
@@ -43,24 +43,25 @@
                 @foreach($questions as $name => $label)
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
                         <p class="font-medium text-gray-800 mb-4 text-sm leading-snug">{{ $loop->iteration }}. {{ $label }}</p>
-                        <div class="flex justify-between gap-2">
+                        <div class="flex justify-between gap-1 sm:gap-2">
                             @foreach($smileys as $value => $smiley)
                                 <button
                                     type="button"
-                                    :data-active="scores['{{ $name }}'] === {{ $value }} ? 'true' : 'false'"
                                     @click="setScore('{{ $name }}', {{ $value }})"
-                                    class="flex-1 flex flex-col items-center gap-1 py-3 px-1 rounded-xl border-2 border-transparent ring-2 ring-transparent transition-all duration-150 cursor-pointer focus:outline-none
-                                        {{ $smiley['color'] }}"
+                                    class="flex-1 flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl border border-gray-200 ring-2 ring-transparent transition-all duration-150 cursor-pointer focus:outline-none {{ $smiley['hover'] }}"
                                     :class="{
-                                        'ring-2': scores['{{ $name }}'] === {{ $value }},
-                                        'opacity-40': scores['{{ $name }}'] !== null && scores['{{ $name }}'] !== {{ $value }}
+                                        '{{ $smiley['on'] }}': scores['{{ $name }}'] === {{ $value }},
+                                        'opacity-30 grayscale': scores['{{ $name }}'] !== null && scores['{{ $name }}'] !== {{ $value }}
                                     }"
                                     :aria-pressed="scores['{{ $name }}'] === {{ $value }}"
                                     aria-label="{{ $smiley['label'] }}"
                                     title="{{ $smiley['label'] }}"
                                 >
-                                    <span class="text-3xl leading-none select-none">{{ $smiley['emoji'] }}</span>
-                                    <span class="text-xs text-gray-500 hidden sm:block">{{ $smiley['label'] }}</span>
+                                    <span
+                                        class="leading-none select-none transition-transform duration-150"
+                                        :class="scores['{{ $name }}'] === {{ $value }} ? 'text-4xl' : 'text-3xl'"
+                                    >{{ $smiley['emoji'] }}</span>
+                                    <span class="text-xs text-gray-500 hidden sm:block leading-tight text-center">{{ $smiley['label'] }}</span>
                                 </button>
                             @endforeach
                         </div>
