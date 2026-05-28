@@ -3,6 +3,8 @@
 namespace App\Modules\Backup\Console\Commands;
 
 use App\Modules\Backup\Models\BackupSettings;
+use App\Modules\Backup\Services\BackupExportCollector;
+use App\Modules\Backup\Services\BackupSmbService;
 use Illuminate\Console\Command;
 
 class BackupCreateCommand extends Command
@@ -37,20 +39,36 @@ class BackupCreateCommand extends Command
             }
 
             if ($settings->backup_exports) {
-                $this->info('  → Schulen-Exporte sichern…');
-                $this->backupExports($dir);
-                $this->info('  ✓ Schulen-Exporte gesichert');
+                $this->info('  → Exporte sichern…');
+                $exportedModules = $this->backupAllExports($dir, $settings);
+                $this->info('  ✓ Exporte gesichert: ' . implode(', ', $exportedModules));
             }
 
             file_put_contents("{$dir}/info.json", json_encode([
-                'name'           => $name,
-                'created_at'     => now()->toIso8601String(),
-                'backup_db'      => $settings->backup_db,
-                'backup_files'   => $settings->backup_files,
-                'backup_exports' => $settings->backup_exports,
+                'name'                => $name,
+                'created_at'          => now()->toIso8601String(),
+                'backup_db'           => $settings->backup_db,
+                'backup_files'        => $settings->backup_files,
+                'backup_exports'      => $settings->backup_exports,
+                'backup_exports_all'  => $settings->backup_exports_all,
             ], JSON_PRETTY_PRINT));
 
             $this->cleanupOldBackups($settings->retention_count);
+
+            // SMB-Upload nach Abschluss aller lokalen Schritte
+            if ($settings->smb_enabled && $settings->smb_server && $settings->smb_share) {
+                $this->info('  → SMB-Upload…');
+                try {
+                    app(BackupSmbService::class)->upload(
+                        $dir,
+                        $name,
+                        fn(string $msg) => $this->line($msg)
+                    );
+                } catch (\Throwable $e) {
+                    // SMB-Fehler bricht das lokale Backup nicht ab
+                    $this->warn('  ⚠ SMB-Upload fehlgeschlagen: ' . $e->getMessage());
+                }
+            }
 
             $this->info("Backup '{$name}' erfolgreich abgeschlossen.");
             return 0;
@@ -129,23 +147,36 @@ class BackupCreateCommand extends Command
         }
     }
 
-    private function backupExports(string $dir): void
+    private function backupAllExports(string $dir, BackupSettings $settings): array
     {
-        $exportsDir = storage_path('app/exports');
-
-        if (!is_dir($exportsDir)) {
-            $this->warn('  storage/app/exports nicht gefunden – überspringe Export-Backup.');
-            return;
+        $exportDir = "{$dir}/exports";
+        if (!mkdir($exportDir, 0755, true) && !is_dir($exportDir)) {
+            throw new \RuntimeException("Export-Verzeichnis konnte nicht erstellt werden.");
         }
 
-        $outFile = escapeshellarg("{$dir}/exports.tar.gz");
-        $srcBase = escapeshellarg(storage_path('app'));
+        $generated = [];
 
-        exec("tar -czf {$outFile} -C {$srcBase} exports 2>/dev/null", $output, $ret);
-
-        if ($ret !== 0) {
-            throw new \RuntimeException("tar-Archivierung der Exporte fehlgeschlagen (Exit-Code {$ret}).");
+        if ($settings->backup_exports_all) {
+            // Frische Exporte aus allen Modulen generieren
+            $generated = app(BackupExportCollector::class)->collectTo(
+                $exportDir,
+                fn(string $msg) => $this->line($msg)
+            );
+        } else {
+            // Rückwärtskompatibel: bestehende Schulen-Exporte aus storage/app/exports kopieren
+            $schulenSrc = storage_path('app/exports');
+            if (is_dir($schulenSrc)) {
+                exec(
+                    "cp -r " . escapeshellarg($schulenSrc) . "/. " . escapeshellarg("{$exportDir}/schulen") . " 2>/dev/null",
+                    $cpOut, $cpRet
+                );
+                if ($cpRet === 0) {
+                    $generated[] = 'Schulen (archiviert)';
+                }
+            }
         }
+
+        return $generated ?: ['(keine Exporte vorhanden)'];
     }
 
     private function cleanupOldBackups(int $keep): void

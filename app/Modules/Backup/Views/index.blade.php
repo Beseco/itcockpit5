@@ -51,13 +51,35 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
-                    <div>
-                        <strong>Automatisches Backup:</strong>
-                        täglich um {{ $settings->schedule_time }} Uhr &nbsp;·&nbsp;
-                        Aufbewahrung: {{ $settings->retention_count }} Backup{{ $settings->retention_count !== 1 ? 's' : '' }}
-                        &nbsp;·&nbsp;
-                        Inhalt:
-                        {{ collect(['Datenbank' => $settings->backup_db, 'Dateien' => $settings->backup_files, 'Exporte' => $settings->backup_exports])->filter()->keys()->implode(', ') ?: '–' }}
+                    <div class="space-y-1">
+                        <div>
+                            <strong>Automatisches Backup:</strong>
+                            täglich um {{ $settings->schedule_time }} Uhr &nbsp;·&nbsp;
+                            Aufbewahrung: {{ $settings->retention_count }} Backup{{ $settings->retention_count !== 1 ? 's' : '' }}
+                        </div>
+                        <div>
+                            <strong>Inhalt:</strong>
+                            @php
+                                $parts = array_filter([
+                                    $settings->backup_db    ? 'Datenbank' : null,
+                                    $settings->backup_files ? 'Dateien' : null,
+                                    $settings->backup_exports
+                                        ? ($settings->backup_exports_all ? 'Exporte (alle Module)' : 'Exporte (Schulen)')
+                                        : null,
+                                ]);
+                            @endphp
+                            {{ implode(', ', $parts) ?: '–' }}
+                        </div>
+                        @if($settings->smb_enabled && $settings->smb_server)
+                        <div class="flex items-center gap-1.5">
+                            <strong>SMB:</strong>
+                            <span class="text-green-700 font-medium">Aktiv</span>
+                            <span class="text-gray-400">→</span>
+                            <code class="text-xs bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded">
+                                //{{ $settings->smb_server }}/{{ $settings->smb_share }}{{ $settings->smb_path ? '/' . $settings->smb_path : '' }}
+                            </code>
+                        </div>
+                        @endif
                     </div>
                 </div>
             </div>

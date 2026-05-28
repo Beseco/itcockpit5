@@ -13,6 +13,7 @@ Route::middleware(['auth', 'module.permission:backup,view'])->group(function () 
 });
 
 Route::middleware(['auth', 'module.permission:backup,config'])->group(function () {
-    Route::get('/settings',  [BackupSettingsController::class, 'index'])->name('settings');
-    Route::post('/settings', [BackupSettingsController::class, 'update'])->name('settings.update');
+    Route::get('/settings',      [BackupSettingsController::class, 'index'])->name('settings');
+    Route::post('/settings',     [BackupSettingsController::class, 'update'])->name('settings.update');
+    Route::post('/settings/smb-test', [BackupSettingsController::class, 'testSmb'])->name('settings.smb-test');
 });
