@@ -19,7 +19,7 @@ class FeedbackServiceProvider extends ServiceProvider
         $hookManager->registerSidebarItem('feedback', [
             'label'      => 'Feedback',
             'route'      => 'feedback.admin.dashboard',
-            'icon'       => 'heroicon-o-star',
+            'icon'       => 'heroicon-o-chat-bubble-oval-left',
             'permission' => 'feedback.view',
             'module'     => 'feedback',
         ]);

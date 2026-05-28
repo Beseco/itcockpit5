@@ -44,10 +44,97 @@
             'M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21',
         'heroicon-o-shield-exclamation' =>
             'M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z',
+        'heroicon-o-chat-bubble-oval-left' =>
+            'M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z',
+        'heroicon-o-star' =>
+            'M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.562.562 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z',
         // Fallback: Würfel
         'default' =>
             'M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9',
     ];
+
+    // ── Sortiertes Navigations-Array aufbauen ──────────────────────────────
+    $navItems = [];
+
+    if ($canSee('announcements', 'announcements.view')) {
+        $navItems[] = [
+            'label'  => 'Ankündigungen',
+            'href'   => route('announcements.index'),
+            'active' => request()->routeIs('announcements.*'),
+            'icon'   => 'M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 110-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 01-1.44-4.282m3.102.069a18.03 18.03 0 01-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 018.835 2.535M10.34 6.66a23.847 23.847 0 008.835-2.535m0 0A23.74 23.74 0 0018.795 3m.38 1.125a23.91 23.91 0 011.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 001.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 010 3.46',
+        ];
+    }
+
+    if ($canSee('applikationen', 'applikationen.view')) {
+        $navItems[] = [
+            'label'  => 'Applikationen',
+            'href'   => route('applikationen.index'),
+            'active' => request()->routeIs('applikationen.*'),
+            'icon'   => 'M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 15V5.25m19.5 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V5.25',
+        ];
+    }
+
+    if ($canSee('orders', 'orders.view')) {
+        $navItems[] = [
+            'label'  => 'Bestellungen',
+            'href'   => route('orders.index'),
+            'active' => $inOrdersSection,
+            'icon'   => 'M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z',
+        ];
+    }
+
+    if ($canSee('dienstleister', 'dienstleister.view')) {
+        $navItems[] = [
+            'label'  => 'Dienstleister',
+            'href'   => route('dienstleister.index'),
+            'active' => request()->routeIs('dienstleister.*'),
+            'icon'   => 'M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21',
+        ];
+    }
+
+    if ($canSee('reminders', 'reminders.view')) {
+        $navItems[] = [
+            'label'  => 'Erinnerungsmails',
+            'href'   => route('reminders.index'),
+            'active' => request()->routeIs('reminders.*'),
+            'icon'   => 'M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z',
+        ];
+    }
+
+    if ($canSee('abteilungen', 'abteilungen.view')) {
+        $navItems[] = [
+            'label'  => 'Organisationseinheiten',
+            'href'   => route('abteilungen.index'),
+            'active' => $inAbteilungenSection,
+            'icon'   => 'M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z',
+        ];
+    }
+
+    if ($canSee('aufgaben', 'base.aufgaben.view')) {
+        $navItems[] = [
+            'label'  => 'Rollen & Aufgaben',
+            'href'   => route('aufgaben.index'),
+            'active' => request()->routeIs('aufgaben.*'),
+            'icon'   => 'M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z',
+        ];
+    }
+
+    // Modul-Einträge aus dem HookManager
+    if (isset($moduleNavItems)) {
+        foreach ($moduleNavItems as $item) {
+            $iconKey  = $item['icon'] ?? 'default';
+            $iconPath = $heroiconPaths[$iconKey] ?? $heroiconPaths['default'];
+            $navItems[] = [
+                'label'  => $item['label'],
+                'href'   => route($item['route']),
+                'active' => request()->routeIs($item['route_active_pattern'] ?? $item['route']),
+                'icon'   => $iconPath,
+            ];
+        }
+    }
+
+    // Alphabetisch sortieren (case-insensitive, Umlaute korrekt via mb_strtolower)
+    usort($navItems, fn($a, $b) => strcmp(mb_strtolower($a['label']), mb_strtolower($b['label'])));
 @endphp
 
 <div class="flex-1 flex flex-col min-h-0">
@@ -69,100 +156,16 @@
             Dashboard
         </a>
 
-        {{-- Ankündigungen --}}
-        @if($canSee('announcements', 'announcements.view'))
-        <a href="{{ route('announcements.index') }}"
-           class="group flex items-center px-2 py-1 text-sm font-medium rounded-md {{ request()->routeIs('announcements.*') ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
-            <svg class="mr-3 flex-shrink-0 h-5 w-5 {{ request()->routeIs('announcements.*') ? 'text-white' : 'text-gray-400 group-hover:text-gray-300' }}" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M10.34 15.84c-.688-.06-1.386-.09-2.09-.09H7.5a4.5 4.5 0 110-9h.75c.704 0 1.402-.03 2.09-.09m0 9.18c.253.962.584 1.892.985 2.783.247.55.06 1.21-.463 1.511l-.657.38c-.551.318-1.26.117-1.527-.461a20.845 20.845 0 01-1.44-4.282m3.102.069a18.03 18.03 0 01-.59-4.59c0-1.586.205-3.124.59-4.59m0 9.18a23.848 23.848 0 018.835 2.535M10.34 6.66a23.847 23.847 0 008.835-2.535m0 0A23.74 23.74 0 0018.795 3m.38 1.125a23.91 23.91 0 011.014 5.395m-1.014 8.855c-.118.38-.245.754-.38 1.125m.38-1.125a23.91 23.91 0 001.014-5.395m0-3.46c.495.413.811 1.035.811 1.73 0 .695-.316 1.317-.811 1.73m0-3.46a24.347 24.347 0 010 3.46" />
+        {{-- Alle Menüpunkte alphabetisch sortiert --}}
+        @foreach($navItems as $item)
+        <a href="{{ $item['href'] }}"
+           class="group flex items-center px-2 py-1 text-sm font-medium rounded-md {{ $item['active'] ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
+            <svg class="mr-3 flex-shrink-0 h-5 w-5 {{ $item['active'] ? 'text-white' : 'text-gray-400 group-hover:text-gray-300' }}" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="{{ $item['icon'] }}" />
             </svg>
-            Ankündigungen
+            {{ $item['label'] }}
         </a>
-        @endif
-
-        {{-- Organisationseinheiten --}}
-        @if($canSee('abteilungen', 'abteilungen.view'))
-        <a href="{{ route('abteilungen.index') }}"
-           class="group flex items-center px-2 py-1 text-sm font-medium rounded-md {{ $inAbteilungenSection ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
-            <svg class="mr-3 flex-shrink-0 h-5 w-5 {{ $inAbteilungenSection ? 'text-white' : 'text-gray-400 group-hover:text-gray-300' }}" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
-            </svg>
-            Organisationseinheiten
-        </a>
-        @endif
-
-        {{-- Applikationen --}}
-        @if($canSee('applikationen', 'applikationen.view'))
-        <a href="{{ route('applikationen.index') }}"
-           class="group flex items-center px-2 py-1 text-sm font-medium rounded-md {{ request()->routeIs('applikationen.*') ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
-            <svg class="mr-3 flex-shrink-0 h-5 w-5 {{ request()->routeIs('applikationen.*') ? 'text-white' : 'text-gray-400 group-hover:text-gray-300' }}" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H3.75A2.25 2.25 0 011.5 15V5.25m19.5 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V5.25" />
-            </svg>
-            Applikationen
-        </a>
-        @endif
-
-        {{-- Bestellungen --}}
-        @if($canSee('orders', 'orders.view'))
-        <a href="{{ route('orders.index') }}"
-           class="group flex items-center px-2 py-1 text-sm font-medium rounded-md {{ $inOrdersSection ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
-            <svg class="mr-3 flex-shrink-0 h-5 w-5 {{ $inOrdersSection ? 'text-white' : 'text-gray-400 group-hover:text-gray-300' }}" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-            </svg>
-            Bestellungen
-        </a>
-        @endif
-
-        {{-- Dienstleister --}}
-        @if($canSee('dienstleister', 'dienstleister.view'))
-        <a href="{{ route('dienstleister.index') }}"
-           class="group flex items-center px-2 py-1 text-sm font-medium rounded-md {{ request()->routeIs('dienstleister.*') ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
-            <svg class="mr-3 flex-shrink-0 h-5 w-5 {{ request()->routeIs('dienstleister.*') ? 'text-white' : 'text-gray-400 group-hover:text-gray-300' }}" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
-            </svg>
-            Dienstleister
-        </a>
-        @endif
-
-        {{-- Erinnerungsmails --}}
-        @if($canSee('reminders', 'reminders.view'))
-        <a href="{{ route('reminders.index') }}"
-           class="group flex items-center px-2 py-1 text-sm font-medium rounded-md {{ request()->routeIs('reminders.*') ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
-            <svg class="mr-3 flex-shrink-0 h-5 w-5 {{ request()->routeIs('reminders.*') ? 'text-white' : 'text-gray-400 group-hover:text-gray-300' }}" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Erinnerungsmails
-        </a>
-        @endif
-
-        {{-- Rollen & Aufgaben --}}
-        @if($canSee('aufgaben', 'base.aufgaben.view'))
-        <a href="{{ route('aufgaben.index') }}"
-           class="group flex items-center px-2 py-1 text-sm font-medium rounded-md {{ request()->routeIs('aufgaben.*') ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
-            <svg class="mr-3 flex-shrink-0 h-5 w-5 {{ request()->routeIs('aufgaben.*') ? 'text-white' : 'text-gray-400 group-hover:text-gray-300' }}" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-            </svg>
-            Rollen &amp; Aufgaben
-        </a>
-        @endif
-
-        {{-- HookManager-Module (Network, Server, AdUsers, Tickets, etc.) --}}
-        @if(isset($moduleNavItems))
-            @foreach($moduleNavItems as $item)
-            @php
-                $iconKey  = $item['icon'] ?? 'default';
-                $iconPath = $heroiconPaths[$iconKey] ?? $heroiconPaths['default'];
-                $isActive = request()->routeIs($item['route_active_pattern'] ?? $item['route']);
-            @endphp
-            <a href="{{ route($item['route']) }}"
-               class="group flex items-center px-2 py-1 text-sm font-medium rounded-md {{ $isActive ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white' }}">
-                <svg class="mr-3 flex-shrink-0 h-5 w-5 {{ $isActive ? 'text-white' : 'text-gray-400 group-hover:text-gray-300' }}" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="{{ $iconPath }}" />
-                </svg>
-                {{ $item['label'] }}
-            </a>
-            @endforeach
-        @endif
+        @endforeach
 
         {{-- Persönlicher Bereich --}}
         <a href="{{ route('personal.index') }}"
