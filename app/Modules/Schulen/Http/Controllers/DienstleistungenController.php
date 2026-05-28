@@ -2,8 +2,10 @@
 
 namespace App\Modules\Schulen\Http\Controllers;
 
+use App\Models\Dienstleister;
 use App\Modules\Schulen\Models\DienstKategorie;
 use App\Modules\Schulen\Models\Dienstleistung;
+use App\Modules\Schulen\Models\DienstleistungZustaendigkeit;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -26,7 +28,7 @@ class DienstleistungenController extends Controller
 
     public function show(Dienstleistung $dienstleistung)
     {
-        $dienstleistung->load('kategorie');
+        $dienstleistung->load(['kategorie', 'dienstleister', 'zustaendigkeiten']);
 
         $schulenGesamt = \App\Modules\Schulen\Models\Schule::count();
         $jahresstunden = $dienstleistung->jahresstunden();
@@ -59,15 +61,23 @@ class DienstleistungenController extends Controller
 
     public function create()
     {
-        $kategorien = DienstKategorie::orderBy('sort_order')->orderBy('name')->get();
-        return view('schulen::dienstleistungen.create', ['dienstleistung' => null, 'kategorien' => $kategorien]);
+        $kategorien   = DienstKategorie::orderBy('sort_order')->orderBy('name')->get();
+        $alleDienstleister = Dienstleister::where('status', 'aktiv')->orderBy('firmenname')->get();
+        return view('schulen::dienstleistungen.create', [
+            'dienstleistung'     => null,
+            'kategorien'         => $kategorien,
+            'alleDienstleister'  => $alleDienstleister,
+        ]);
     }
 
     public function store(Request $request)
     {
         $validated = $this->validateDienst($request);
         $validated['is_active'] = $request->boolean('is_active');
-        $dienst    = Dienstleistung::create($validated);
+        $dienst = Dienstleistung::create($validated);
+
+        $this->syncDienstleister($dienst, $request);
+        $this->syncZustaendigkeiten($dienst, $request);
 
         $this->auditLogger->logModuleAction('Schulen', 'Dienstleistung erstellt', [
             'id'   => $dienst->id,
@@ -80,8 +90,12 @@ class DienstleistungenController extends Controller
 
     public function edit(Dienstleistung $dienstleistung)
     {
-        $kategorien = DienstKategorie::orderBy('sort_order')->orderBy('name')->get();
-        return view('schulen::dienstleistungen.edit', compact('dienstleistung', 'kategorien'));
+        $dienstleistung->load(['dienstleister', 'zustaendigkeiten']);
+        $kategorien        = DienstKategorie::orderBy('sort_order')->orderBy('name')->get();
+        $alleDienstleister = Dienstleister::where('status', 'aktiv')->orderBy('firmenname')->get();
+        return view('schulen::dienstleistungen.edit', compact(
+            'dienstleistung', 'kategorien', 'alleDienstleister'
+        ));
     }
 
     public function update(Request $request, Dienstleistung $dienstleistung)
@@ -90,12 +104,15 @@ class DienstleistungenController extends Controller
         $validated['is_active'] = $request->boolean('is_active');
         $dienstleistung->update($validated);
 
+        $this->syncDienstleister($dienstleistung, $request);
+        $this->syncZustaendigkeiten($dienstleistung, $request);
+
         $this->auditLogger->logModuleAction('Schulen', 'Dienstleistung aktualisiert', [
             'id'   => $dienstleistung->id,
             'name' => $dienstleistung->name,
         ]);
 
-        return redirect()->route('schulen.dienste.index')
+        return redirect()->route('schulen.dienste.show', $dienstleistung)
             ->with('success', 'Dienstleistung erfolgreich gespeichert.');
     }
 
@@ -146,14 +163,46 @@ class DienstleistungenController extends Controller
     private function validateDienst(Request $request): array
     {
         return $request->validate([
-            'dienst_kategorie_id' => ['nullable', 'integer', 'exists:dienst_kategorien,id'],
-            'name'                => ['required', 'string', 'max:255'],
-            'beschreibung'        => ['nullable', 'string'],
-            'dokumentation_url'   => ['nullable', 'url', 'max:500'],
-            'stunden_modus'       => ['required', 'in:jahresstunden,wochenstunden'],
-            'stunden_wert'        => ['nullable', 'numeric', 'min:0'],
-            'sort_order'          => ['nullable', 'integer'],
-            'is_active'           => ['nullable', 'boolean'],
+            'dienst_kategorie_id'            => ['nullable', 'integer', 'exists:dienst_kategorien,id'],
+            'name'                            => ['required', 'string', 'max:255'],
+            'beschreibung'                    => ['nullable', 'string'],
+            'dokumentation_url'               => ['nullable', 'url', 'max:500'],
+            'stunden_modus'                   => ['required', 'in:jahresstunden,wochenstunden'],
+            'stunden_wert'                    => ['nullable', 'numeric', 'min:0'],
+            'sort_order'                      => ['nullable', 'integer'],
+            'is_active'                       => ['nullable', 'boolean'],
+            'dienstleister_ids'               => ['nullable', 'array'],
+            'dienstleister_ids.*'             => ['integer', 'exists:dienstleister,id'],
+            'zustaendigkeiten'                => ['nullable', 'array'],
+            'zustaendigkeiten.*.aufgabe'      => ['required', 'string', 'max:200'],
+            'zustaendigkeiten.*.lra_it'       => ['nullable', 'string', 'max:200'],
+            'zustaendigkeiten.*.schule_sb'    => ['nullable', 'string', 'max:200'],
+            'zustaendigkeiten.*.externer_dl'  => ['nullable', 'string', 'max:200'],
         ]);
+    }
+
+    private function syncDienstleister(Dienstleistung $dienst, Request $request): void
+    {
+        $ids = array_filter((array) $request->input('dienstleister_ids', []));
+        $dienst->dienstleister()->sync($ids);
+    }
+
+    private function syncZustaendigkeiten(Dienstleistung $dienst, Request $request): void
+    {
+        $dienst->zustaendigkeiten()->delete();
+
+        foreach ((array) $request->input('zustaendigkeiten', []) as $i => $row) {
+            if (empty($row['aufgabe'])) {
+                continue;
+            }
+            DienstleistungZustaendigkeit::create([
+                'dienstleistung_id' => $dienst->id,
+                'aufgabe'           => $row['aufgabe'],
+                'lra_it'            => $row['lra_it'] ?? null,
+                'schule_sb'         => $row['schule_sb'] ?? null,
+                'externer_dl'       => $row['externer_dl'] ?? null,
+                'sort_order'        => $i,
+            ]);
+        }
     }
 }

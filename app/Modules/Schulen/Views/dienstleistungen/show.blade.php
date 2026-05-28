@@ -148,6 +148,84 @@
                 @endif
             </div>
 
+            {{-- Zugewiesene Dienstleister --}}
+            @if($dienstleistung->dienstleister->isNotEmpty())
+            <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                    <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                        Dienstleister
+                        <span class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-700">
+                            {{ $dienstleistung->dienstleister->count() }}
+                        </span>
+                    </h3>
+                </div>
+                <ul class="divide-y divide-gray-50">
+                    @foreach($dienstleistung->dienstleister as $dl)
+                    <li class="px-6 py-3 flex items-center gap-3">
+                        <div class="flex-1 min-w-0">
+                            <a href="{{ route('dienstleister.show', $dl) }}"
+                               class="font-medium text-gray-800 hover:text-indigo-600 text-sm">
+                                {{ $dl->firmenname }}
+                            </a>
+                            @if($dl->dienstleister_typ)
+                                <span class="ml-2 text-xs text-gray-400">{{ $dl->dienstleister_typ }}</span>
+                            @endif
+                        </div>
+                        @php
+                            $statusClasses = match($dl->status) {
+                                'aktiv'      => 'bg-green-100 text-green-700',
+                                'inaktiv'    => 'bg-gray-100 text-gray-500',
+                                'gesperrt'   => 'bg-red-100 text-red-600',
+                                'potenziell' => 'bg-yellow-100 text-yellow-700',
+                                default      => 'bg-gray-100 text-gray-500',
+                            };
+                        @endphp
+                        <span class="px-2 py-0.5 text-xs font-semibold rounded-full {{ $statusClasses }}">
+                            {{ ucfirst($dl->status) }}
+                        </span>
+                    </li>
+                    @endforeach
+                </ul>
+            </div>
+            @endif
+
+            {{-- Zuständigkeiten --}}
+            @if($dienstleistung->zustaendigkeiten->isNotEmpty())
+            <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
+                    <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">Zuständigkeiten</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-gray-50 border-b border-gray-100">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600">Aufgabe</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600">LRA Freising IT</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600">Schule / SB</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600">Externer DL</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50">
+                            @foreach($dienstleistung->zustaendigkeiten as $z)
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-3 font-medium text-gray-800">{{ $z->aufgabe }}</td>
+                                <td class="px-6 py-3 {{ $z->lra_it && $z->lra_it !== '—' ? 'text-indigo-700 font-medium' : 'text-gray-400' }}">
+                                    {{ $z->lra_it ?: '—' }}
+                                </td>
+                                <td class="px-6 py-3 {{ $z->schule_sb && $z->schule_sb !== '—' ? 'text-amber-700 font-medium' : 'text-gray-400' }}">
+                                    {{ $z->schule_sb ?: '—' }}
+                                </td>
+                                <td class="px-6 py-3 {{ $z->externer_dl && $z->externer_dl !== '—' ? 'text-teal-700 font-medium' : 'text-gray-400' }}">
+                                    {{ $z->externer_dl ?: '—' }}
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            @endif
+
             {{-- Schulen die den Dienst nutzen --}}
             <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">

@@ -5,6 +5,7 @@ namespace App\Modules\Schulen\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Dienstleistung extends Model
 {
@@ -29,6 +30,19 @@ class Dienstleistung extends Model
     public function kategorie(): BelongsTo
     {
         return $this->belongsTo(DienstKategorie::class, 'dienst_kategorie_id');
+    }
+
+    public function dienstleister(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            \App\Models\Dienstleister::class,
+            'dienstleistung_dienstleister',
+        )->withPivot('sort_order')->orderByPivot('sort_order');
+    }
+
+    public function zustaendigkeiten(): HasMany
+    {
+        return $this->hasMany(DienstleistungZustaendigkeit::class)->orderBy('sort_order');
     }
 
     public function schulen(): BelongsToMany
