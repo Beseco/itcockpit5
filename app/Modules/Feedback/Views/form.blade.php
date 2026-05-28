@@ -31,11 +31,11 @@
                     'q5_competence'      => 'Wie bewerten Sie die fachliche Kompetenz unseres Supports?',
                 ];
                 $smileys = [
-                    1 => ['emoji' => '😠', 'label' => 'Sehr schlecht', 'on' => 'ring-red-500 bg-red-50',    'hover' => 'hover:bg-red-50'],
-                    2 => ['emoji' => '🙁', 'label' => 'Schlecht',      'on' => 'ring-orange-400 bg-orange-50', 'hover' => 'hover:bg-orange-50'],
-                    3 => ['emoji' => '😐', 'label' => 'Neutral',       'on' => 'ring-yellow-400 bg-yellow-50', 'hover' => 'hover:bg-yellow-50'],
-                    4 => ['emoji' => '🙂', 'label' => 'Gut',           'on' => 'ring-lime-500 bg-lime-50',  'hover' => 'hover:bg-lime-50'],
-                    5 => ['emoji' => '😄', 'label' => 'Sehr gut',      'on' => 'ring-green-500 bg-green-50', 'hover' => 'hover:bg-green-50'],
+                    1 => ['emoji' => '😠', 'label' => 'Sehr schlecht', 'on' => 'ring-red-500 bg-red-50'],
+                    2 => ['emoji' => '🙁', 'label' => 'Schlecht',      'on' => 'ring-orange-400 bg-orange-50'],
+                    3 => ['emoji' => '😐', 'label' => 'Neutral',       'on' => 'ring-yellow-400 bg-yellow-50'],
+                    4 => ['emoji' => '🙂', 'label' => 'Gut',           'on' => 'ring-lime-500 bg-lime-50'],
+                    5 => ['emoji' => '😄', 'label' => 'Sehr gut',      'on' => 'ring-green-500 bg-green-50'],
                 ];
             @endphp
 
@@ -48,10 +48,11 @@
                                 <button
                                     type="button"
                                     @click="setScore('{{ $name }}', {{ $value }})"
-                                    class="flex-1 flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl border border-gray-200 ring-2 ring-transparent transition-all duration-150 cursor-pointer focus:outline-none {{ $smiley['hover'] }}"
+                                    class="flex-1 flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl border border-gray-200 ring-2 ring-transparent transition-all duration-200 cursor-pointer focus:outline-none hover:grayscale-0 hover:opacity-100"
                                     :class="{
                                         '{{ $smiley['on'] }}': scores['{{ $name }}'] === {{ $value }},
-                                        'opacity-30 grayscale': scores['{{ $name }}'] !== null && scores['{{ $name }}'] !== {{ $value }}
+                                        'grayscale opacity-25': scores['{{ $name }}'] !== null && scores['{{ $name }}'] !== {{ $value }},
+                                        'grayscale opacity-60': scores['{{ $name }}'] === null
                                     }"
                                     :aria-pressed="scores['{{ $name }}'] === {{ $value }}"
                                     aria-label="{{ $smiley['label'] }}"
