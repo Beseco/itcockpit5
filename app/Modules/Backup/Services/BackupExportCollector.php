@@ -92,6 +92,20 @@ class BackupExportCollector
             }
         }
 
+        // ── Netzwerk ──────────────────────────────────────────────────────────
+        if (\Illuminate\Support\Facades\Schema::hasTable('vlans')) {
+            try {
+                $d = "{$dir}/netzwerk";
+                @mkdir($d, 0755, true);
+                app(\App\Modules\Network\Http\Controllers\ExportController::class)
+                    ->generateXlsToFile("{$d}/netzwerk.xls", $log);
+                $generated[] = 'Netzwerk';
+                $log && $log('  ✓ Netzwerk (VLANs + IPs als XLS)');
+            } catch (\Throwable $e) {
+                $log && $log('  ⚠ Netzwerk-Export übersprungen: ' . $e->getMessage());
+            }
+        }
+
         return $generated;
     }
 
