@@ -1,0 +1,6 @@
+{
+    "name": "Feedback",
+    "slug": "feedback",
+    "version": "1.0.0",
+    "description": "Anonymes Bewertungssystem für den IT-Support – öffentliches Formular und internes Statistik-Dashboard"
+}
