@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Feedback extends Model
 {
+    protected $table = 'feedbacks';
+
     protected $fillable = [
         'q1_overall',
         'q2_processing_time',
