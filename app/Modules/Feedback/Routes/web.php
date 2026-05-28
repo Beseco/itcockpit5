@@ -11,6 +11,8 @@ Route::get('/danke', [FeedbackController::class, 'thankYou'])->name('thank-you')
 
 // Admin-Bereich – Authentifizierung + Berechtigung erforderlich
 Route::middleware(['auth', 'module.permission:feedback,view'])->group(function () {
-    Route::get('/admin',            [FeedbackAdminController::class, 'dashboard'])->name('admin.dashboard');
-    Route::get('/admin/kommentare', [FeedbackAdminController::class, 'comments'])->name('admin.comments');
+    Route::get('/admin',                          [FeedbackAdminController::class, 'dashboard'])->name('admin.dashboard');
+    Route::get('/admin/bewertungen',              [FeedbackAdminController::class, 'index'])->name('admin.index');
+    Route::delete('/admin/bewertungen/{feedback}',[FeedbackAdminController::class, 'destroy'])->name('admin.destroy');
+    Route::get('/admin/kommentare',               [FeedbackAdminController::class, 'comments'])->name('admin.comments');
 });

@@ -28,6 +28,39 @@ class FeedbackAdminController extends Controller
         ));
     }
 
+    public function index(Request $request)
+    {
+        $search = $request->get('search', '');
+        $sort   = $request->get('sort', 'created_at');
+        $dir    = $request->get('dir', 'desc');
+
+        $allowed = ['created_at', 'q1_overall', 'q2_processing_time', 'q3_communication', 'q4_simplicity', 'q5_competence'];
+        if (!in_array($sort, $allowed)) {
+            $sort = 'created_at';
+        }
+
+        $query = Feedback::query();
+
+        if ($search) {
+            $query->where('comment', 'LIKE', '%' . $search . '%');
+        }
+
+        $feedbacks = $query->orderBy($sort, $dir === 'asc' ? 'asc' : 'desc')
+            ->paginate(25)
+            ->withQueryString();
+
+        $questionLabels = Feedback::questionLabels();
+
+        return view('feedback::admin.index', compact('feedbacks', 'questionLabels', 'search', 'sort', 'dir'));
+    }
+
+    public function destroy(Feedback $feedback)
+    {
+        $feedback->delete();
+
+        return back()->with('success', 'Bewertung wurde gelöscht.');
+    }
+
     public function comments(Request $request)
     {
         $search   = $request->get('search', '');
