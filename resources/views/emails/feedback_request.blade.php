@@ -25,7 +25,7 @@
                         <td style="background:#ffffff;padding:32px;border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;">
 
                             <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#1f2937;">
-                                Hallo{{ $recipientName ? ' <strong>' . htmlspecialchars($recipientName) . '</strong>' : '' }},
+                                Hallo@if($recipientName) <strong>{{ $recipientName }}</strong>@endif,
                             </p>
                             <p style="margin:0 0 24px;line-height:1.7;color:#374151;">
                                 wir möchten uns bei Ihnen für die Inanspruchnahme unseres IT-Supports bedanken
