@@ -73,7 +73,7 @@
                         </select>
                     </div>
                     @if ($filterTyp || $filterKategorie)
-                        <a href="{{ route('schulen.matrix') }}"
+                        <a href="{{ route('schulen.matrix', ['filter_typ' => '', 'filter_kategorie' => '']) }}"
                            class="text-xs text-indigo-600 hover:underline self-end pb-1">Filter zurücksetzen</a>
                     @endif
                 </form>

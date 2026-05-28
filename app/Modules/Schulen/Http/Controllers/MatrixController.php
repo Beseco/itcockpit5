@@ -18,8 +18,18 @@ class MatrixController extends Controller
 
     public function index(Request $request)
     {
-        $filterTyp       = $request->get('filter_typ', '');
-        $filterKategorie = $request->get('filter_kategorie', '');
+        // Filter in Session speichern (leere Werte überschreiben bewusst → Reset funktioniert)
+        if ($request->isMethod('GET')) {
+            if ($request->has('filter_typ') || $request->has('filter_kategorie')) {
+                session([
+                    'schulen_matrix_filter_typ'       => $request->get('filter_typ', ''),
+                    'schulen_matrix_filter_kategorie' => $request->get('filter_kategorie', ''),
+                ]);
+            }
+        }
+
+        $filterTyp       = $request->get('filter_typ',       session('schulen_matrix_filter_typ', ''));
+        $filterKategorie = $request->get('filter_kategorie', session('schulen_matrix_filter_kategorie', ''));
 
         $schulenQuery = Schule::with('schulTyp')->orderBy('schul_typ_id')->orderBy('sort_order')->orderBy('name');
         if (filled($filterTyp)) {
