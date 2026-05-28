@@ -24,6 +24,8 @@ class FeedbackServiceProvider extends ServiceProvider
             'module'     => 'feedback',
         ]);
 
-        $hookManager->registerPermission('feedback', 'view', 'Feedback-Auswertungen einsehen');
+        $hookManager->registerPermission('feedback', 'view',   'Feedback-Statistik einsehen');
+        $hookManager->registerPermission('feedback', 'edit',   'Alle Bewertungen und Kommentare einsehen');
+        $hookManager->registerPermission('feedback', 'delete', 'Einzelne Bewertungen löschen');
     }
 }

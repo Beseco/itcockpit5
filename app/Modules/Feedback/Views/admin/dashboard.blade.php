@@ -3,6 +3,7 @@
         <div class="flex items-center gap-3 flex-wrap">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">Feedback-Auswertung</h2>
             <div class="ml-auto flex items-center gap-2">
+                @can('feedback.edit')
                 <a href="{{ route('feedback.admin.index') }}"
                    class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50">
                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -17,6 +18,7 @@
                     </svg>
                     Kommentare
                 </a>
+                @endcan
             </div>
         </div>
     </x-slot>

@@ -23,7 +23,9 @@ class FeedbackModuleSeeder extends Seeder
         );
 
         $permissions = [
-            ['name' => 'feedback.view', 'module_id' => $module->id],
+            ['name' => 'feedback.view',   'module_id' => $module->id],
+            ['name' => 'feedback.edit',   'module_id' => $module->id],
+            ['name' => 'feedback.delete', 'module_id' => $module->id],
         ];
 
         foreach ($permissions as $perm) {
@@ -40,10 +42,10 @@ class FeedbackModuleSeeder extends Seeder
 
         $admin = Role::where('name', 'admin')->first();
         if ($admin) {
-            $admin->givePermissionTo(['feedback.view']);
+            $admin->givePermissionTo(['feedback.view', 'feedback.edit', 'feedback.delete']);
         }
 
         $this->command->info('✓ Modul "feedback" registriert');
-        $this->command->info('✓ 1 Permission angelegt (feedback.view)');
+        $this->command->info('✓ 3 Permissions angelegt (feedback.view/edit/delete)');
     }
 }

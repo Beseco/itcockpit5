@@ -112,6 +112,7 @@
                                         @endif
                                     </td>
                                     <td class="px-4 py-3 text-right">
+                                        @can('feedback.delete')
                                         <form action="{{ route('feedback.admin.destroy', $fb) }}" method="POST"
                                               onsubmit="return confirm('Bewertung vom {{ $fb->created_at->format('d.m.Y') }} wirklich löschen?')">
                                             @csrf
@@ -124,6 +125,7 @@
                                                 Löschen
                                             </button>
                                         </form>
+                                        @endcan
                                     </td>
                                 </tr>
                             @empty
