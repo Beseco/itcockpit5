@@ -86,30 +86,76 @@
         $selectedIds = collect(old('dienstleister_ids',
             $dienstleistung?->dienstleister?->pluck('id')->toArray() ?? []
         ))->map(fn($v) => (int)$v)->toArray();
+
+        $allDlJson = $alleDienstleister->map(fn($dl) => [
+            'id'   => $dl->id,
+            'name' => $dl->firmenname,
+            'typ'  => $dl->dienstleister_typ ?? '',
+        ])->values()->toJson();
+
+        $selectedDlJson = $alleDienstleister
+            ->whereIn('id', $selectedIds)
+            ->map(fn($dl) => [
+                'id'   => $dl->id,
+                'name' => $dl->firmenname,
+                'typ'  => $dl->dienstleister_typ ?? '',
+            ])->values()->toJson();
     @endphp
-    <div x-data="{ search: '' }" class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+
+    <div x-data="dienstleisterPicker({{ $allDlJson }}, {{ $selectedDlJson }})"
+         class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+
         <h4 class="text-sm font-semibold text-gray-700 mb-3">Zugewiesene Dienstleister</h4>
-        <input type="text" x-model="search" placeholder="Dienstleister suchen…"
-               class="mb-3 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
-        <div class="max-h-48 overflow-y-auto space-y-1 pr-1">
-            @foreach($alleDienstleister as $dl)
-            <label
-                x-show="search === '' || '{{ strtolower($dl->firmenname) }}'.includes(search.toLowerCase())"
-                class="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white cursor-pointer text-sm"
-            >
-                <input type="checkbox"
-                       name="dienstleister_ids[]"
-                       value="{{ $dl->id }}"
-                       class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500"
-                       @if(in_array($dl->id, $selectedIds)) checked @endif>
-                <span class="font-medium text-gray-800">{{ $dl->firmenname }}</span>
-                @if($dl->dienstleister_typ)
-                    <span class="text-xs text-gray-400">· {{ $dl->dienstleister_typ }}</span>
-                @endif
-            </label>
-            @endforeach
+
+        {{-- Ausgewählte Tags --}}
+        <div class="flex flex-wrap gap-2 mb-3" x-show="selected.length > 0">
+            <template x-for="item in selected" :key="item.id">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-100 text-indigo-800 text-xs font-medium rounded-full">
+                    <span x-text="item.name"></span>
+                    <button type="button" @click="remove(item.id)"
+                            class="hover:text-indigo-600 text-indigo-400 leading-none">&times;</button>
+                    <input type="hidden" name="dienstleister_ids[]" :value="item.id">
+                </span>
+            </template>
         </div>
-        <p class="text-xs text-gray-400 mt-2">Mehrfachauswahl möglich</p>
+
+        {{-- Suchfeld --}}
+        <div class="relative">
+            <input type="text"
+                   x-model="query"
+                   @focus="open = true"
+                   @keydown.escape="open = false"
+                   @keydown.arrow-down.prevent="focusNext(1)"
+                   @keydown.arrow-up.prevent="focusNext(-1)"
+                   @keydown.enter.prevent="addFocused()"
+                   @click.away="open = false"
+                   placeholder="Dienstleister suchen und hinzufügen…"
+                   autocomplete="off"
+                   class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+
+            {{-- Dropdown --}}
+            <div x-show="open && filtered.length > 0"
+                 x-cloak
+                 class="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden max-h-52 overflow-y-auto">
+                <template x-for="(item, i) in filtered" :key="item.id">
+                    <button type="button"
+                            @click="add(item); query = ''; open = false"
+                            :class="i === focusedIndex ? 'bg-indigo-50' : 'hover:bg-gray-50'"
+                            class="w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 last:border-0 flex items-center justify-between">
+                        <span>
+                            <span class="font-medium text-gray-800" x-text="item.name"></span>
+                            <span x-show="item.typ" class="ml-1.5 text-xs text-gray-400" x-text="'· ' + item.typ"></span>
+                        </span>
+                        <svg class="w-4 h-4 text-indigo-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                    </button>
+                </template>
+                <div x-show="filtered.length === 0 && query.length > 0"
+                     class="px-4 py-3 text-sm text-gray-400">Kein Ergebnis.</div>
+            </div>
+        </div>
+
     </div>
     @endif
 
@@ -203,6 +249,44 @@
 
 @push('scripts')
 <script>
+function dienstleisterPicker(all, preselected) {
+    return {
+        all,
+        selected: preselected,
+        query: '',
+        open: false,
+        focusedIndex: -1,
+        get filtered() {
+            const q = this.query.toLowerCase();
+            const selectedIds = this.selected.map(s => s.id);
+            return this.all.filter(item =>
+                !selectedIds.includes(item.id) &&
+                (q === '' || item.name.toLowerCase().includes(q))
+            );
+        },
+        add(item) {
+            if (!this.selected.find(s => s.id === item.id)) {
+                this.selected.push(item);
+            }
+            this.focusedIndex = -1;
+        },
+        remove(id) {
+            this.selected = this.selected.filter(s => s.id !== id);
+        },
+        focusNext(dir) {
+            this.open = true;
+            this.focusedIndex = Math.max(-1, Math.min(this.filtered.length - 1, this.focusedIndex + dir));
+        },
+        addFocused() {
+            if (this.focusedIndex >= 0 && this.filtered[this.focusedIndex]) {
+                this.add(this.filtered[this.focusedIndex]);
+                this.query = '';
+                this.open = false;
+            }
+        }
+    }
+}
+
 function zustaendigkeitenEditor(initial) {
     return {
         rows: initial.length ? initial : [],
