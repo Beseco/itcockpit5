@@ -59,7 +59,33 @@ class BaraSettingsController extends Controller
             'unc_path' => ['required', 'string', 'max:1000'],
         ]);
 
-        $result = $this->scanner->testPath($request->input('unc_path'));
+        $uncPath  = $request->input('unc_path');
+        $settings = BaraSettings::getSingleton();
+
+        // Mit konfigurierten SMB-Zugangsdaten vorab verbinden
+        $shareRoot = null;
+        if ($settings->hasSmbCredentials()) {
+            $shareRoot = $this->scanner->getShareRoot($uncPath);
+            $user      = $settings->smb_domain
+                ? $settings->smb_domain . '\\' . $settings->smb_username
+                : $settings->smb_username;
+
+            $conn = $this->scanner->netUseConnect($shareRoot, $user, $settings->smb_password);
+            if (!$conn['ok']) {
+                return response()->json([
+                    'ok'      => false,
+                    'message' => 'net use fehlgeschlagen: ' . $conn['message'],
+                ]);
+            }
+        }
+
+        try {
+            $result = $this->scanner->testPath($uncPath);
+        } finally {
+            if ($shareRoot) {
+                $this->scanner->netUseDisconnect($shareRoot);
+            }
+        }
 
         return response()->json($result);
     }
