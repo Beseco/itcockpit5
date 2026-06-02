@@ -7,9 +7,10 @@ use Illuminate\Support\Facades\Route;
 
 // Settings zuerst – vor /{pkg}, sonst wird "settings" als Paket-ID interpretiert
 Route::middleware(['auth', 'module.permission:baramundi,config'])->group(function () {
-    Route::get('/settings',           [BaraSettingsController::class, 'index'])->name('settings');
-    Route::put('/settings',           [BaraSettingsController::class, 'update'])->name('settings.update');
-    Route::post('/settings/test-smb', [BaraSettingsController::class, 'testSmb'])->name('settings.test-smb');
+    Route::get('/settings',                    [BaraSettingsController::class, 'index'])->name('settings');
+    Route::put('/settings',                    [BaraSettingsController::class, 'update'])->name('settings.update');
+    Route::put('/settings/credentials',        [BaraSettingsController::class, 'updateCredentials'])->name('settings.credentials.update');
+    Route::post('/settings/test-smb',          [BaraSettingsController::class, 'testSmb'])->name('settings.test-smb');
 });
 
 // Events

@@ -19,38 +19,55 @@ class BaraSettingsController extends Controller
         return view('baramundi::settings', compact('settings'));
     }
 
+    /** Speichert nur Scan-Konfiguration + E-Mail – berührt SMB-Credentials nicht. */
     public function update(Request $request): RedirectResponse
     {
         $request->validate([
             'scan_interval_minutes' => ['required', 'integer', 'min:1', 'max:1440'],
             'email_on_smb_error'    => ['nullable', 'boolean'],
             'notification_email'    => ['nullable', 'email', 'max:255'],
-            'smb_domain'            => ['nullable', 'string', 'max:255'],
-            'smb_username'          => ['nullable', 'string', 'max:255'],
-            'smb_password'          => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $settings = BaraSettings::getSingleton();
+        $settings->fill([
+            'scan_interval_minutes' => $request->integer('scan_interval_minutes'),
+            'email_on_smb_error'    => $request->boolean('email_on_smb_error'),
+            'notification_email'    => $request->input('notification_email') ?: null,
+        ])->save();
+
+        return redirect()->route('baramundi.settings')
+            ->with('success', 'Einstellungen gespeichert. Das neue Scan-Intervall wird nach einem Neustart des Webservers aktiv.');
+    }
+
+    /** Speichert nur SMB-Zugangsdaten – berührt Scan-Konfiguration nicht. */
+    public function updateCredentials(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'smb_domain'   => ['nullable', 'string', 'max:255'],
+            'smb_username' => ['nullable', 'string', 'max:255'],
+            'smb_password' => ['nullable', 'string', 'max:500'],
         ]);
 
         $settings = BaraSettings::getSingleton();
 
         $data = [
-            'scan_interval_minutes' => $request->integer('scan_interval_minutes'),
-            'email_on_smb_error'    => $request->boolean('email_on_smb_error'),
-            'notification_email'    => $request->input('notification_email') ?: null,
-            'smb_domain'            => $request->input('smb_domain') ?: null,
-            'smb_username'          => $request->input('smb_username') ?: null,
+            'smb_domain'   => $request->input('smb_domain') ?: null,
+            'smb_username' => $request->input('smb_username') ?: null,
         ];
 
-        // Passwort nur überschreiben wenn neu eingegeben; smb_clear leert es explizit
         if ($request->boolean('smb_clear')) {
             $data['smb_password'] = null;
+            $data['smb_username'] = null;
+            $data['smb_domain']   = null;
         } elseif ($request->filled('smb_password')) {
             $data['smb_password'] = $request->input('smb_password');
         }
+        // Passwort leer gelassen → bestehendes Passwort beibehalten (kein Eintrag in $data)
 
         $settings->fill($data)->save();
 
         return redirect()->route('baramundi.settings')
-            ->with('success', 'Einstellungen gespeichert. Das neue Scan-Intervall wird nach einem Neustart des Webservers aktiv.');
+            ->with('success', 'SMB-Zugangsdaten gespeichert.');
     }
 
     public function testSmb(Request $request): JsonResponse
@@ -62,9 +79,9 @@ class BaraSettingsController extends Controller
         $uncPath  = $request->input('unc_path');
         $settings = BaraSettings::getSingleton();
 
-        // Mit konfigurierten SMB-Zugangsdaten vorab verbinden
+        // Windows: net use vorab; Linux: smbclient nutzt Credentials inline via testPath
         $shareRoot = null;
-        if ($settings->hasSmbCredentials()) {
+        if ($settings->hasSmbCredentials() && strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
             $shareRoot = $this->scanner->getShareRoot($uncPath);
             $user      = $settings->smb_domain
                 ? $settings->smb_domain . '\\' . $settings->smb_username
@@ -72,10 +89,7 @@ class BaraSettingsController extends Controller
 
             $conn = $this->scanner->netUseConnect($shareRoot, $user, $settings->smb_password);
             if (!$conn['ok']) {
-                return response()->json([
-                    'ok'      => false,
-                    'message' => 'net use fehlgeschlagen: ' . $conn['message'],
-                ]);
+                return response()->json(['ok' => false, 'message' => $conn['message']]);
             }
         }
 

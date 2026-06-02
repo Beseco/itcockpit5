@@ -87,13 +87,9 @@
                     @endif
                 </div>
 
-                <form method="POST" action="{{ route('baramundi.settings.update') }}" class="space-y-4">
+                <form method="POST" action="{{ route('baramundi.settings.credentials.update') }}" class="space-y-4">
                     @csrf
                     @method('PUT')
-                    {{-- Pflichtfelder mitschicken damit der Controller sie nicht überschreibt --}}
-                    <input type="hidden" name="scan_interval_minutes" value="{{ $settings->scan_interval_minutes }}">
-                    <input type="hidden" name="notification_email" value="{{ $settings->notification_email }}">
-                    <input type="hidden" name="email_on_smb_error" value="{{ $settings->email_on_smb_error ? '1' : '0' }}">
 
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
@@ -126,14 +122,8 @@
 
                     <div class="pt-2 border-t border-gray-100 flex items-center justify-between gap-3">
                         @if($settings->smb_username)
-                            <form method="POST" action="{{ route('baramundi.settings.update') }}" class="inline">
+                            <form method="POST" action="{{ route('baramundi.settings.credentials.update') }}" class="inline">
                                 @csrf @method('PUT')
-                                <input type="hidden" name="scan_interval_minutes" value="{{ $settings->scan_interval_minutes }}">
-                                <input type="hidden" name="notification_email" value="{{ $settings->notification_email }}">
-                                <input type="hidden" name="email_on_smb_error" value="{{ $settings->email_on_smb_error ? '1' : '0' }}">
-                                <input type="hidden" name="smb_domain" value="">
-                                <input type="hidden" name="smb_username" value="">
-                                <input type="hidden" name="smb_password" value="">
                                 <input type="hidden" name="smb_clear" value="1">
                                 <button type="submit" onclick="return confirm('SMB-Zugangsdaten wirklich löschen?')"
                                         class="text-xs text-red-500 hover:text-red-700">
