@@ -273,6 +273,8 @@ class SmbScannerService
 
     private function looksLikeVersion(string $name): bool
     {
-        return (bool) preg_match('/^\d[\d.]*\.\d+$/', $name);
+        // Erlaubt: 15.78.3  |  15.78.3-x64  |  8.0.451  |  2026.1.0-arm64
+        // Blockiert: 15.x-x64  |  README  |  backup_old
+        return (bool) preg_match('/^\d[\d.]*\.\d+(-[a-zA-Z0-9]+)?$/', $name);
     }
 }
