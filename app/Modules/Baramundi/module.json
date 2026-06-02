@@ -1,0 +1,6 @@
+{
+    "name": "Baramundi",
+    "slug": "baramundi",
+    "version": "1.0.0",
+    "description": "Baramundi Paketüberwachung: UNC-Pfade auf neue Versionsordner überwachen, E-Mail-Benachrichtigung und optionaler Download-Auslöser"
+}
