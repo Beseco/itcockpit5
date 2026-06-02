@@ -49,9 +49,10 @@ class BaraScanCommand extends Command
     {
         $settings = BaraSettings::getSingleton();
 
-        // SMB-Credentials: net use für alle einzigartigen Server-Roots vorab herstellen
+        // Windows: net use für alle Server-Roots vorab herstellen.
+        // Linux: smbclient übergibt Credentials pro Aufruf inline – kein Vorab-Connect nötig.
         $connectedRoots = [];
-        if ($settings->hasSmbCredentials()) {
+        if ($settings->hasSmbCredentials() && strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
             $connectedRoots = $this->connectSmbShares($settings);
         }
 
