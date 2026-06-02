@@ -11,6 +11,7 @@ Route::middleware(['auth', 'module.permission:baramundi,config'])->group(functio
     Route::put('/settings',                    [BaraSettingsController::class, 'update'])->name('settings.update');
     Route::put('/settings/credentials',        [BaraSettingsController::class, 'updateCredentials'])->name('settings.credentials.update');
     Route::post('/settings/test-smb',          [BaraSettingsController::class, 'testSmb'])->name('settings.test-smb');
+    Route::post('/settings/test-mail',         [BaraSettingsController::class, 'testMail'])->name('settings.test-mail');
 });
 
 // Events

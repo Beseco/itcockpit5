@@ -2,12 +2,15 @@
 
 namespace App\Modules\Baramundi\Http\Controllers;
 
+use App\Modules\Baramundi\Mail\NewVersionDetectedMail;
 use App\Modules\Baramundi\Models\BaraSettings;
+use App\Modules\Baramundi\Models\WatchedPackage;
 use App\Modules\Baramundi\Services\SmbScannerService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Mail;
 
 class BaraSettingsController extends Controller
 {
@@ -68,6 +71,41 @@ class BaraSettingsController extends Controller
 
         return redirect()->route('baramundi.settings')
             ->with('success', 'SMB-Zugangsdaten gespeichert.');
+    }
+
+    /** Sendet eine Test-E-Mail an die konfigurierte Benachrichtigungsadresse. */
+    public function testMail(Request $request): JsonResponse
+    {
+        $settings = BaraSettings::getSingleton();
+
+        if (!$settings->notification_email) {
+            return response()->json([
+                'ok'      => false,
+                'message' => 'Keine Benachrichtigungs-E-Mail-Adresse konfiguriert.',
+            ]);
+        }
+
+        // Beispielpaket für die Test-Mail zusammenbauen (kein DB-Eintrag nötig)
+        $fakePkg = new WatchedPackage([
+            'name'        => 'Testpaket (TeamViewer Host)',
+            'server_name' => 'Bara-01',
+            'share_path'  => 'dip$\\ManagedSoftware\\source\\TeamViewer\\TeamViewerHost\\15.x-x64',
+        ]);
+
+        try {
+            Mail::to($settings->notification_email)
+                ->send(new NewVersionDetectedMail($fakePkg, '15.99.0-x64'));
+
+            return response()->json([
+                'ok'      => true,
+                'message' => 'Test-E-Mail gesendet an ' . $settings->notification_email,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'ok'      => false,
+                'message' => 'Fehler: ' . $e->getMessage(),
+            ]);
+        }
     }
 
     public function testSmb(Request $request): JsonResponse

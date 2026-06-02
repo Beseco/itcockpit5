@@ -64,7 +64,37 @@
                         </label>
                     </div>
 
-                    <div class="pt-2 border-t border-gray-100 flex justify-end">
+                    <div class="pt-2 border-t border-gray-100 flex items-center justify-between gap-3">
+                        {{-- Test-E-Mail --}}
+                        @if($settings->notification_email)
+                            <div x-data="{
+                                testing: false, result: null, ok: null,
+                                async send() {
+                                    this.testing = true; this.result = null;
+                                    try {
+                                        const r = await fetch('{{ route('baramundi.settings.test-mail') }}', {
+                                            method: 'POST',
+                                            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' },
+                                        });
+                                        const j = await r.json();
+                                        this.ok = j.ok; this.result = j.message;
+                                    } catch(e) { this.ok = false; this.result = e.toString(); }
+                                    finally { this.testing = false; }
+                                }
+                            }">
+                                <div class="flex items-center gap-3 flex-wrap">
+                                    <button type="button" @click="send()" :disabled="testing"
+                                            class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+                                        <span x-text="testing ? 'Sende …' : 'Test-E-Mail senden'">Test-E-Mail senden</span>
+                                    </button>
+                                    <span x-show="result !== null"
+                                          :class="ok ? 'text-green-700' : 'text-red-700'"
+                                          class="text-xs" x-text="result" x-cloak></span>
+                                </div>
+                            </div>
+                        @else
+                            <span class="text-xs text-gray-400">E-Mail-Adresse eintragen um Test-Mail zu senden</span>
+                        @endif
                         <x-primary-button type="submit">Einstellungen speichern</x-primary-button>
                     </div>
                 </form>
