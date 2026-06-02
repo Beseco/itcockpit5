@@ -95,6 +95,64 @@ class SmbScannerService
     }
 
     /**
+     * Authentifiziert eine SMB-Freigabe via "net use" mit Benutzername und Passwort.
+     * Wird am Scan-Start aufgerufen wenn Zugangsdaten konfiguriert sind.
+     *
+     * @param string $serverPath  UNC-Server-Root, z.B. \\Bara-01 (ohne Unterordner)
+     * @param string $username    Benutzername (ggf. mit Domäne: DOMAIN\user)
+     * @param string $password    Passwort im Klartext
+     * @return array{ok: bool, message: string}
+     */
+    public function netUseConnect(string $serverPath, string $username, string $password): array
+    {
+        if (!str_starts_with($serverPath, '\\\\')) {
+            return ['ok' => false, 'message' => 'Ungültiger Server-Pfad.'];
+        }
+
+        // Zuerst alte Verbindung trennen (Fehler ignorieren)
+        exec('net use ' . escapeshellarg($serverPath) . ' /delete /yes 2>nul');
+
+        $cmd = sprintf(
+            'net use %s %s /user:%s /persistent:no 2>&1',
+            escapeshellarg($serverPath),
+            escapeshellarg($password),
+            escapeshellarg($username)
+        );
+
+        exec($cmd, $out, $ret);
+        $output = implode(' ', $out);
+
+        return [
+            'ok'      => ($ret === 0),
+            'message' => $ret === 0
+                ? "Verbindung hergestellt: {$serverPath}"
+                : "net use fehlgeschlagen (Exit {$ret}): {$output}",
+        ];
+    }
+
+    /**
+     * Trennt eine per "net use" hergestellte Verbindung wieder.
+     */
+    public function netUseDisconnect(string $serverPath): void
+    {
+        exec('net use ' . escapeshellarg($serverPath) . ' /delete /yes 2>nul');
+    }
+
+    /**
+     * Extrahiert den Server-Root aus einem UNC-Pfad: \\server\share → \\server\share
+     * (nur Server + erste Freigabe, für "net use")
+     */
+    public function getShareRoot(string $uncPath): string
+    {
+        // \\server\share\sub\path → \\server\share
+        $parts = explode('\\', ltrim($uncPath, '\\'));
+        if (count($parts) >= 2) {
+            return '\\\\' . $parts[0] . '\\' . $parts[1];
+        }
+        return $uncPath;
+    }
+
+    /**
      * Prüft ob ein Ordnername wie eine Versionsnummer aussieht.
      * Erwartet: mindestens zwei durch Punkte getrennte Zahlengruppen.
      * Beispiele: 15.68.5, 8.0.451, 2026.1.0 → true

@@ -12,11 +12,21 @@ class BaraSettings extends Model
         'scan_interval_minutes',
         'email_on_smb_error',
         'notification_email',
+        'smb_domain',
+        'smb_username',
+        'smb_password',
     ];
 
     protected $casts = [
         'email_on_smb_error' => 'boolean',
     ];
+
+    protected $hidden = ['smb_password'];
+
+    public function hasSmbCredentials(): bool
+    {
+        return !empty($this->smb_username) && !empty($this->smb_password);
+    }
 
     public static function getSingleton(): self
     {

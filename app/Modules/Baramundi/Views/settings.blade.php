@@ -70,6 +70,84 @@
                 </form>
             </div>
 
+            {{-- SMB-Zugangsdaten --}}
+            <div class="bg-white shadow-sm sm:rounded-lg p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-sm font-semibold text-gray-700">SMB-Zugangsdaten (optional)</h3>
+                        <p class="text-xs text-gray-400 mt-0.5">
+                            Nur erforderlich wenn der Apache-Prozess keinen automatischen Domänenzugriff auf die Baramundi-Freigaben hat.
+                            Die Verbindung wird vor jedem Scan über <code class="bg-gray-100 px-1 rounded">net use</code> hergestellt und danach wieder getrennt.
+                        </p>
+                    </div>
+                    @if($settings->smb_username)
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">Konfiguriert</span>
+                    @else
+                        <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">Nicht konfiguriert</span>
+                    @endif
+                </div>
+
+                <form method="POST" action="{{ route('baramundi.settings.update') }}" class="space-y-4">
+                    @csrf
+                    @method('PUT')
+                    {{-- Pflichtfelder mitschicken damit der Controller sie nicht überschreibt --}}
+                    <input type="hidden" name="scan_interval_minutes" value="{{ $settings->scan_interval_minutes }}">
+                    <input type="hidden" name="notification_email" value="{{ $settings->notification_email }}">
+                    <input type="hidden" name="email_on_smb_error" value="{{ $settings->email_on_smb_error ? '1' : '0' }}">
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <x-input-label for="smb_domain" value="Domäne (optional)" />
+                            <x-text-input id="smb_domain" name="smb_domain" type="text" class="mt-1 block w-full"
+                                          value="{{ old('smb_domain', $settings->smb_domain) }}"
+                                          placeholder="LRA" />
+                            <p class="mt-1 text-xs text-gray-400">z.B. LRA oder lra.lan</p>
+                        </div>
+                        <div>
+                            <x-input-label for="smb_username" value="Benutzername" />
+                            <x-text-input id="smb_username" name="smb_username" type="text" class="mt-1 block w-full"
+                                          value="{{ old('smb_username', $settings->smb_username) }}"
+                                          placeholder="bara-reader" autocomplete="off" />
+                        </div>
+                        <div>
+                            <x-input-label for="smb_password" value="Passwort" />
+                            <x-text-input id="smb_password" name="smb_password" type="password" class="mt-1 block w-full"
+                                          placeholder="{{ $settings->smb_password ? '(gespeichert – leer lassen zum Beibehalten)' : 'Passwort eingeben' }}"
+                                          autocomplete="new-password" />
+                        </div>
+                    </div>
+
+                    @if($settings->smb_username)
+                        <p class="text-xs text-gray-500">
+                            Verbindung wird hergestellt als:
+                            <code class="bg-gray-100 px-1 rounded">{{ $settings->smb_domain ? $settings->smb_domain . '\\' . $settings->smb_username : $settings->smb_username }}</code>
+                        </p>
+                    @endif
+
+                    <div class="pt-2 border-t border-gray-100 flex items-center justify-between gap-3">
+                        @if($settings->smb_username)
+                            <form method="POST" action="{{ route('baramundi.settings.update') }}" class="inline">
+                                @csrf @method('PUT')
+                                <input type="hidden" name="scan_interval_minutes" value="{{ $settings->scan_interval_minutes }}">
+                                <input type="hidden" name="notification_email" value="{{ $settings->notification_email }}">
+                                <input type="hidden" name="email_on_smb_error" value="{{ $settings->email_on_smb_error ? '1' : '0' }}">
+                                <input type="hidden" name="smb_domain" value="">
+                                <input type="hidden" name="smb_username" value="">
+                                <input type="hidden" name="smb_password" value="">
+                                <input type="hidden" name="smb_clear" value="1">
+                                <button type="submit" onclick="return confirm('SMB-Zugangsdaten wirklich löschen?')"
+                                        class="text-xs text-red-500 hover:text-red-700">
+                                    Zugangsdaten entfernen
+                                </button>
+                            </form>
+                        @else
+                            <span></span>
+                        @endif
+                        <x-primary-button type="submit">Zugangsdaten speichern</x-primary-button>
+                    </div>
+                </form>
+            </div>
+
             {{-- UNC-Pfad testen --}}
             <div class="bg-white shadow-sm sm:rounded-lg p-6"
                  x-data="{

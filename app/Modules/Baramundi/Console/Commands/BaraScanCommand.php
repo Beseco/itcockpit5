@@ -49,27 +49,78 @@ class BaraScanCommand extends Command
     {
         $settings = BaraSettings::getSingleton();
 
-        $query = WatchedPackage::where('enabled', true);
-
-        if ($id = $this->option('package')) {
-            $query->where('id', (int) $id);
+        // SMB-Credentials: net use für alle einzigartigen Server-Roots vorab herstellen
+        $connectedRoots = [];
+        if ($settings->hasSmbCredentials()) {
+            $connectedRoots = $this->connectSmbShares($settings);
         }
 
-        $packages = $query->get();
+        try {
+            $query = WatchedPackage::where('enabled', true);
 
-        if ($packages->isEmpty()) {
-            $this->info('Keine aktiven Pakete zum Scannen.');
+            if ($id = $this->option('package')) {
+                $query->where('id', (int) $id);
+            }
+
+            $packages = $query->get();
+
+            if ($packages->isEmpty()) {
+                $this->info('Keine aktiven Pakete zum Scannen.');
+                return 0;
+            }
+
+            $this->info("Scanne {$packages->count()} Paket(e)...");
+
+            foreach ($packages as $pkg) {
+                $this->scanPackage($pkg, $settings);
+            }
+
+            $this->info('Scan abgeschlossen.');
             return 0;
+        } finally {
+            // Verbindungen wieder trennen
+            foreach ($connectedRoots as $root) {
+                $this->scanner->netUseDisconnect($root);
+            }
         }
+    }
 
-        $this->info("Scanne {$packages->count()} Paket(e)...");
+    /**
+     * Stellt net-use-Verbindungen zu allen einzigartigen Server-Shares der aktiven Pakete her.
+     * Gibt die Liste der verbundenen Roots zurück (für spätere Trennung).
+     */
+    private function connectSmbShares(BaraSettings $settings): array
+    {
+        $packages = WatchedPackage::where('enabled', true)->get();
+        $roots    = [];
 
         foreach ($packages as $pkg) {
-            $this->scanPackage($pkg, $settings);
+            $root = $this->scanner->getShareRoot($pkg->getUncPath());
+            if (!in_array($root, $roots, true)) {
+                $roots[] = $root;
+            }
         }
 
-        $this->info('Scan abgeschlossen.');
-        return 0;
+        $user     = $settings->smb_domain
+            ? $settings->smb_domain . '\\' . $settings->smb_username
+            : $settings->smb_username;
+
+        $connected = [];
+        foreach ($roots as $root) {
+            $result = $this->scanner->netUseConnect($root, $user, $settings->smb_password);
+            if ($result['ok']) {
+                $this->line("  SMB verbunden: {$root}");
+                $connected[] = $root;
+            } else {
+                $this->warn("  SMB-Verbindung fehlgeschlagen für {$root}: {$result['message']}");
+                Log::warning('Baramundi: net use fehlgeschlagen', [
+                    'root'    => $root,
+                    'message' => $result['message'],
+                ]);
+            }
+        }
+
+        return $connected;
     }
 
     private function scanPackage(WatchedPackage $pkg, BaraSettings $settings): void
