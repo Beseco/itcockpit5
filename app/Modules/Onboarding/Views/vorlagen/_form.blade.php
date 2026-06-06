@@ -143,6 +143,13 @@
                               value="{{ old('abteilung_ad', $vorlage->abteilung_ad ?? '') }}" />
                 <x-input-error :messages="$errors->get('abteilung_ad')" class="mt-1" />
             </div>
+            <div class="sm:col-span-2">
+                <x-input-label for="ad_beschreibung" value="Beschreibung (AD-Attribut description)" />
+                <x-text-input id="ad_beschreibung" name="ad_beschreibung" type="text" class="mt-1 block w-full"
+                              value="{{ old('ad_beschreibung', $vorlage->ad_beschreibung ?? '') }}"
+                              placeholder="z.B. Mitarbeiter Führerscheinstelle" />
+                <x-input-error :messages="$errors->get('ad_beschreibung')" class="mt-1" />
+            </div>
         </div>
     </div>
 
@@ -264,31 +271,5 @@
         </div>
     </div>
 
-    {{-- E-Mail-Vorlagen (optional) --}}
-    <div class="bg-white shadow-sm sm:rounded-lg p-6">
-        <h3 class="text-sm font-semibold text-gray-700 mb-2">E-Mail-Vorlagen (optional)</h3>
-        <p class="text-xs text-gray-400 mb-4">
-            Leer lassen um die globalen Texte aus den Einstellungen zu verwenden.
-            Variablen: <code class="bg-gray-100 px-1 rounded">%vorname%</code>, <code class="bg-gray-100 px-1 rounded">%nachname%</code>,
-            <code class="bg-gray-100 px-1 rounded">%benutzername%</code>, <code class="bg-gray-100 px-1 rounded">%upn%</code>,
-            <code class="bg-gray-100 px-1 rounded">%rufnummer%</code>, <code class="bg-gray-100 px-1 rounded">%passwort%</code>
-        </p>
-        <div class="space-y-4">
-            <div>
-                <x-input-label for="welcome_mail_override" value="Begrüßungsmail-Text (Überschreibung)" />
-                <textarea id="welcome_mail_override" name="welcome_mail_override" rows="5"
-                          class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm font-mono"
-                          placeholder="Leer lassen = globaler Text wird verwendet"
-                          >{{ old('welcome_mail_override', $vorlage->welcome_mail_override ?? '') }}</textarea>
-            </div>
-            <div>
-                <x-input-label for="supervisor_mail_override" value="Vorgesetzten-Mail-Text (Überschreibung)" />
-                <textarea id="supervisor_mail_override" name="supervisor_mail_override" rows="4"
-                          class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm font-mono"
-                          placeholder="Leer lassen = globaler Text wird verwendet"
-                          >{{ old('supervisor_mail_override', $vorlage->supervisor_mail_override ?? '') }}</textarea>
-            </div>
-        </div>
-    </div>
 
 </div>

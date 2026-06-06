@@ -78,6 +78,7 @@ class AdProvisioningService
             'homeDirectory'            => $data['heimatverzeichnis'] ?? null,
             'scriptPath'               => $vorlage->anmeldeskript,
             'department'               => $vorlage->abteilung_ad,
+            'description'              => $vorlage->ad_beschreibung,
             'company'                  => $vorlage->firma,
             'manager'                  => ($data['vorgesetzter_dn'] ?? null) ?: null,
         ], fn($v) => $v !== null && $v !== '');

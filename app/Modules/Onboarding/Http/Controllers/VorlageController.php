@@ -100,6 +100,7 @@ class VorlageController extends Controller
             'anmeldeskript'           => ['nullable', 'string', 'max:255'],
             'laufwerke'               => ['nullable', 'json'],
             'abteilung_ad'            => ['nullable', 'string', 'max:255'],
+            'ad_beschreibung'         => ['nullable', 'string', 'max:1024'],
             'firma'                   => ['nullable', 'string', 'max:255'],
             'vorgesetzter_ad_user_id' => ['nullable', 'exists:adusers,id'],
             'welcome_mail_override'   => ['nullable', 'string'],
