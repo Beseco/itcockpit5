@@ -14,9 +14,9 @@
 
         {{-- Header --}}
         <tr>
-            <td style="background:linear-gradient(135deg,#4338ca 0%,#6366f1 100%);padding:36px 40px;border-radius:10px 10px 0 0;">
-                <p style="margin:0 0 4px 0;color:#c7d2fe;font-size:13px;letter-spacing:1px;text-transform:uppercase;">IT-Abteilung · Kreis Freising</p>
-                <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;line-height:1.3;">{{ $mailSubject }}</h1>
+            <td style="background-color:#1e3a5f;padding:36px 40px;border-radius:10px 10px 0 0;">
+                <p style="margin:0 0 6px 0;color:#a5c8f0;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;font-weight:600;">IT-Abteilung · Kreis Freising</p>
+                <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;line-height:1.4;">{{ $mailSubject }}</h1>
             </td>
         </tr>
 

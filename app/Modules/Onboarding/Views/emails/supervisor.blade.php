@@ -14,17 +14,17 @@
 
         {{-- Header --}}
         <tr>
-            <td style="background:linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%);padding:36px 40px;border-radius:10px 10px 0 0;">
-                <p style="margin:0 0 4px 0;color:#93c5fd;font-size:13px;letter-spacing:1px;text-transform:uppercase;">IT-Abteilung · Kreis Freising</p>
-                <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;line-height:1.3;">{{ $mailSubject }}</h1>
+            <td style="background-color:#1e3a5f;padding:36px 40px;border-radius:10px 10px 0 0;">
+                <p style="margin:0 0 6px 0;color:#a5c8f0;font-size:12px;letter-spacing:1.5px;text-transform:uppercase;font-weight:600;">IT-Abteilung · Kreis Freising</p>
+                <h1 style="margin:0;color:#ffffff;font-size:22px;font-weight:700;line-height:1.4;">{{ $mailSubject }}</h1>
             </td>
         </tr>
 
         {{-- Erklärungsbox --}}
         <tr>
-            <td style="background:#eff6ff;padding:24px 40px;border-bottom:1px solid #bfdbfe;">
-                <p style="margin:0;color:#1e40af;font-size:14px;line-height:1.7;">
-                    <strong>Sie erhalten diese E-Mail, da Sie als Vorgesetzter von
+            <td style="background-color:#ffffff;padding:24px 40px 20px;border-left:4px solid #2563eb;">
+                <p style="margin:0;color:#111827;font-size:14px;line-height:1.7;">
+                    <strong style="color:#1e3a5f;">Sie erhalten diese E-Mail, da Sie als Vorgesetzter von
                     {{ $record->vorname }} {{ $record->nachname }} hinterlegt sind.</strong><br>
                     Die IT-Abteilung hat soeben ein neues AD-Benutzerkonto angelegt.
                     Bitte prüfen Sie die nachfolgenden Angaben auf Richtigkeit und melden Sie
@@ -101,9 +101,9 @@
 
         {{-- Call to Action --}}
         <tr>
-            <td style="background:#f0fdf4;padding:20px 40px;border-top:1px solid #bbf7d0;border-bottom:1px solid #bbf7d0;">
-                <p style="margin:0;color:#166534;font-size:13px;line-height:1.6;">
-                    <strong>Bitte prüfen Sie die Angaben</strong> und wenden Sie sich bei Unstimmigkeiten
+            <td style="background-color:#f8fafc;padding:20px 40px;border-top:2px solid #1e3a5f;">
+                <p style="margin:0;color:#111827;font-size:13px;line-height:1.6;">
+                    <strong style="color:#1e3a5f;">Bitte prüfen Sie die Angaben</strong> und wenden Sie sich bei Unstimmigkeiten
                     umgehend an die IT-Abteilung. Das Konto ist ab sofort aktiv.
                 </p>
             </td>
