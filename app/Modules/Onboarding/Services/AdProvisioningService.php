@@ -30,7 +30,7 @@ class AdProvisioningService
 
         $cn     = trim("{$vorname} {$nachname}");
         $ouDn   = $vorlage->abteilung?->ad_path ?? $adSettings->base_dn;
-        $userDn = "CN={$cn},{$ouDn}";
+        $userDn = $this->buildUniqueDn($conn, $cn, $ouDn, $samaccountname);
 
         // Schritt 1: Konto mit absoluten Mindest-Attributen anlegen.
         // Nur objectClass + cn + sAMAccountName – alles andere per ldap_modify im Folgeschritt,
@@ -234,5 +234,22 @@ class AdProvisioningService
     private function addToGroup(mixed $conn, string $userDn, string $groupDn): void
     {
         @ldap_mod_add($conn, $groupDn, ['member' => [$userDn]]);
+    }
+
+    /**
+     * Gibt einen DN zurück, der in der OU noch nicht existiert.
+     * Bei Namenskollision (z.B. zwei "Max Mustermann") wird der sAMAccountName angehängt.
+     */
+    private function buildUniqueDn(mixed $conn, string $cn, string $ouDn, string $samaccountname): string
+    {
+        $dn = "CN={$cn},{$ouDn}";
+
+        // ldap_read prüft ob ein Objekt mit exakt diesem DN bereits existiert (BASE-Suche)
+        $existing = @ldap_read($conn, $dn, '(objectClass=*)', ['dn'], 0, 1);
+        if ($existing && ldap_count_entries($conn, $existing) > 0) {
+            $dn = "CN={$cn} ({$samaccountname}),{$ouDn}";
+        }
+
+        return $dn;
     }
 }
