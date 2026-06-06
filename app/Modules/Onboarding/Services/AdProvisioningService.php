@@ -223,12 +223,11 @@ class AdProvisioningService
         $encoded = mb_convert_encoding('"' . $password . '"', 'UTF-16LE');
 
         if (!@ldap_modify($conn, $userDn, ['unicodePwd' => [$encoded]])) {
-            $err = ldap_error($conn);
-            // Passwort konnte nicht gesetzt werden – Konto trotzdem anlegen, aber warnen
-            throw new \RuntimeException(
-                "Passwort konnte nicht gesetzt werden: {$err}. " .
-                "Hinweis: Für das Setzen von AD-Passwörtern ist LDAPS (Port 636, SSL) erforderlich."
-            );
+            $err     = ldap_error($conn);
+            $diagMsg = '';
+            @ldap_get_option($conn, LDAP_OPT_DIAGNOSTIC_MESSAGE, $diagMsg);
+            $detail = $diagMsg ? " – AD-Details: {$diagMsg}" : '';
+            throw new \RuntimeException("Passwort konnte nicht gesetzt werden: {$err}{$detail}");
         }
     }
 
