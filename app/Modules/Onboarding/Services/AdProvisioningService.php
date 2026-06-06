@@ -28,11 +28,14 @@ class AdProvisioningService
         $nachname       = $data['nachname'];
         $rufnummer      = $data['rufnummer'] ?? null;
 
-        $cn        = trim("{$vorname} {$nachname}");
-        $ouDn      = $vorlage->abteilung?->ad_path ?? $adSettings->base_dn;
-        $userDn    = "CN={$cn},{$ouDn}";
+        $cn     = trim("{$vorname} {$nachname}");
+        $ouDn   = $vorlage->abteilung?->ad_path ?? $adSettings->base_dn;
+        $userDn = "CN={$cn},{$ouDn}";
 
-        $attrs = array_filter([
+        // Schritt 1: Konto mit Mindest-Attributen anlegen (deaktiviert, kein Passwort).
+        // userAccountControl und Profilpfad-Attribute werden erst im zweiten Schritt gesetzt,
+        // da AD bei ldap_add sonst eine Constraint Violation zurückgibt.
+        $createAttrs = array_filter([
             'objectClass'       => ['top', 'person', 'organizationalPerson', 'user'],
             'cn'                => $cn,
             'givenName'         => $vorname,
@@ -41,34 +44,40 @@ class AdProvisioningService
             'sAMAccountName'    => $samaccountname,
             'userPrincipalName' => $upn,
             'mail'              => $upn,
-            'telephoneNumber'   => $rufnummer,
-            'facsimileTelephoneNumber' => $data['fax'] ?? null,
-            'streetAddress'     => $vorlage->strasse,
-            'postalCode'        => $vorlage->plz,
-            'l'                 => $vorlage->ort,
-            'profilePath'       => $data['profilpfad'] ?? null,
-            'homeDirectory'     => $data['heimatverzeichnis'] ?? null,
-            'scriptPath'        => $vorlage->anmeldeskript,
-            'department'        => $vorlage->abteilung_ad,
-            'company'           => $vorlage->firma,
-            'manager'           => $data['vorgesetzter_dn'] ?? null,
-            // Konto zunächst deaktiviert anlegen (userAccountControl=514 = disabled)
-            'userAccountControl' => ['514'],
         ], fn($v) => $v !== null && $v !== '' && $v !== []);
 
-        if (!@ldap_add($conn, $userDn, $attrs)) {
+        if (!@ldap_add($conn, $userDn, $createAttrs)) {
             $err = ldap_error($conn);
             ldap_unbind($conn);
             throw new \RuntimeException("Benutzer konnte nicht angelegt werden: {$err}");
         }
 
-        // Passwort setzen (erfordert LDAPS / Port 636)
+        // Schritt 2: Passwort setzen (erfordert LDAPS / Port 636)
         $this->setPassword($conn, $userDn, $password);
 
-        // Konto aktivieren + Passwort muss beim nächsten Login geändert werden
+        // Schritt 3: Konto aktivieren + Passwort-Änderung beim ersten Login erzwingen
         $this->enableAccount($conn, $userDn);
 
-        // Gruppen zuweisen
+        // Schritt 4: Zusätzliche Attribute setzen
+        $extraAttrs = array_filter([
+            'telephoneNumber'          => $rufnummer,
+            'facsimileTelephoneNumber' => $data['fax'] ?? null,
+            'streetAddress'            => $vorlage->strasse,
+            'postalCode'               => $vorlage->plz,
+            'l'                        => $vorlage->ort,
+            'profilePath'              => $data['profilpfad'] ?? null,
+            'homeDirectory'            => $data['heimatverzeichnis'] ?? null,
+            'scriptPath'               => $vorlage->anmeldeskript,
+            'department'               => $vorlage->abteilung_ad,
+            'company'                  => $vorlage->firma,
+            'manager'                  => ($data['vorgesetzter_dn'] ?? null) ?: null,
+        ], fn($v) => $v !== null && $v !== '');
+
+        if (!empty($extraAttrs)) {
+            @ldap_modify($conn, $userDn, $extraAttrs);
+        }
+
+        // Schritt 5: Sicherheitsgruppen zuweisen
         foreach ($vorlage->gruppen as $gruppe) {
             $this->addToGroup($conn, $userDn, $gruppe->ad_group_dn);
         }
