@@ -130,7 +130,7 @@ class AdProvisioningService
         }
     }
 
-    /** Sucht AD-Gruppen anhand eines Suchbegriffs. */
+    /** Sucht AD-Gruppen (Sicherheits- und Verteilergruppen) anhand eines Suchbegriffs. */
     public function searchGroups(string $query): array
     {
         if (!extension_loaded('ldap')) return [];
@@ -141,11 +141,12 @@ class AdProvisioningService
             $conn       = $this->connect($adSettings);
             $this->bind($conn, $adSettings, $obSettings);
 
+            $baseDn  = $obSettings->group_search_base_dn ?: $adSettings->base_dn;
             $escaped = ldap_escape($query, '', LDAP_ESCAPE_FILTER);
             $filter  = "(&(objectClass=group)(cn=*{$escaped}*))";
 
-            $result = @ldap_search($conn, $adSettings->base_dn, $filter,
-                ['cn', 'distinguishedname'], 0, 50);
+            $result = @ldap_search($conn, $baseDn, $filter,
+                ['cn', 'distinguishedname', 'grouptype'], 0, 50);
 
             if (!$result) {
                 ldap_unbind($conn);
@@ -157,9 +158,11 @@ class AdProvisioningService
 
             $groups = [];
             for ($i = 0; $i < ($entries['count'] ?? 0); $i++) {
+                $groupType = (int)($entries[$i]['grouptype'][0] ?? 0);
                 $groups[] = [
                     'dn'   => $entries[$i]['distinguishedname'][0] ?? '',
                     'name' => $entries[$i]['cn'][0] ?? '',
+                    'type' => $groupType < 0 ? 'security' : 'distribution',
                 ];
             }
 
@@ -167,6 +170,49 @@ class AdProvisioningService
         } catch (\Throwable) {
             return [];
         }
+    }
+
+    /** Zählt alle Gruppen in der konfigurierten Suchbasis (für den Test-Button). */
+    public function countGroups(): array
+    {
+        if (!extension_loaded('ldap')) {
+            throw new \RuntimeException('PHP LDAP-Extension ist nicht aktiviert.');
+        }
+
+        $adSettings = AdUserSettings::getSingleton();
+        $obSettings = OnboardingSettings::getSingleton();
+        $conn       = $this->connect($adSettings);
+        $this->bind($conn, $adSettings, $obSettings);
+
+        $baseDn = $obSettings->group_search_base_dn ?: $adSettings->base_dn;
+        $result = @ldap_search($conn, $baseDn, '(objectClass=group)', ['grouptype'], 0, 0);
+
+        if (!$result) {
+            $err = ldap_error($conn);
+            ldap_unbind($conn);
+            throw new \RuntimeException("Gruppensuche fehlgeschlagen: {$err}");
+        }
+
+        $entries  = ldap_get_entries($conn, $result);
+        ldap_unbind($conn);
+
+        $security     = 0;
+        $distribution = 0;
+        for ($i = 0; $i < ($entries['count'] ?? 0); $i++) {
+            $groupType = (int)($entries[$i]['grouptype'][0] ?? 0);
+            if ($groupType < 0) {
+                $security++;
+            } else {
+                $distribution++;
+            }
+        }
+
+        return [
+            'security'     => $security,
+            'distribution' => $distribution,
+            'total'        => $security + $distribution,
+            'base_dn'      => $baseDn,
+        ];
     }
 
     // ─── private ─────────────────────────────────────────────────────────────

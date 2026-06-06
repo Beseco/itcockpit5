@@ -20,18 +20,20 @@ class OnboardingSettingsController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $request->validate([
-            'ldap_write_bind_dn'      => ['nullable', 'string', 'max:500'],
+            'ldap_write_bind_dn'       => ['nullable', 'string', 'max:500'],
             'ldap_write_bind_password' => ['nullable', 'string', 'max:500'],
-            'welcome_mail_subject'    => ['required', 'string', 'max:255'],
-            'welcome_mail_body'       => ['nullable', 'string'],
-            'supervisor_mail_subject' => ['required', 'string', 'max:255'],
-            'supervisor_mail_body'    => ['nullable', 'string'],
+            'group_search_base_dn'     => ['nullable', 'string', 'max:1000'],
+            'welcome_mail_subject'     => ['required', 'string', 'max:255'],
+            'welcome_mail_body'        => ['nullable', 'string'],
+            'supervisor_mail_subject'  => ['required', 'string', 'max:255'],
+            'supervisor_mail_body'     => ['nullable', 'string'],
         ]);
 
         $settings = OnboardingSettings::getSingleton();
 
         $data = $request->only([
             'ldap_write_bind_dn',
+            'group_search_base_dn',
             'welcome_mail_subject',
             'welcome_mail_body',
             'supervisor_mail_subject',
@@ -53,5 +55,21 @@ class OnboardingSettingsController extends Controller
     {
         $result = $provisioner->testWriteConnection();
         return response()->json($result);
+    }
+
+    /** AJAX: Gruppen in der konfigurierten Suchbasis zählen */
+    public function testGroupSearch(AdProvisioningService $provisioner): JsonResponse
+    {
+        try {
+            $result = $provisioner->countGroups();
+            return response()->json([
+                'ok'      => true,
+                'message' => "{$result['total']} Gruppen in {$result['base_dn']} gefunden",
+                'security'     => $result['security'],
+                'distribution' => $result['distribution'],
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'message' => $e->getMessage()]);
+        }
     }
 }

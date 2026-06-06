@@ -71,6 +71,60 @@
                     </div>
                 </div>
 
+                {{-- Gruppen-Suchbasis --}}
+                <div class="bg-white shadow-sm sm:rounded-lg p-6">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-2">Gruppen-Suchbasis</h3>
+                    <p class="text-xs text-gray-400 mb-4">
+                        OU aus der Sicherheits- und Verteilergruppen geladen werden (z.B. <code class="bg-gray-100 px-1 rounded">OU=Gruppen,OU=LRA-FS,DC=lra,DC=lan</code>).
+                        Leer lassen = gesamtes Verzeichnis (Base DN aus AD-Einstellungen).
+                    </p>
+                    <div>
+                        <x-input-label for="group_search_base_dn" value="Gruppen-OU (Base DN)" />
+                        <x-text-input id="group_search_base_dn" name="group_search_base_dn" type="text"
+                                      class="mt-1 block w-full font-mono text-xs"
+                                      value="{{ old('group_search_base_dn', $settings->group_search_base_dn) }}"
+                                      placeholder="OU=Gruppen,OU=LRA-FS,DC=lra,DC=lan" />
+                        <x-input-error :messages="$errors->get('group_search_base_dn')" class="mt-1" />
+                    </div>
+
+                    <div class="mt-4"
+                         x-data="{
+                             testing: false, result: null, ok: null, security: null, distribution: null,
+                             async test() {
+                                 this.testing = true; this.result = null;
+                                 try {
+                                     const r = await fetch('{{ route('onboarding.settings.test-groups') }}', {
+                                         method: 'POST',
+                                         headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' }
+                                     });
+                                     const j = await r.json();
+                                     this.ok = j.ok; this.result = j.message;
+                                     this.security = j.security ?? null;
+                                     this.distribution = j.distribution ?? null;
+                                 } catch(e) { this.ok = false; this.result = e.toString(); }
+                                 finally { this.testing = false; }
+                             }
+                         }">
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <button type="button" @click="test()" :disabled="testing"
+                                    class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+                                <span x-text="testing ? 'Suche …' : 'Gruppen zählen'">Gruppen zählen</span>
+                            </button>
+                            <span x-show="result !== null" x-cloak
+                                  :class="ok ? 'text-green-700' : 'text-red-700'"
+                                  class="text-xs" x-text="result"></span>
+                        </div>
+                        <div x-show="ok && security !== null" x-cloak class="mt-3 flex gap-3">
+                            <span class="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full font-medium">
+                                <span x-text="security"></span> Sicherheitsgruppen
+                            </span>
+                            <span class="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full font-medium">
+                                <span x-text="distribution"></span> Verteilergruppen
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- E-Mail-Vorlagen --}}
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-sm font-semibold text-gray-700 mb-2">E-Mail-Vorlagen (global)</h3>

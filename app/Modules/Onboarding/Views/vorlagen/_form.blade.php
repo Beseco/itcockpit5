@@ -175,10 +175,10 @@
         </div>
     </div>
 
-    {{-- Sicherheitsgruppen --}}
+    {{-- Gruppen (Sicherheits- & Verteilergruppen) --}}
     <div class="bg-white shadow-sm sm:rounded-lg p-6"
          x-data="{
-            gruppen: {{ json_encode(old('gruppen', isset($vorlage) ? $vorlage->gruppen->map(fn($g) => ['dn' => $g->ad_group_dn, 'name' => $g->ad_group_name])->toArray() : [])) }},
+            gruppen: {{ json_encode(old('gruppen', isset($vorlage) ? $vorlage->gruppen->map(fn($g) => ['dn' => $g->ad_group_dn, 'name' => $g->ad_group_name, 'type' => 'security'])->toArray() : [])) }},
             searchQuery: '',
             searchResults: [],
             searching: false,
@@ -197,22 +197,44 @@
                 if (!this.gruppen.find(x => x.dn === g.dn)) this.gruppen.push(g);
                 this.searchQuery = ''; this.searchResults = [];
             },
-            remove(dn) { this.gruppen = this.gruppen.filter(g => g.dn !== dn); }
+            remove(dn) { this.gruppen = this.gruppen.filter(g => g.dn !== dn); },
+            badgeClass(type) {
+                return type === 'security'
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'bg-blue-100 text-blue-700';
+            },
+            badgeLabel(type) {
+                return type === 'security' ? 'Sicherheit' : 'Verteiler';
+            }
          }">
-        <h3 class="text-sm font-semibold text-gray-700 mb-4">Sicherheitsgruppen</h3>
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold text-gray-700">Gruppen</h3>
+            <div class="flex gap-2 text-xs text-gray-400">
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full">Sicherheitsgruppe</span>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">Verteilergruppe</span>
+            </div>
+        </div>
 
         {{-- Suche --}}
         <div class="relative mb-4">
-            <input type="text" x-model="searchQuery" @input.debounce.300ms="search()"
-                   placeholder="Gruppe suchen (mind. 2 Zeichen) …"
-                   class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+            <div class="relative">
+                <input type="text" x-model="searchQuery" @input.debounce.300ms="search()"
+                       placeholder="Gruppe suchen (mind. 2 Zeichen) …"
+                       class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm pr-8">
+                <span x-show="searching" x-cloak class="absolute right-3 top-2 text-xs text-gray-400">…</span>
+            </div>
             <div x-show="searchResults.length > 0" x-cloak
-                 class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                 class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-56 overflow-y-auto">
                 <template x-for="g in searchResults" :key="g.dn">
                     <button type="button" @click="add(g)"
-                            class="w-full text-left px-4 py-2 text-sm hover:bg-indigo-50">
-                        <span class="font-medium" x-text="g.name"></span>
-                        <span class="text-xs text-gray-400 block truncate" x-text="g.dn"></span>
+                            class="w-full text-left px-4 py-2.5 text-sm hover:bg-indigo-50 flex items-center gap-3">
+                        <span class="flex-1 min-w-0">
+                            <span class="font-medium block" x-text="g.name"></span>
+                            <span class="text-xs text-gray-400 block truncate" x-text="g.dn"></span>
+                        </span>
+                        <span :class="badgeClass(g.type)"
+                              class="shrink-0 text-xs px-2 py-0.5 rounded-full font-medium"
+                              x-text="badgeLabel(g.type)"></span>
                     </button>
                 </template>
             </div>
@@ -221,15 +243,21 @@
         {{-- Ausgewählte Gruppen --}}
         <div class="space-y-2">
             <template x-for="(g, i) in gruppen" :key="g.dn">
-                <div class="flex items-center gap-3 p-2 bg-gray-50 rounded-md">
+                <div class="flex items-center gap-3 p-2.5 bg-gray-50 rounded-md">
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm font-medium text-gray-800" x-text="g.name"></p>
-                        <p class="text-xs text-gray-400 truncate" x-text="g.dn"></p>
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-medium text-gray-800" x-text="g.name"></span>
+                            <span :class="badgeClass(g.type)"
+                                  class="text-xs px-2 py-0.5 rounded-full font-medium"
+                                  x-text="badgeLabel(g.type)"></span>
+                        </div>
+                        <p class="text-xs text-gray-400 truncate mt-0.5" x-text="g.dn"></p>
                     </div>
                     <button type="button" @click="remove(g.dn)"
                             class="text-xs text-red-500 hover:text-red-700 shrink-0">Entfernen</button>
                     <input type="hidden" :name="'gruppen[' + i + '][dn]'" :value="g.dn">
                     <input type="hidden" :name="'gruppen[' + i + '][name]'" :value="g.name">
+                    <input type="hidden" :name="'gruppen[' + i + '][type]'" :value="g.type">
                 </div>
             </template>
             <p x-show="gruppen.length === 0" class="text-sm text-gray-400">Noch keine Gruppen hinzugefügt.</p>

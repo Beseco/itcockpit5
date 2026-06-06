@@ -12,6 +12,7 @@ class OnboardingSettings extends Model
     protected $fillable = [
         'ldap_write_bind_dn',
         'ldap_write_bind_password',
+        'group_search_base_dn',
         'welcome_mail_subject',
         'welcome_mail_body',
         'supervisor_mail_subject',
