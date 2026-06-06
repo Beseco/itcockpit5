@@ -21,7 +21,7 @@
                                     Benutzer {{ $record->vorname }} {{ $record->nachname }} wurde im AD angelegt – Konto ist noch deaktiviert.
                                 </p>
                                 <p class="text-sm text-amber-700 mt-2">
-                                    <strong>Passwort konnte nicht gesetzt werden:</strong> AD-Passwörter können nur über LDAPS (Port 636, SSL) gesetzt werden.
+                                    <strong>Passwort konnte nicht gesetzt werden:</strong> {{ $record->error_message }}
                                 </p>
                                 <div class="mt-3 p-3 bg-amber-100 rounded text-sm text-amber-800">
                                     <strong>Nächste Schritte:</strong>
