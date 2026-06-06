@@ -1,0 +1,266 @@
+{{-- Gemeinsames Formular für Vorlage erstellen/bearbeiten --}}
+<div class="space-y-6">
+
+    {{-- Basis-Informationen --}}
+    <div class="bg-white shadow-sm sm:rounded-lg p-6">
+        <h3 class="text-sm font-semibold text-gray-700 mb-5">Allgemein</h3>
+        <div class="space-y-4">
+
+            <div>
+                <x-input-label for="name" value="Name der Vorlage *" />
+                <x-text-input id="name" name="name" type="text" class="mt-1 block w-full"
+                              value="{{ old('name', $vorlage->name ?? '') }}" required />
+                <x-input-error :messages="$errors->get('name')" class="mt-1" />
+            </div>
+
+            <div>
+                <x-input-label for="beschreibung" value="Beschreibung" />
+                <textarea id="beschreibung" name="beschreibung" rows="2"
+                          class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
+                          >{{ old('beschreibung', $vorlage->beschreibung ?? '') }}</textarea>
+                <x-input-error :messages="$errors->get('beschreibung')" class="mt-1" />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <x-input-label for="abteilung_id" value="Organisationseinheit (aus Abteilungen)" />
+                    <select id="abteilung_id" name="abteilung_id"
+                            class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                        <option value="">– Keine –</option>
+                        @foreach($abteilungen as $abt)
+                            <option value="{{ $abt->id }}"
+                                @selected(old('abteilung_id', $vorlage->abteilung_id ?? '') == $abt->id)>
+                                {{ $abt->name }}{{ $abt->ad_path ? ' (' . Str::limit($abt->ad_path, 60) . ')' : '' }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-xs text-gray-400">Die OU aus der Abteilung wird als Ziel-OU beim Anlegen verwendet.</p>
+                    <x-input-error :messages="$errors->get('abteilung_id')" class="mt-1" />
+                </div>
+
+                <div>
+                    <x-input-label for="vorgesetzter_ad_user_id" value="Standard-Vorgesetzter (AD)" />
+                    <select id="vorgesetzter_ad_user_id" name="vorgesetzter_ad_user_id"
+                            class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                        <option value="">– Kein –</option>
+                        @foreach($adUsers as $adUser)
+                            <option value="{{ $adUser->id }}"
+                                @selected(old('vorgesetzter_ad_user_id', $vorlage->vorgesetzter_ad_user_id ?? '') == $adUser->id)>
+                                {{ $adUser->anzeigename_or_name }} ({{ $adUser->samaccountname }})
+                            </option>
+                        @endforeach
+                    </select>
+                    <x-input-error :messages="$errors->get('vorgesetzter_ad_user_id')" class="mt-1" />
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <input type="checkbox" id="is_active" name="is_active" value="1"
+                       @checked(old('is_active', $vorlage->is_active ?? true))
+                       class="rounded border-gray-300 text-indigo-600">
+                <label for="is_active" class="text-sm text-gray-700">Vorlage ist aktiv (erscheint im Onboarding-Formular)</label>
+            </div>
+        </div>
+    </div>
+
+    {{-- Benutzername & UPN --}}
+    <div class="bg-white shadow-sm sm:rounded-lg p-6">
+        <h3 class="text-sm font-semibold text-gray-700 mb-2">Benutzername-Muster</h3>
+        <p class="text-xs text-gray-400 mb-4">
+            Variablen: <code class="bg-gray-100 px-1 rounded">%vorname%</code>,
+            <code class="bg-gray-100 px-1 rounded">%nachname%</code>,
+            <code class="bg-gray-100 px-1 rounded">%F%</code> (erster Buchstabe Vorname, Groß),
+            <code class="bg-gray-100 px-1 rounded">%N%</code> (erster Buchstabe Nachname, Groß),
+            <code class="bg-gray-100 px-1 rounded">%f%</code>,
+            <code class="bg-gray-100 px-1 rounded">%n%</code> (Kleinbuchstaben)
+        </p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <x-input-label for="samaccountname_pattern" value="sAMAccountName-Muster *" />
+                <x-text-input id="samaccountname_pattern" name="samaccountname_pattern" type="text" class="mt-1 block w-full font-mono"
+                              value="{{ old('samaccountname_pattern', $vorlage->samaccountname_pattern ?? '%nachname%%F%') }}" required />
+                <p class="mt-1 text-xs text-gray-400">Bsp: <code>%nachname%%F%</code> → BeublF</p>
+                <x-input-error :messages="$errors->get('samaccountname_pattern')" class="mt-1" />
+            </div>
+            <div>
+                <x-input-label for="upn_pattern" value="UPN-Muster (E-Mail / Login) *" />
+                <x-text-input id="upn_pattern" name="upn_pattern" type="text" class="mt-1 block w-full font-mono"
+                              value="{{ old('upn_pattern', $vorlage->upn_pattern ?? '%vorname%.%nachname%@kreis-fs.de') }}" required />
+                <p class="mt-1 text-xs text-gray-400">Bsp: <code>%vorname%.%nachname%@kreis-fs.de</code></p>
+                <x-input-error :messages="$errors->get('upn_pattern')" class="mt-1" />
+            </div>
+        </div>
+    </div>
+
+    {{-- Kontaktdaten --}}
+    <div class="bg-white shadow-sm sm:rounded-lg p-6">
+        <h3 class="text-sm font-semibold text-gray-700 mb-5">Kontakt & Adresse</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <x-input-label for="rufnummer_praefix" value="Rufnummer-Präfix (XX = freie Stelle)" />
+                <x-text-input id="rufnummer_praefix" name="rufnummer_praefix" type="text" class="mt-1 block w-full"
+                              value="{{ old('rufnummer_praefix', $vorlage->rufnummer_praefix ?? '') }}"
+                              placeholder="+498161600314XX" />
+                <p class="mt-1 text-xs text-gray-400">XX wird automatisch als nächste freie 2-stellige Nummer aus dem AD ermittelt.</p>
+                <x-input-error :messages="$errors->get('rufnummer_praefix')" class="mt-1" />
+            </div>
+            <div>
+                <x-input-label for="fax_praefix" value="Fax-Präfix" />
+                <x-text-input id="fax_praefix" name="fax_praefix" type="text" class="mt-1 block w-full"
+                              value="{{ old('fax_praefix', $vorlage->fax_praefix ?? '') }}"
+                              placeholder="+498161600914XX" />
+                <x-input-error :messages="$errors->get('fax_praefix')" class="mt-1" />
+            </div>
+            <div>
+                <x-input-label for="strasse" value="Straße" />
+                <x-text-input id="strasse" name="strasse" type="text" class="mt-1 block w-full"
+                              value="{{ old('strasse', $vorlage->strasse ?? '') }}" />
+                <x-input-error :messages="$errors->get('strasse')" class="mt-1" />
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+                <div>
+                    <x-input-label for="plz" value="PLZ" />
+                    <x-text-input id="plz" name="plz" type="text" class="mt-1 block w-full"
+                                  value="{{ old('plz', $vorlage->plz ?? '') }}" />
+                    <x-input-error :messages="$errors->get('plz')" class="mt-1" />
+                </div>
+                <div class="col-span-2">
+                    <x-input-label for="ort" value="Ort" />
+                    <x-text-input id="ort" name="ort" type="text" class="mt-1 block w-full"
+                                  value="{{ old('ort', $vorlage->ort ?? '') }}" />
+                    <x-input-error :messages="$errors->get('ort')" class="mt-1" />
+                </div>
+            </div>
+            <div>
+                <x-input-label for="firma" value="Firma (AD-Attribut company)" />
+                <x-text-input id="firma" name="firma" type="text" class="mt-1 block w-full"
+                              value="{{ old('firma', $vorlage->firma ?? '') }}" />
+                <x-input-error :messages="$errors->get('firma')" class="mt-1" />
+            </div>
+            <div>
+                <x-input-label for="abteilung_ad" value="Abteilung (AD-Attribut department)" />
+                <x-text-input id="abteilung_ad" name="abteilung_ad" type="text" class="mt-1 block w-full"
+                              value="{{ old('abteilung_ad', $vorlage->abteilung_ad ?? '') }}" />
+                <x-input-error :messages="$errors->get('abteilung_ad')" class="mt-1" />
+            </div>
+        </div>
+    </div>
+
+    {{-- Profil & Laufwerke --}}
+    <div class="bg-white shadow-sm sm:rounded-lg p-6">
+        <h3 class="text-sm font-semibold text-gray-700 mb-2">Profil & Laufwerke</h3>
+        <p class="text-xs text-gray-400 mb-4">Variable <code class="bg-gray-100 px-1 rounded">%benutzername%</code> wird durch den sAMAccountName ersetzt.</p>
+        <div class="space-y-4">
+            <div>
+                <x-input-label for="profilpfad_pattern" value="Profilpfad-Muster" />
+                <x-text-input id="profilpfad_pattern" name="profilpfad_pattern" type="text" class="mt-1 block w-full font-mono text-xs"
+                              value="{{ old('profilpfad_pattern', $vorlage->profilpfad_pattern ?? '') }}"
+                              placeholder="\\srv01\profiles\%benutzername%" />
+                <x-input-error :messages="$errors->get('profilpfad_pattern')" class="mt-1" />
+            </div>
+            <div>
+                <x-input-label for="heimatverzeichnis_pattern" value="Heimatverzeichnis-Muster" />
+                <x-text-input id="heimatverzeichnis_pattern" name="heimatverzeichnis_pattern" type="text" class="mt-1 block w-full font-mono text-xs"
+                              value="{{ old('heimatverzeichnis_pattern', $vorlage->heimatverzeichnis_pattern ?? '') }}"
+                              placeholder="\\srv01\home\%benutzername%" />
+                <x-input-error :messages="$errors->get('heimatverzeichnis_pattern')" class="mt-1" />
+            </div>
+            <div>
+                <x-input-label for="anmeldeskript" value="Anmeldeskript (scriptPath)" />
+                <x-text-input id="anmeldeskript" name="anmeldeskript" type="text" class="mt-1 block w-full font-mono"
+                              value="{{ old('anmeldeskript', $vorlage->anmeldeskript ?? '') }}"
+                              placeholder="logon.bat" />
+                <x-input-error :messages="$errors->get('anmeldeskript')" class="mt-1" />
+            </div>
+        </div>
+    </div>
+
+    {{-- Sicherheitsgruppen --}}
+    <div class="bg-white shadow-sm sm:rounded-lg p-6"
+         x-data="{
+            gruppen: {{ json_encode(old('gruppen', isset($vorlage) ? $vorlage->gruppen->map(fn($g) => ['dn' => $g->ad_group_dn, 'name' => $g->ad_group_name])->toArray() : [])) }},
+            searchQuery: '',
+            searchResults: [],
+            searching: false,
+            async search() {
+                if (this.searchQuery.length < 2) { this.searchResults = []; return; }
+                this.searching = true;
+                try {
+                    const r = await fetch('{{ route('onboarding.vorlagen.search-groups') }}?q=' + encodeURIComponent(this.searchQuery), {
+                        headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content }
+                    });
+                    this.searchResults = await r.json();
+                } catch(e) { this.searchResults = []; }
+                finally { this.searching = false; }
+            },
+            add(g) {
+                if (!this.gruppen.find(x => x.dn === g.dn)) this.gruppen.push(g);
+                this.searchQuery = ''; this.searchResults = [];
+            },
+            remove(dn) { this.gruppen = this.gruppen.filter(g => g.dn !== dn); }
+         }">
+        <h3 class="text-sm font-semibold text-gray-700 mb-4">Sicherheitsgruppen</h3>
+
+        {{-- Suche --}}
+        <div class="relative mb-4">
+            <input type="text" x-model="searchQuery" @input.debounce.300ms="search()"
+                   placeholder="Gruppe suchen (mind. 2 Zeichen) …"
+                   class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+            <div x-show="searchResults.length > 0" x-cloak
+                 class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                <template x-for="g in searchResults" :key="g.dn">
+                    <button type="button" @click="add(g)"
+                            class="w-full text-left px-4 py-2 text-sm hover:bg-indigo-50">
+                        <span class="font-medium" x-text="g.name"></span>
+                        <span class="text-xs text-gray-400 block truncate" x-text="g.dn"></span>
+                    </button>
+                </template>
+            </div>
+        </div>
+
+        {{-- Ausgewählte Gruppen --}}
+        <div class="space-y-2">
+            <template x-for="(g, i) in gruppen" :key="g.dn">
+                <div class="flex items-center gap-3 p-2 bg-gray-50 rounded-md">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-800" x-text="g.name"></p>
+                        <p class="text-xs text-gray-400 truncate" x-text="g.dn"></p>
+                    </div>
+                    <button type="button" @click="remove(g.dn)"
+                            class="text-xs text-red-500 hover:text-red-700 shrink-0">Entfernen</button>
+                    <input type="hidden" :name="'gruppen[' + i + '][dn]'" :value="g.dn">
+                    <input type="hidden" :name="'gruppen[' + i + '][name]'" :value="g.name">
+                </div>
+            </template>
+            <p x-show="gruppen.length === 0" class="text-sm text-gray-400">Noch keine Gruppen hinzugefügt.</p>
+        </div>
+    </div>
+
+    {{-- E-Mail-Vorlagen (optional) --}}
+    <div class="bg-white shadow-sm sm:rounded-lg p-6">
+        <h3 class="text-sm font-semibold text-gray-700 mb-2">E-Mail-Vorlagen (optional)</h3>
+        <p class="text-xs text-gray-400 mb-4">
+            Leer lassen um die globalen Texte aus den Einstellungen zu verwenden.
+            Variablen: <code class="bg-gray-100 px-1 rounded">%vorname%</code>, <code class="bg-gray-100 px-1 rounded">%nachname%</code>,
+            <code class="bg-gray-100 px-1 rounded">%benutzername%</code>, <code class="bg-gray-100 px-1 rounded">%upn%</code>,
+            <code class="bg-gray-100 px-1 rounded">%rufnummer%</code>, <code class="bg-gray-100 px-1 rounded">%passwort%</code>
+        </p>
+        <div class="space-y-4">
+            <div>
+                <x-input-label for="welcome_mail_override" value="Begrüßungsmail-Text (Überschreibung)" />
+                <textarea id="welcome_mail_override" name="welcome_mail_override" rows="5"
+                          class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm font-mono"
+                          placeholder="Leer lassen = globaler Text wird verwendet"
+                          >{{ old('welcome_mail_override', $vorlage->welcome_mail_override ?? '') }}</textarea>
+            </div>
+            <div>
+                <x-input-label for="supervisor_mail_override" value="Vorgesetzten-Mail-Text (Überschreibung)" />
+                <textarea id="supervisor_mail_override" name="supervisor_mail_override" rows="4"
+                          class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm font-mono"
+                          placeholder="Leer lassen = globaler Text wird verwendet"
+                          >{{ old('supervisor_mail_override', $vorlage->supervisor_mail_override ?? '') }}</textarea>
+            </div>
+        </div>
+    </div>
+
+</div>

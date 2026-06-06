@@ -1,0 +1,6 @@
+{
+    "name": "Onboarding",
+    "slug": "onboarding",
+    "version": "1.0.0",
+    "description": "AD-Benutzer anlegen: Vorlagen pro OE definieren, Benutzer mit einem Klick provisionieren, E-Mails versenden und alles dokumentieren"
+}
