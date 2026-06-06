@@ -32,24 +32,22 @@ class AdProvisioningService
         $ouDn   = $vorlage->abteilung?->ad_path ?? $adSettings->base_dn;
         $userDn = "CN={$cn},{$ouDn}";
 
-        // Schritt 1: Konto mit Mindest-Attributen anlegen (deaktiviert, kein Passwort).
-        // userAccountControl und Profilpfad-Attribute werden erst im zweiten Schritt gesetzt,
-        // da AD bei ldap_add sonst eine Constraint Violation zurückgibt.
-        $createAttrs = array_filter([
-            'objectClass'       => ['top', 'person', 'organizationalPerson', 'user'],
-            'cn'                => $cn,
-            'givenName'         => $vorname,
-            'sn'                => $nachname,
-            'displayName'       => $cn,
-            'sAMAccountName'    => $samaccountname,
-            'userPrincipalName' => $upn,
-            'mail'              => $upn,
-        ], fn($v) => $v !== null && $v !== '' && $v !== []);
+        // Schritt 1: Konto mit absoluten Mindest-Attributen anlegen.
+        // Nur objectClass + cn + sAMAccountName – alles andere per ldap_modify im Folgeschritt,
+        // da AD sonst bei UPN-Suffix, mail oder anderen Attributen eine Constraint Violation wirft.
+        $createAttrs = [
+            'objectClass'    => ['top', 'person', 'organizationalPerson', 'user'],
+            'cn'             => $cn,
+            'sAMAccountName' => $samaccountname,
+        ];
 
         if (!@ldap_add($conn, $userDn, $createAttrs)) {
-            $err = ldap_error($conn);
+            $err      = ldap_error($conn);
+            $diagMsg  = '';
+            @ldap_get_option($conn, LDAP_OPT_DIAGNOSTIC_MESSAGE, $diagMsg);
             ldap_unbind($conn);
-            throw new \RuntimeException("Benutzer konnte nicht angelegt werden: {$err}");
+            $detail = $diagMsg ? " – Details: {$diagMsg}" : '';
+            throw new \RuntimeException("Benutzer konnte nicht angelegt werden: {$err}{$detail}");
         }
 
         // Schritt 2: Passwort setzen (erfordert LDAPS / Port 636)
@@ -58,8 +56,13 @@ class AdProvisioningService
         // Schritt 3: Konto aktivieren + Passwort-Änderung beim ersten Login erzwingen
         $this->enableAccount($conn, $userDn);
 
-        // Schritt 4: Zusätzliche Attribute setzen
+        // Schritt 4: Alle weiteren Attribute per ldap_modify setzen
         $extraAttrs = array_filter([
+            'givenName'                => $vorname,
+            'sn'                       => $nachname,
+            'displayName'              => $cn,
+            'userPrincipalName'        => $upn,
+            'mail'                     => $upn,
             'telephoneNumber'          => $rufnummer,
             'facsimileTelephoneNumber' => $data['fax'] ?? null,
             'streetAddress'            => $vorlage->strasse,
@@ -74,7 +77,14 @@ class AdProvisioningService
         ], fn($v) => $v !== null && $v !== '');
 
         if (!empty($extraAttrs)) {
-            @ldap_modify($conn, $userDn, $extraAttrs);
+            if (!@ldap_modify($conn, $userDn, $extraAttrs)) {
+                $err     = ldap_error($conn);
+                $diagMsg = '';
+                @ldap_get_option($conn, LDAP_OPT_DIAGNOSTIC_MESSAGE, $diagMsg);
+                $detail = $diagMsg ? " – Details: {$diagMsg}" : '';
+                // Konto wurde angelegt – Fehler melden aber nicht abbrechen
+                \Illuminate\Support\Facades\Log::warning("Onboarding: ldap_modify teilweise fehlgeschlagen für {$userDn}: {$err}{$detail}");
+            }
         }
 
         // Schritt 5: Sicherheitsgruppen zuweisen
