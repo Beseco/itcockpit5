@@ -238,18 +238,26 @@ class AdProvisioningService
 
     /**
      * Gibt einen DN zurück, der in der OU noch nicht existiert.
-     * Bei Namenskollision (z.B. zwei "Max Mustermann") wird der sAMAccountName angehängt.
+     * Bei Namenskollision wird erst der sAMAccountName angehängt, dann eine Zahl –
+     * ohne Klammern, da Windows AD () in DN-Werten ablehnt (BAD_ATT_SYNTAX).
      */
     private function buildUniqueDn(mixed $conn, string $cn, string $ouDn, string $samaccountname): string
     {
-        $dn = "CN={$cn},{$ouDn}";
-
-        // ldap_read prüft ob ein Objekt mit exakt diesem DN bereits existiert (BASE-Suche)
-        $existing = @ldap_read($conn, $dn, '(objectClass=*)', ['dn'], 0, 1);
-        if ($existing && ldap_count_entries($conn, $existing) > 0) {
-            $dn = "CN={$cn} ({$samaccountname}),{$ouDn}";
+        $candidates = [
+            "CN={$cn},{$ouDn}",
+            "CN={$cn} {$samaccountname},{$ouDn}",
+        ];
+        for ($i = 2; $i <= 9; $i++) {
+            $candidates[] = "CN={$cn} {$i},{$ouDn}";
         }
 
-        return $dn;
+        foreach ($candidates as $dn) {
+            $result = @ldap_read($conn, $dn, '(objectClass=*)', ['dn'], 0, 1);
+            if (!$result || ldap_count_entries($conn, $result) === 0) {
+                return $dn;
+            }
+        }
+
+        throw new \RuntimeException("Kein eindeutiger CN für '{$cn}' in der OU gefunden.");
     }
 }
