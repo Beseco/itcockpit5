@@ -22,6 +22,13 @@ class LdapConnectionService
         }
 
         $host = ($this->settings->use_ssl ? 'ldaps://' : 'ldap://') . $this->settings->server;
+
+        // Muss vor ldap_connect() als globale Option gesetzt werden; verhindert Fehler bei
+        // self-signed oder internen CA-Zertifikaten (z.B. Windows AD-eigene PKI).
+        if ($this->settings->use_ssl) {
+            ldap_set_option(null, LDAP_OPT_X_TLS_REQUIRE_CERT, LDAP_OPT_X_TLS_NEVER);
+        }
+
         $conn = ldap_connect($host, $this->settings->port);
 
         if (!$conn) {

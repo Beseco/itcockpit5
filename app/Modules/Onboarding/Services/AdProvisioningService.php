@@ -174,6 +174,11 @@ class AdProvisioningService
     private function connect(AdUserSettings $settings): mixed
     {
         $host = ($settings->use_ssl ? 'ldaps://' : 'ldap://') . $settings->server;
+
+        if ($settings->use_ssl) {
+            ldap_set_option(null, LDAP_OPT_X_TLS_REQUIRE_CERT, LDAP_OPT_X_TLS_NEVER);
+        }
+
         $conn = ldap_connect($host, $settings->port);
 
         if (!$conn) {

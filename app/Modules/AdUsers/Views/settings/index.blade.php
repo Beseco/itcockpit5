@@ -114,7 +114,34 @@
             </div>
 
             {{-- Test-Bereich --}}
-            <div class="bg-white shadow-sm sm:rounded-lg p-6" x-data="ldapTestBlock()">
+            <div class="bg-white shadow-sm sm:rounded-lg p-6"
+                 x-data="{
+                     connResult: null,
+                     queryResult: null,
+                     loading: false,
+                     async testConnection() {
+                         this.loading = true; this.connResult = null;
+                         try {
+                             const r = await fetch('{{ route('adusers.settings.test-connection') }}', {
+                                 method: 'POST',
+                                 headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' }
+                             });
+                             this.connResult = await r.json();
+                         } catch(e) { this.connResult = { success: false, message: e.message }; }
+                         finally { this.loading = false; }
+                     },
+                     async testQuery() {
+                         this.loading = true; this.queryResult = null;
+                         try {
+                             const r = await fetch('{{ route('adusers.settings.test-query') }}', {
+                                 method: 'POST',
+                                 headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' }
+                             });
+                             this.queryResult = await r.json();
+                         } catch(e) { this.queryResult = { success: false, message: e.message }; }
+                         finally { this.loading = false; }
+                     }
+                 }">
                 <h3 class="text-sm font-semibold text-gray-700 mb-4">Verbindungstest</h3>
                 <div class="flex flex-wrap gap-3">
                     <button type="button" @click="testConnection()" :disabled="loading"
@@ -122,35 +149,32 @@
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.14 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"/>
                         </svg>
-                        Verbindung testen
+                        <span x-text="loading ? 'Teste …' : 'Verbindung testen'">Verbindung testen</span>
                     </button>
                     <button type="button" @click="testQuery()" :disabled="loading"
                             class="inline-flex items-center px-4 py-2 border border-gray-300 bg-gray-50 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-100 transition disabled:opacity-50">
                         <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"/>
                         </svg>
-                        Testabfrage (Anzahl User)
+                        <span x-text="loading ? 'Teste …' : 'Testabfrage (Anzahl User)'">Testabfrage (Anzahl User)</span>
                     </button>
                 </div>
 
-                <div x-show="connResult" x-cloak class="mt-3">
+                <div x-show="connResult !== null" x-cloak class="mt-3">
                     <div :class="connResult?.success ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'"
                          class="p-3 border rounded-md text-sm flex items-center gap-2">
-                        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                             :style="connResult?.success ? 'color:#16a34a' : 'color:#dc2626'">
-                            <path x-show="connResult?.success" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                            <path x-show="!connResult?.success" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
+                        <span x-text="connResult?.success ? '✓' : '✗'" class="font-bold shrink-0"></span>
                         <span x-text="connResult?.message"></span>
                     </div>
                 </div>
 
-                <div x-show="queryResult" x-cloak class="mt-3">
+                <div x-show="queryResult !== null" x-cloak class="mt-3">
                     <div :class="queryResult?.success ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'"
-                         class="p-3 border rounded-md text-sm">
+                         class="p-3 border rounded-md text-sm flex items-center gap-2">
+                        <span x-text="queryResult?.success ? '✓' : '✗'" class="font-bold shrink-0"></span>
                         <span x-text="queryResult?.message"></span>
                         <span x-show="queryResult?.success && queryResult?.count !== undefined"
-                              class="ml-2 font-bold" x-text="'(' + queryResult?.count + ' Benutzer gefunden)'"></span>
+                              class="font-bold" x-text="'(' + queryResult?.count + ' Benutzer gefunden)'"></span>
                     </div>
                 </div>
             </div>
@@ -175,44 +199,5 @@
 document.getElementById('anonymous_bind').addEventListener('change', function() {
     document.getElementById('bind-fields').classList.toggle('hidden', this.checked);
 });
-
-const _ldapUrls = {
-    connection: '{{ route("adusers.settings.test-connection") }}',
-    query:      '{{ route("adusers.settings.test-query") }}',
-};
-
-async function _ldapFetch(url) {
-    const token = document.querySelector('meta[name="csrf-token"]');
-    const r = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': token ? token.content : '',
-            'Accept': 'application/json',
-        }
-    });
-    const text = await r.text();
-    try { return JSON.parse(text); }
-    catch(e) { return { success: false, message: 'HTTP ' + r.status + ' – keine JSON-Antwort' }; }
-}
-
-function ldapTestBlock() {
-    return {
-        connResult:  null,
-        queryResult: null,
-        loading:     false,
-        async testConnection() {
-            this.loading = true; this.connResult = null;
-            try { this.connResult = await _ldapFetch(_ldapUrls.connection); }
-            catch(e) { this.connResult = { success: false, message: e.message }; }
-            this.loading = false;
-        },
-        async testQuery() {
-            this.loading = true; this.queryResult = null;
-            try { this.queryResult = await _ldapFetch(_ldapUrls.query); }
-            catch(e) { this.queryResult = { success: false, message: e.message }; }
-            this.loading = false;
-        }
-    };
-}
 </script>
 @endpush
