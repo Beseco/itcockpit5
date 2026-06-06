@@ -23,9 +23,11 @@ class LdapConnectionService
 
         $host = ($this->settings->use_ssl ? 'ldaps://' : 'ldap://') . $this->settings->server;
 
-        // Muss vor ldap_connect() als globale Option gesetzt werden; verhindert Fehler bei
-        // self-signed oder internen CA-Zertifikaten (z.B. Windows AD-eigene PKI).
+        // Zertifikatsvalidierung deaktivieren für interne AD-Zertifikate.
+        // putenv() setzt die OpenLDAP-Umgebungsvariable – zuverlässiger als ldap_set_option,
+        // da /etc/ldap/ldap.conf auf Linux-Servern sonst die PHP-Option überschreibt.
         if ($this->settings->use_ssl) {
+            putenv('LDAPTLS_REQCERT=never');
             ldap_set_option(null, LDAP_OPT_X_TLS_REQUIRE_CERT, LDAP_OPT_X_TLS_NEVER);
         }
 

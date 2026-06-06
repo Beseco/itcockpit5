@@ -176,6 +176,7 @@ class AdProvisioningService
         $host = ($settings->use_ssl ? 'ldaps://' : 'ldap://') . $settings->server;
 
         if ($settings->use_ssl) {
+            putenv('LDAPTLS_REQCERT=never');
             ldap_set_option(null, LDAP_OPT_X_TLS_REQUIRE_CERT, LDAP_OPT_X_TLS_NEVER);
         }
 
