@@ -4,28 +4,29 @@ namespace App\Services;
 
 class PasswordGeneratorService
 {
-    private const UPPERCASE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    private const LOWERCASE = 'abcdefghijklmnopqrstuvwxyz';
-    private const DIGITS    = '0123456789';
-    private const LENGTH    = 8;
+    private const UPPERCASE = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    private const LOWERCASE = 'abcdefghjkmnpqrstuvwxyz';
+    private const DIGITS    = '23456789';
+    private const SPECIAL   = '!@#$%&*-+=?';
+    private const LENGTH    = 12;
 
     /**
-     * Generiert ein sicheres 8-Zeichen-Passwort.
-     * Garantiert: mind. 1 Großbuchstabe, 1 Kleinbuchstabe, 1 Ziffer.
-     * Restliche Zeichen werden zufällig aus dem Gesamtzeichensatz gewählt.
-     * Am Ende wird das Array gemischt (shuffle).
+     * Generiert ein 12-Zeichen-Passwort das alle vier AD-Komplexitätskategorien erfüllt
+     * (Großbuchstabe, Kleinbuchstabe, Ziffer, Sonderzeichen).
+     * Ambige Zeichen (0, O, 1, I, l) sind ausgeschlossen.
      */
     public function generate(): string
     {
-        $combined = self::UPPERCASE . self::LOWERCASE . self::DIGITS;
+        $combined = self::UPPERCASE . self::LOWERCASE . self::DIGITS . self::SPECIAL;
 
         $chars = [
             self::UPPERCASE[random_int(0, strlen(self::UPPERCASE) - 1)],
             self::LOWERCASE[random_int(0, strlen(self::LOWERCASE) - 1)],
             self::DIGITS[random_int(0, strlen(self::DIGITS) - 1)],
+            self::SPECIAL[random_int(0, strlen(self::SPECIAL) - 1)],
         ];
 
-        for ($i = 3; $i < self::LENGTH; $i++) {
+        for ($i = 4; $i < self::LENGTH; $i++) {
             $chars[] = $combined[random_int(0, strlen($combined) - 1)];
         }
 
