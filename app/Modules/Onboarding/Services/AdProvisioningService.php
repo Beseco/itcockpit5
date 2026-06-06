@@ -173,22 +173,31 @@ class AdProvisioningService
 
     private function connect(AdUserSettings $settings): mixed
     {
-        $host = ($settings->use_ssl ? 'ldaps://' : 'ldap://') . $settings->server;
+        putenv('LDAPTLS_REQCERT=never');
+        ldap_set_option(null, LDAP_OPT_X_TLS_REQUIRE_CERT, LDAP_OPT_X_TLS_NEVER);
 
         if ($settings->use_ssl) {
-            putenv('LDAPTLS_REQCERT=never');
-            ldap_set_option(null, LDAP_OPT_X_TLS_REQUIRE_CERT, LDAP_OPT_X_TLS_NEVER);
+            // STARTTLS (ldap:// Port 389 + TLS-Upgrade) ist in PHP zuverlässiger als
+            // ldaps:// auf Port 636, weil ldaps:// bei Windows-internen CA-Zertifikaten
+            // stillschweigend ohne TLS verbindet und AD dann unicodePwd ablehnt.
+            $conn = ldap_connect('ldap://' . $settings->server, 389);
+        } else {
+            $conn = ldap_connect('ldap://' . $settings->server, $settings->port);
         }
 
-        $conn = ldap_connect($host, $settings->port);
-
         if (!$conn) {
-            throw new \RuntimeException("Verbindung zu {$host} konnte nicht hergestellt werden.");
+            throw new \RuntimeException("Verbindung zu {$settings->server} konnte nicht hergestellt werden.");
         }
 
         ldap_set_option($conn, LDAP_OPT_PROTOCOL_VERSION, 3);
         ldap_set_option($conn, LDAP_OPT_REFERRALS, 0);
         ldap_set_option($conn, LDAP_OPT_NETWORK_TIMEOUT, 10);
+
+        if ($settings->use_ssl) {
+            if (!@ldap_start_tls($conn)) {
+                throw new \RuntimeException('STARTTLS fehlgeschlagen: ' . ldap_error($conn));
+            }
+        }
 
         return $conn;
     }
