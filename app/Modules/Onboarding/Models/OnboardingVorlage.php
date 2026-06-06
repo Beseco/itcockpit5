@@ -18,7 +18,7 @@ class OnboardingVorlage extends Model
         'rufnummer_praefix', 'fax_praefix',
         'strasse', 'plz', 'ort',
         'profilpfad_pattern', 'heimatverzeichnis_pattern', 'anmeldeskript',
-        'laufwerke', 'abteilung_ad', 'ad_beschreibung', 'firma',
+        'laufwerke', 'abteilung_ad', 'ad_beschreibung', 'buero', 'firma',
         'vorgesetzter_ad_user_id',
         'welcome_mail_override', 'supervisor_mail_override',
         'is_active',

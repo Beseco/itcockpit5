@@ -72,6 +72,7 @@ class OnboardingController extends Controller
             'upn'            => $upnRaw,
             'rufnummer'      => $rufnummer,
             'fax'            => $fax,
+            'buero'          => $vorlage->buero,
         ]);
     }
 
@@ -85,14 +86,16 @@ class OnboardingController extends Controller
             'samaccountname' => ['required', 'string', 'max:20'],
             'upn'            => ['required', 'email', 'max:255'],
             'rufnummer'      => ['nullable', 'string', 'max:50'],
+            'mobile'         => ['nullable', 'string', 'max:50'],
             'fax'            => ['nullable', 'string', 'max:50'],
+            'buero'          => ['nullable', 'string', 'max:255'],
             'vorgesetzter_dn' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $vorlage  = OnboardingVorlage::with(['abteilung', 'gruppen'])->findOrFail($request->integer('vorlage_id'));
         $password = (new PasswordGeneratorService())->generate();
 
-        $data = array_merge($request->only(['vorname', 'nachname', 'samaccountname', 'upn', 'rufnummer', 'fax', 'vorgesetzter_dn']), [
+        $data = array_merge($request->only(['vorname', 'nachname', 'samaccountname', 'upn', 'rufnummer', 'mobile', 'fax', 'buero', 'vorgesetzter_dn']), [
             'password'          => $password,
             'profilpfad'        => $this->resolvePattern($vorlage->profilpfad_pattern, $request),
             'heimatverzeichnis' => $this->resolvePattern($vorlage->heimatverzeichnis_pattern, $request),
@@ -114,7 +117,7 @@ class OnboardingController extends Controller
 
             $record->update([
                 'distinguished_name'     => $result['distinguished_name'],
-                'ad_attributes_snapshot' => $data,
+                'ad_attributes_snapshot' => \Illuminate\Support\Arr::except($data, ['password']),
                 'status'                 => 'erfolgreich',
                 'error_message'          => $result['password_warning'] ?? null,
             ]);
@@ -171,12 +174,15 @@ class OnboardingController extends Controller
     {
         $obSettings = OnboardingSettings::getSingleton();
 
+        $snapshot = $record->ad_attributes_snapshot ?? [];
         $vars = [
             '%vorname%'      => $record->vorname,
             '%nachname%'     => $record->nachname,
             '%benutzername%' => $record->samaccountname,
             '%upn%'          => $record->upn,
             '%rufnummer%'    => $record->rufnummer ?? '–',
+            '%mobil%'        => $snapshot['mobile'] ?? '–',
+            '%buero%'        => $snapshot['buero'] ?? '–',
             '%passwort%'     => $password,
         ];
 

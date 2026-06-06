@@ -73,6 +73,10 @@
                                                class="text-xs text-indigo-600 hover:text-indigo-800">Verwenden</a>
                                             <a href="{{ route('onboarding.vorlagen.edit', $vorlage) }}"
                                                class="text-xs text-gray-500 hover:text-gray-700">Bearbeiten</a>
+                                            <form method="POST" action="{{ route('onboarding.vorlagen.clone', $vorlage) }}">
+                                                @csrf
+                                                <button type="submit" class="text-xs text-gray-500 hover:text-gray-700">Klonen</button>
+                                            </form>
                                             <form method="POST" action="{{ route('onboarding.vorlagen.destroy', $vorlage) }}"
                                                   onsubmit="return confirm('Vorlage „{{ $vorlage->name }}" wirklich löschen?')">
                                                 @csrf @method('DELETE')

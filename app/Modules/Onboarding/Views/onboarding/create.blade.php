@@ -9,20 +9,21 @@
     <div class="py-8">
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8"
              x-data="{
-                vorlageId: '{{ old('vorlage_id', $vorlage?->id ?? '') }}',
-                vorname: '{{ old('vorname', '') }}',
-                nachname: '{{ old('nachname', '') }}',
-                samaccountname: '{{ old('samaccountname', '') }}',
-                upn: '{{ old('upn', '') }}',
-                rufnummer: '{{ old('rufnummer', '') }}',
-                fax: '{{ old('fax', '') }}',
+                vorlageId: '{{ old("vorlage_id", $vorlage?->id ?? "") }}',
+                vorname: '{{ old("vorname", "") }}',
+                nachname: '{{ old("nachname", "") }}',
+                samaccountname: '{{ old("samaccountname", "") }}',
+                upn: '{{ old("upn", "") }}',
+                rufnummer: '{{ old("rufnummer", "") }}',
+                fax: '{{ old("fax", "") }}',
+                buero: '{{ old("buero", "") }}',
                 alternatives: [],
                 previewing: false,
                 async loadPreview() {
                     if (!this.vorlageId || !this.vorname || !this.nachname) return;
                     this.previewing = true;
                     try {
-                        const r = await fetch('{{ route('onboarding.preview') }}', {
+                        const r = await fetch('{{ route("onboarding.preview") }}', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -36,6 +37,7 @@
                         this.upn = j.upn;
                         this.rufnummer = j.rufnummer || '';
                         this.fax = j.fax || '';
+                        this.buero = j.buero || '';
                         this.alternatives = j.alternatives || [];
                     } catch(e) {}
                     finally { this.previewing = false; }
@@ -124,6 +126,21 @@
                                 <x-text-input id="rufnummer" name="rufnummer" type="text" class="mt-1 block w-full"
                                               x-model="rufnummer" placeholder="Wird automatisch ermittelt" />
                                 <x-input-error :messages="$errors->get('rufnummer')" class="mt-1" />
+                            </div>
+                            <div>
+                                <x-input-label for="mobile" value="Mobilnummer" />
+                                <x-text-input id="mobile" name="mobile" type="text" class="mt-1 block w-full"
+                                              value="{{ old('mobile') }}" placeholder="+49 171 ..." />
+                                <x-input-error :messages="$errors->get('mobile')" class="mt-1" />
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <x-input-label for="buero" value="Büro / Zimmer" />
+                                <x-text-input id="buero" name="buero" type="text" class="mt-1 block w-full"
+                                              x-model="buero" placeholder="z.B. Zimmer 103" />
+                                <x-input-error :messages="$errors->get('buero')" class="mt-1" />
                             </div>
                             <div>
                                 <x-input-label for="fax" value="Fax" />

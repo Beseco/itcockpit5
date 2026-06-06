@@ -143,6 +143,14 @@
                               value="{{ old('abteilung_ad', $vorlage->abteilung_ad ?? '') }}" />
                 <x-input-error :messages="$errors->get('abteilung_ad')" class="mt-1" />
             </div>
+            <div>
+                <x-input-label for="buero" value="Büro / Zimmer (AD-Attribut physicalDeliveryOfficeName)" />
+                <x-text-input id="buero" name="buero" type="text" class="mt-1 block w-full"
+                              value="{{ old('buero', $vorlage->buero ?? '') }}"
+                              placeholder="z.B. Zimmer 103" />
+                <p class="mt-1 text-xs text-gray-400">Standard für diese Vorlage – kann beim Anlegen überschrieben werden.</p>
+                <x-input-error :messages="$errors->get('buero')" class="mt-1" />
+            </div>
             <div class="sm:col-span-2">
                 <x-input-label for="ad_beschreibung" value="Beschreibung (AD-Attribut description)" />
                 <x-text-input id="ad_beschreibung" name="ad_beschreibung" type="text" class="mt-1 block w-full"

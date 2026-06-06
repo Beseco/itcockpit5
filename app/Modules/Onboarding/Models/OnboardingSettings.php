@@ -24,10 +24,10 @@ class OnboardingSettings extends Model
     public static function getSingleton(): self
     {
         return self::firstOrNew([], [
-            'welcome_mail_subject'   => 'Willkommen – Ihr neues Benutzerkonto',
-            'welcome_mail_body'      => "Guten Tag %vorname% %nachname%,\n\nIhr neues Benutzerkonto wurde eingerichtet.\n\nBenutzername: %benutzername%\nTemporäres Passwort: %passwort%\n\nBitte ändern Sie Ihr Passwort beim ersten Login.\n\nBei Fragen wenden Sie sich an die IT-Abteilung.\n\nMit freundlichen Grüßen\nIT-Abteilung",
-            'supervisor_mail_subject' => 'Neues Benutzerkonto wurde angelegt',
-            'supervisor_mail_body'   => "Guten Tag,\n\nfür %vorname% %nachname% wurde ein neues AD-Benutzerkonto angelegt.\n\nBenutzername: %benutzername%\nE-Mail: %upn%\nTelefon: %rufnummer%\n\nMit freundlichen Grüßen\nIT-Abteilung",
+            'welcome_mail_subject'   => 'Willkommen – Ihr neues Benutzerkonto ist bereit',
+            'welcome_mail_body'      => "Guten Tag %vorname% %nachname%,\n\nherzlich willkommen! Ihr persönliches Windows-Benutzerkonto wurde erfolgreich eingerichtet. Ab sofort können Sie sich an Ihrem Arbeitsplatz anmelden.\n\nIhre Zugangsdaten:\n  Benutzername:        %benutzername%\n  Temporäres Passwort: %passwort%\n  E-Mail-Adresse:      %upn%\n  Rufnummer:           %rufnummer%\n\nWichtig: Sie werden beim ersten Anmelden aufgefordert, ein neues persönliches Passwort zu vergeben. Bitte wählen Sie ein sicheres Passwort.\n\nBei Fragen oder Problemen steht Ihnen die IT-Abteilung gerne zur Verfügung.\n\nMit freundlichen Grüßen\nIT-Abteilung · Landratsamt Freising",
+            'supervisor_mail_subject' => 'Information: Neues Benutzerkonto für %vorname% %nachname% angelegt',
+            'supervisor_mail_body'   => "Guten Tag,\n\nim Auftrag Ihrer Organisationseinheit wurde für die unten genannte Person ein neues AD-Benutzerkonto eingerichtet. Die betreffende Person kann sich ab sofort an ihrem Arbeitsplatz anmelden.\n\nBitte überprüfen Sie die nachfolgenden Kontodaten und melden Sie der IT-Abteilung umgehend etwaige Fehler oder Änderungswünsche.",
         ]);
     }
 

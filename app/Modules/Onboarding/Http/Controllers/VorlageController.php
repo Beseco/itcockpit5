@@ -69,6 +69,26 @@ class VorlageController extends Controller
             ->with('success', 'Vorlage "' . $name . '" wurde gelöscht.');
     }
 
+    /** Vorlage klonen */
+    public function clone(OnboardingVorlage $vorlage): RedirectResponse
+    {
+        $kopie = $vorlage->replicate();
+        $kopie->name = 'Kopie von ' . $vorlage->name;
+        $kopie->is_active = false;
+        $kopie->save();
+
+        foreach ($vorlage->gruppen as $gruppe) {
+            OnboardingVorlageGruppe::create([
+                'vorlage_id'    => $kopie->id,
+                'ad_group_dn'   => $gruppe->ad_group_dn,
+                'ad_group_name' => $gruppe->ad_group_name,
+            ]);
+        }
+
+        return redirect()->route('onboarding.vorlagen.edit', $kopie)
+            ->with('success', 'Vorlage "' . $vorlage->name . '" wurde geklont. Bitte anpassen und aktivieren.');
+    }
+
     /** AJAX: AD-Gruppen suchen */
     public function searchGroups(Request $request, AdProvisioningService $provisioner)
     {
@@ -101,6 +121,7 @@ class VorlageController extends Controller
             'laufwerke'               => ['nullable', 'json'],
             'abteilung_ad'            => ['nullable', 'string', 'max:255'],
             'ad_beschreibung'         => ['nullable', 'string', 'max:1024'],
+            'buero'                   => ['nullable', 'string', 'max:255'],
             'firma'                   => ['nullable', 'string', 'max:255'],
             'vorgesetzter_ad_user_id' => ['nullable', 'exists:adusers,id'],
             'welcome_mail_override'   => ['nullable', 'string'],

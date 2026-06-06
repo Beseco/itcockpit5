@@ -22,6 +22,7 @@ Route::middleware(['auth', 'module.permission:onboarding,edit'])->group(function
     Route::get('/vorlagen/{vorlage}/edit', [VorlageController::class, 'edit'])->name('vorlagen.edit');
     Route::put('/vorlagen/{vorlage}',    [VorlageController::class, 'update'])->name('vorlagen.update');
     Route::delete('/vorlagen/{vorlage}', [VorlageController::class, 'destroy'])->name('vorlagen.destroy');
+    Route::post('/vorlagen/{vorlage}/clone', [VorlageController::class, 'clone'])->name('vorlagen.clone');
     Route::get('/vorlagen/search-groups', [VorlageController::class, 'searchGroups'])->name('vorlagen.search-groups');
 });
 
