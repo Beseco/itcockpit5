@@ -11,17 +11,42 @@
 
             {{-- Status --}}
             @if($record->status === 'erfolgreich')
-                <div class="bg-green-50 border border-green-200 rounded-lg p-5">
-                    <div class="flex items-start gap-3">
-                        <span class="text-green-500 text-xl">✓</span>
-                        <div>
-                            <p class="font-semibold text-green-800">
-                                Benutzer {{ $record->vorname }} {{ $record->nachname }} wurde erfolgreich im AD angelegt.
-                            </p>
-                            <p class="text-sm text-green-700 mt-1">Benutzername: <strong>{{ $record->samaccountname }}</strong></p>
+                @if($record->error_message)
+                    {{-- Erfolgreich angelegt, aber Passwort-Warnung vorhanden --}}
+                    <div class="bg-amber-50 border border-amber-300 rounded-lg p-5">
+                        <div class="flex items-start gap-3">
+                            <span class="text-amber-500 text-xl">⚠</span>
+                            <div>
+                                <p class="font-semibold text-amber-800">
+                                    Benutzer {{ $record->vorname }} {{ $record->nachname }} wurde im AD angelegt – Konto ist noch deaktiviert.
+                                </p>
+                                <p class="text-sm text-amber-700 mt-2">
+                                    <strong>Passwort konnte nicht gesetzt werden:</strong> AD-Passwörter können nur über LDAPS (Port 636, SSL) gesetzt werden.
+                                </p>
+                                <div class="mt-3 p-3 bg-amber-100 rounded text-sm text-amber-800">
+                                    <strong>Nächste Schritte:</strong>
+                                    <ol class="mt-1 ml-4 list-decimal space-y-1">
+                                        <li>Passwort in ADUC (Active Directory-Benutzer und -Computer) manuell setzen</li>
+                                        <li>Konto aktivieren</li>
+                                        <li>Oder: LDAPS in den <a href="{{ route('adusers.settings') }}" class="underline">AD-Benutzer Einstellungen</a> aktivieren (Port 636, SSL), dann funktioniert es automatisch</li>
+                                    </ol>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
+                @else
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-5">
+                        <div class="flex items-start gap-3">
+                            <span class="text-green-500 text-xl">✓</span>
+                            <div>
+                                <p class="font-semibold text-green-800">
+                                    Benutzer {{ $record->vorname }} {{ $record->nachname }} wurde erfolgreich im AD angelegt.
+                                </p>
+                                <p class="text-sm text-green-700 mt-1">Benutzername: <strong>{{ $record->samaccountname }}</strong></p>
+                            </div>
+                        </div>
+                    </div>
+                @endif
             @else
                 <div class="bg-red-50 border border-red-200 rounded-lg p-5">
                     <p class="font-semibold text-red-800">Fehler beim Anlegen des Benutzers</p>
@@ -82,6 +107,9 @@
                             {{ $record->status === 'erfolgreich' ? '✓' : '✗' }}
                         </span>
                         AD-Benutzerkonto angelegt
+                        @if($record->status === 'erfolgreich' && $record->error_message)
+                            <span class="text-xs text-amber-600">(deaktiviert – Passwort manuell setzen)</span>
+                        @endif
                     </li>
                     <li class="flex items-center gap-2">
                         <span class="{{ $record->welcome_mail_sent_at ? 'text-green-500' : 'text-gray-300' }}">

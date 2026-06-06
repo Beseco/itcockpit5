@@ -113,9 +113,10 @@ class OnboardingController extends Controller
             $result = $this->provisioner->createUser($vorlage, $data);
 
             $record->update([
-                'distinguished_name'  => $result['distinguished_name'],
+                'distinguished_name'     => $result['distinguished_name'],
                 'ad_attributes_snapshot' => $data,
-                'status'              => 'erfolgreich',
+                'status'                 => 'erfolgreich',
+                'error_message'          => $result['password_warning'] ?? null,
             ]);
 
             AuditLog::create([
@@ -125,8 +126,10 @@ class OnboardingController extends Controller
                 'payload' => ['samaccountname' => $record->samaccountname, 'upn' => $record->upn],
             ]);
 
-            // Mails versenden
-            $this->sendMails($record, $vorlage, $password);
+            // Mails nur versenden wenn Passwort gesetzt werden konnte
+            if (!$result['password_warning']) {
+                $this->sendMails($record, $vorlage, $password);
+            }
 
         } catch (\Throwable $e) {
             $record->update(['status' => 'fehler', 'error_message' => $e->getMessage()]);

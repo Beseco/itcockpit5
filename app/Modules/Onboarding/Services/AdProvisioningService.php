@@ -50,11 +50,17 @@ class AdProvisioningService
             throw new \RuntimeException("Benutzer konnte nicht angelegt werden: {$err}{$detail}");
         }
 
-        // Schritt 2: Passwort setzen (erfordert LDAPS / Port 636)
-        $this->setPassword($conn, $userDn, $password);
-
-        // Schritt 3: Konto aktivieren + Passwort-Änderung beim ersten Login erzwingen
-        $this->enableAccount($conn, $userDn);
+        // Schritt 2: Passwort setzen (erfordert LDAPS / Port 636).
+        // Fehler sind nicht fatal – Konto bleibt dann deaktiviert, Admin muss Passwort manuell setzen.
+        $passwordWarning = null;
+        try {
+            $this->setPassword($conn, $userDn, $password);
+            // Schritt 3: Nur wenn Passwort gesetzt wurde, Konto aktivieren
+            $this->enableAccount($conn, $userDn);
+        } catch (\RuntimeException $e) {
+            $passwordWarning = $e->getMessage();
+            \Illuminate\Support\Facades\Log::warning("Onboarding: Passwort konnte nicht gesetzt werden für {$userDn}: {$passwordWarning}");
+        }
 
         // Schritt 4: Alle weiteren Attribute per ldap_modify setzen
         $extraAttrs = array_filter([
@@ -98,6 +104,7 @@ class AdProvisioningService
             'distinguished_name' => $userDn,
             'samaccountname'     => $samaccountname,
             'upn'                => $upn,
+            'password_warning'   => $passwordWarning,
         ];
     }
 
