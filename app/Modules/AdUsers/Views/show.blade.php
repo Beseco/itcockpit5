@@ -29,24 +29,28 @@
 
     @include('adusers::_subnav')
 
+    @php
+        $groupChangeLogsJson = $groupChangeLogs->map(fn($l) => [
+            'id'           => $l->id,
+            'action'       => $l->action,
+            'action_label' => $l->actionLabel(),
+            'group_name'   => $l->group_name,
+            'group_dn'     => $l->group_dn,
+            'performed_by' => $l->performedBy?->name ?? 'Unbekannt',
+            'performed_at' => $l->created_at->format('d.m.Y H:i'),
+            'reverted_at'  => $l->reverted_at?->format('d.m.Y H:i'),
+            'reverted_by'  => $l->revertedBy?->name,
+            'is_reverted'  => $l->isReverted(),
+        ])->values()->toJson(JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
+    @endphp
+
     <div class="py-6"
          x-data="{
             activeTab: window.location.hash.replace('#','') || 'uebersicht',
 
             // ── Gruppen-Management ──
             groups: @json($groups),
-            changeLogs: @json($groupChangeLogs->map(fn($l) => [
-                'id'           => $l->id,
-                'action'       => $l->action,
-                'action_label' => $l->actionLabel(),
-                'group_name'   => $l->group_name,
-                'group_dn'     => $l->group_dn,
-                'performed_by' => $l->performedBy?->name ?? 'Unbekannt',
-                'performed_at' => $l->created_at->format('d.m.Y H:i'),
-                'reverted_at'  => $l->reverted_at?->format('d.m.Y H:i'),
-                'reverted_by'  => $l->revertedBy?->name,
-                'is_reverted'  => $l->isReverted(),
-            ])),
+            changeLogs: {!! $groupChangeLogsJson !!},
             addSearchQuery: '',
             addSearchResults: [],
             addSearchLoading: false,
