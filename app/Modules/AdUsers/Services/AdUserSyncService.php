@@ -3,6 +3,7 @@
 namespace App\Modules\AdUsers\Services;
 
 use App\Modules\AdUsers\Models\AdUser;
+use App\Modules\AdUsers\Models\AdUserSettings;
 use App\Services\AuditLogger;
 
 class AdUserSyncService
@@ -18,7 +19,34 @@ class AdUserSyncService
      */
     public function sync(bool $dryRun = false): array
     {
-        $adUsers   = $this->ldap->getAllUsers();
+        $adUsers = $this->ldap->getAllUsers();
+
+        // Spezielle OUs zusätzlich durchsuchen (könnten außerhalb der base_dn liegen)
+        $specialAttrs = [
+            'samaccountname', 'givenname', 'sn', 'displayname', 'mail', 'company',
+            'department', 'telephonenumber', 'distinguishedname', 'useraccountcontrol',
+            'memberof', 'description', 'physicaldeliveryofficename', 'mobile', 'manager', 'title',
+        ];
+        foreach (AdUserSettings::getSingleton()->specialOus() as $ou) {
+            if (empty($ou['dn'])) continue;
+            try {
+                $extra = $this->ldap->searchWithBaseDn(
+                    $ou['dn'],
+                    '(&(objectClass=user)(objectCategory=person))',
+                    $specialAttrs
+                );
+                $adUsers = $adUsers->merge($extra);
+            } catch (\Throwable) {}
+        }
+
+        // Duplikate nach samaccountname entfernen (hauptliste hat Vorrang)
+        $seen    = [];
+        $adUsers = $adUsers->filter(function ($u) use (&$seen) {
+            $sam = strtolower(LdapConnectionService::getAttr($u, 'samaccountname') ?? '');
+            if (!$sam || isset($seen[$sam])) return false;
+            $seen[$sam] = true;
+            return true;
+        });
         $updated   = 0;
         $foundSams = [];
 
