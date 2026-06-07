@@ -21,7 +21,7 @@ class AdUserSettings extends Model
         $ous = [];
         if ($this->ou_deaktiviert) {
             $ous['deaktiviert'] = [
-                'label'       => 'Deaktiviert',
+                'label'       => 'OU: Deaktiviert',
                 'dn'          => $this->ou_deaktiviert,
                 'badge_class' => 'bg-gray-200 text-gray-700',
                 'banner_class'=> 'bg-gray-100 border-gray-300 text-gray-700',
