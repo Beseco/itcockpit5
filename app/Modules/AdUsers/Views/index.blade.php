@@ -80,8 +80,8 @@
                 @endif
 
                 <select name="vorhanden" class="border-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                    <option value="">AD-Status (alle)</option>
-                    <option value="ja"  @selected(request('vorhanden')==='ja')>Im AD vorhanden</option>
+                    <option value="alle" @selected(request('vorhanden')==='alle')>AD-Status (alle)</option>
+                    <option value="ja"   @selected(request('vorhanden', 'ja')==='ja')>Im AD vorhanden</option>
                     <option value="nein" @selected(request('vorhanden')==='nein')>Nicht mehr vorhanden</option>
                 </select>
 
@@ -96,7 +96,7 @@
                 </select>
 
                 <x-primary-button type="submit">Suchen</x-primary-button>
-                @if(request()->hasAny(['search','status','vorhanden','inaktiv_seit','special_ou']))
+                @if(request()->hasAny(['search','status','inaktiv_seit','special_ou']) || in_array(request('vorhanden'), ['alle','nein']))
                     <a href="{{ route('adusers.index') }}"
                        class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-600 hover:bg-gray-50">✕</a>
                 @endif

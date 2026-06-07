@@ -53,9 +53,13 @@ class AdUserController extends Controller
             $query->whereIn('samaccountname', $offboardingSams->keys());
         }
 
-        if ($request->get('vorhanden') === 'nein') {
+        // Standard: nur vorhandene Benutzer – explizit "alle" oder "nein" wählen um abzuweichen
+        $vorhandenFilter = $request->get('vorhanden', 'ja');
+        if ($vorhandenFilter === 'nein') {
             $query->where('ad_vorhanden', false);
-        } elseif ($request->get('vorhanden') === 'ja') {
+        } elseif ($vorhandenFilter === 'alle') {
+            // kein Filter
+        } else {
             $query->where('ad_vorhanden', true);
         }
 
