@@ -72,6 +72,7 @@
                 @if(!empty($specialOus))
                 <select name="special_ou" class="border-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
                     <option value="">Spezielle OU (alle)</option>
+                    <option value="keine" @selected(request('special_ou')==='keine')>Keine spezielle OU</option>
                     @foreach($specialOus as $key => $sou)
                         <option value="{{ $key }}" @selected(request('special_ou')===$key)>{{ $sou['label'] }}</option>
                     @endforeach

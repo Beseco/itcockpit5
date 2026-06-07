@@ -29,7 +29,7 @@ class AdUserSettings extends Model
         }
         if ($this->ou_elternzeit) {
             $ous['elternzeit'] = [
-                'label'       => 'Elternzeit',
+                'label'       => 'OU: Elternzeit',
                 'dn'          => $this->ou_elternzeit,
                 'badge_class' => 'bg-sky-100 text-sky-700',
                 'banner_class'=> 'bg-sky-50 border-sky-300 text-sky-700',
@@ -37,7 +37,7 @@ class AdUserSettings extends Model
         }
         if ($this->ou_altersteilzeit) {
             $ous['altersteilzeit'] = [
-                'label'       => 'Altersteilzeit',
+                'label'       => 'OU: Altersteilzeit',
                 'dn'          => $this->ou_altersteilzeit,
                 'badge_class' => 'bg-amber-100 text-amber-700',
                 'banner_class'=> 'bg-amber-50 border-amber-300 text-amber-700',

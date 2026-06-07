@@ -64,9 +64,13 @@ class AdUserController extends Controller
         }
 
         $specialOus = $settings->specialOus();
-        if (($specialOuFilter = $request->get('special_ou')) && isset($specialOus[$specialOuFilter])) {
-            $ouDn = $specialOus[$specialOuFilter]['dn'];
-            $query->whereRaw('LOWER(distinguished_name) LIKE ?', ['%,' . strtolower($ouDn)]);
+        $specialOuFilter = $request->get('special_ou');
+        if ($specialOuFilter === 'keine' && !empty($specialOus)) {
+            foreach ($specialOus as $ou) {
+                $query->whereRaw('LOWER(distinguished_name) NOT LIKE ?', ['%,' . strtolower($ou['dn'])]);
+            }
+        } elseif ($specialOuFilter && isset($specialOus[$specialOuFilter])) {
+            $query->whereRaw('LOWER(distinguished_name) LIKE ?', ['%,' . strtolower($specialOus[$specialOuFilter]['dn'])]);
         }
 
         $perPage = in_array((int) $request->get('per_page', 25), [25, 50, 100, 250]) ? (int) $request->get('per_page', 25) : 25;
