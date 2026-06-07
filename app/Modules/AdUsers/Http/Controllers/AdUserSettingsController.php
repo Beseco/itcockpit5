@@ -28,14 +28,18 @@ class AdUserSettingsController extends Controller
             'bind_password'       => ['nullable', 'string', 'max:500'],
             'anonymous_bind'      => ['boolean'],
             'use_ssl'             => ['boolean'],
-            'sync_interval_hours' => ['required', 'integer', 'min:1', 'max:168'],
-            'max_inactive_days'   => ['required', 'integer', 'min:1', 'max:3650'],
+            'sync_interval_hours'  => ['required', 'integer', 'min:1', 'max:168'],
+            'max_inactive_days'    => ['required', 'integer', 'min:1', 'max:3650'],
+            'ou_deaktiviert'       => ['nullable', 'string', 'max:500'],
+            'ou_elternzeit'        => ['nullable', 'string', 'max:500'],
+            'ou_altersteilzeit'    => ['nullable', 'string', 'max:500'],
         ]);
 
         $settings = AdUserSettings::getSingleton();
         $data = $request->only([
             'server', 'port', 'base_dn', 'bind_dn',
             'anonymous_bind', 'use_ssl', 'sync_interval_hours', 'max_inactive_days',
+            'ou_deaktiviert', 'ou_elternzeit', 'ou_altersteilzeit',
         ]);
         $data['anonymous_bind'] = $request->boolean('anonymous_bind');
         $data['use_ssl']        = $request->boolean('use_ssl');

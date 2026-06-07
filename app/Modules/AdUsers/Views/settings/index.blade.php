@@ -119,6 +119,33 @@
                         </div>
                     </div>
 
+                    {{-- Spezielle OUs --}}
+                    <div class="pt-4 border-t border-gray-100 space-y-4">
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-700 mb-1">Spezielle OUs</h4>
+                            <p class="text-xs text-gray-400">Benutzer in diesen OUs werden in der Liste und Detailansicht besonders gekennzeichnet.</p>
+                        </div>
+                        <div>
+                            <x-input-label for="ou_deaktiviert" value="Deaktivierte Benutzer (OU-DN)" />
+                            <x-text-input id="ou_deaktiviert" name="ou_deaktiviert" type="text" class="mt-1 block w-full"
+                                          value="{{ old('ou_deaktiviert', $settings->ou_deaktiviert) }}"
+                                          placeholder="OU=deaktivierte Benutzer,OU=Firma,DC=firma,DC=de" />
+                            <p class="mt-1 text-xs text-gray-400">Benutzer die ausgeschieden sind und auf Löschung warten.</p>
+                        </div>
+                        <div>
+                            <x-input-label for="ou_elternzeit" value="Elternzeit (OU-DN)" />
+                            <x-text-input id="ou_elternzeit" name="ou_elternzeit" type="text" class="mt-1 block w-full"
+                                          value="{{ old('ou_elternzeit', $settings->ou_elternzeit) }}"
+                                          placeholder="OU=Elternzeit,OU=Firma,DC=firma,DC=de" />
+                        </div>
+                        <div>
+                            <x-input-label for="ou_altersteilzeit" value="Altersteilzeit (OU-DN)" />
+                            <x-text-input id="ou_altersteilzeit" name="ou_altersteilzeit" type="text" class="mt-1 block w-full"
+                                          value="{{ old('ou_altersteilzeit', $settings->ou_altersteilzeit) }}"
+                                          placeholder="OU=Altersteilzeit,OU=Firma,DC=firma,DC=de" />
+                        </div>
+                    </div>
+
                     <div class="flex justify-end pt-2">
                         <x-primary-button type="submit">Einstellungen speichern</x-primary-button>
                     </div>

@@ -158,6 +158,12 @@
                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $badge['class'] }}">
                                             {{ $badge['label'] }}
                                         </span>
+                                        @if(isset($specialOuUsers[$user->id]) && isset($specialOus[$specialOuUsers[$user->id]]))
+                                            @php $sou = $specialOus[$specialOuUsers[$user->id]]; @endphp
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ $sou['badge_class'] }}">
+                                                {{ $sou['label'] }}
+                                            </span>
+                                        @endif
                                         @if ($offboardingSams->has($user->samaccountname))
                                             @php $obStatus = $offboardingSams[$user->samaccountname]; @endphp
                                             <a href="{{ route('adusers.offboarding.index', ['search' => $user->samaccountname]) }}"

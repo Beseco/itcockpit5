@@ -67,7 +67,17 @@ class AdUserController extends Controller
         $users     = $query->paginate($perPage)->withQueryString();
         $canDelete = Auth::user()->can('adusers.delete');
 
-        return view('adusers::index', compact('users', 'settings', 'search', 'canDelete', 'offboardingSams', 'perPage'));
+        // Spezielle OUs für Badge-Anzeige in der Liste
+        $specialOus     = $settings->specialOus();
+        $specialOuUsers = [];
+        if (!empty($specialOus)) {
+            foreach ($users as $u) {
+                $key = $settings->specialOuKeyForDn($u->distinguished_name);
+                if ($key) $specialOuUsers[$u->id] = $key;
+            }
+        }
+
+        return view('adusers::index', compact('users', 'settings', 'search', 'canDelete', 'offboardingSams', 'perPage', 'specialOus', 'specialOuUsers'));
     }
 
     public function show(AdUser $user)
@@ -97,7 +107,11 @@ class AdUserController extends Controller
             ->latest()
             ->get();
 
-        return view('adusers::show', compact('user', 'groups', 'onboardingRecords', 'groupChangeLogs'));
+        $settings      = AdUserSettings::getSingleton();
+        $specialOus    = $settings->specialOus();
+        $specialOuKey  = $settings->specialOuKeyForDn($user->distinguished_name);
+
+        return view('adusers::show', compact('user', 'groups', 'onboardingRecords', 'groupChangeLogs', 'specialOus', 'specialOuKey'));
     }
 
     /** AJAX: Benutzersuche für Vergleichs-Picker */

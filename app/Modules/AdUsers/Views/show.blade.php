@@ -29,6 +29,20 @@
 
     @include('adusers::_subnav')
 
+    @if($specialOuKey && isset($specialOus[$specialOuKey]))
+    @php $souInfo = $specialOus[$specialOuKey]; @endphp
+    <div class="border-b {{ $souInfo['banner_class'] }}">
+        <div class="max-w-5xl mx-auto sm:px-6 lg:px-8 px-4 py-2.5 flex items-center gap-2 text-sm font-medium">
+            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Dieser Benutzer befindet sich in der OU „{{ $souInfo['label'] }}"
+            <span class="font-normal text-xs opacity-75 ml-1">({{ $user->distinguished_name }})</span>
+        </div>
+    </div>
+    @endif
+
     @php
         $flags = JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE;
         $changeLogsJs = json_encode(
