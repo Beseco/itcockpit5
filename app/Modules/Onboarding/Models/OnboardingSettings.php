@@ -13,13 +13,17 @@ class OnboardingSettings extends Model
         'ldap_write_bind_dn',
         'ldap_write_bind_password',
         'group_search_base_dn',
+        'exchange_url',
+        'exchange_user',
+        'exchange_password',
+        'exchange_auth',
         'welcome_mail_subject',
         'welcome_mail_body',
         'supervisor_mail_subject',
         'supervisor_mail_body',
     ];
 
-    protected $hidden = ['ldap_write_bind_password'];
+    protected $hidden = ['ldap_write_bind_password', 'exchange_password'];
 
     public static function getSingleton(): self
     {
@@ -39,10 +43,17 @@ class OnboardingSettings extends Model
     public function getLdapWriteBindPasswordAttribute(?string $value): ?string
     {
         if (!$value) return null;
-        try {
-            return Crypt::decryptString($value);
-        } catch (\Exception) {
-            return null;
-        }
+        try { return Crypt::decryptString($value); } catch (\Exception) { return null; }
+    }
+
+    public function setExchangePasswordAttribute(?string $value): void
+    {
+        $this->attributes['exchange_password'] = $value ? Crypt::encryptString($value) : null;
+    }
+
+    public function getExchangePasswordAttribute(?string $value): ?string
+    {
+        if (!$value) return null;
+        try { return Crypt::decryptString($value); } catch (\Exception) { return null; }
     }
 }

@@ -4,6 +4,7 @@ namespace App\Modules\Onboarding\Http\Controllers;
 
 use App\Modules\Onboarding\Models\OnboardingSettings;
 use App\Modules\Onboarding\Services\AdProvisioningService;
+use App\Modules\Onboarding\Services\ExchangeMailboxService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,6 +24,10 @@ class OnboardingSettingsController extends Controller
             'ldap_write_bind_dn'       => ['nullable', 'string', 'max:500'],
             'ldap_write_bind_password' => ['nullable', 'string', 'max:500'],
             'group_search_base_dn'     => ['nullable', 'string', 'max:1000'],
+            'exchange_url'             => ['nullable', 'url', 'max:500'],
+            'exchange_user'            => ['nullable', 'string', 'max:255'],
+            'exchange_password'        => ['nullable', 'string', 'max:500'],
+            'exchange_auth'            => ['nullable', 'in:Negotiate,Basic,Kerberos,NTLM'],
             'welcome_mail_subject'     => ['required', 'string', 'max:255'],
             'welcome_mail_body'        => ['nullable', 'string'],
             'supervisor_mail_subject'  => ['required', 'string', 'max:255'],
@@ -34,6 +39,9 @@ class OnboardingSettingsController extends Controller
         $data = $request->only([
             'ldap_write_bind_dn',
             'group_search_base_dn',
+            'exchange_url',
+            'exchange_user',
+            'exchange_auth',
             'welcome_mail_subject',
             'welcome_mail_body',
             'supervisor_mail_subject',
@@ -42,6 +50,9 @@ class OnboardingSettingsController extends Controller
 
         if ($request->filled('ldap_write_bind_password')) {
             $data['ldap_write_bind_password'] = $request->input('ldap_write_bind_password');
+        }
+        if ($request->filled('exchange_password')) {
+            $data['exchange_password'] = $request->input('exchange_password');
         }
 
         $settings->fill($data)->save();
@@ -55,6 +66,18 @@ class OnboardingSettingsController extends Controller
     {
         $result = $provisioner->testWriteConnection();
         return response()->json($result);
+    }
+
+    /** AJAX: Exchange-Verbindung testen (pwsh vorhanden + PSSession funktioniert) */
+    public function testExchange(): JsonResponse
+    {
+        $exchange = new ExchangeMailboxService();
+        if (!$exchange->isConfigured()) {
+            return response()->json(['ok' => false, 'message' => 'Exchange nicht vollständig konfiguriert (URL, Benutzer und Passwort erforderlich).']);
+        }
+        // Testet nur ob pwsh verfügbar ist + eine Verbindung möglich wäre
+        $result = $exchange->testConnection();
+        return response()->json(['ok' => $result['success'], 'message' => $result['message']]);
     }
 
     /** AJAX: Gruppen in der konfigurierten Suchbasis zählen */

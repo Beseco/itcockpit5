@@ -138,6 +138,79 @@
                     </div>
                 </div>
 
+                {{-- Exchange-Postfach --}}
+                <div class="bg-white shadow-sm sm:rounded-lg p-6">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-2">Exchange – Postfach automatisch anlegen</h3>
+                    <p class="text-xs text-gray-400 mb-4">
+                        Nach dem Anlegen eines AD-Benutzers wird automatisch per
+                        <code class="bg-gray-100 px-1 rounded">pwsh</code> (PowerShell Core) ein Exchange-Postfach aktiviert.
+                        Erfordert <strong>pwsh auf dem Server</strong>
+                        (<a href="https://aka.ms/install-powershell" target="_blank" class="underline text-indigo-600">Installationsanleitung</a>)
+                        und WinRM-Zugriff auf den Exchange-Server.
+                        Alle Felder leer lassen um das Feature zu deaktivieren.
+                    </p>
+                    <div class="space-y-4">
+                        <div>
+                            <x-input-label for="exchange_url" value="PowerShell-Endpoint URL" />
+                            <x-text-input id="exchange_url" name="exchange_url" type="text" class="mt-1 block w-full font-mono text-xs"
+                                          value="{{ old('exchange_url', $settings->exchange_url) }}"
+                                          placeholder="http://mail.lra.lan/PowerShell/" />
+                            <x-input-error :messages="$errors->get('exchange_url')" class="mt-1" />
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <x-input-label for="exchange_user" value="Benutzername (UPN oder DOMAIN\user)" />
+                                <x-text-input id="exchange_user" name="exchange_user" type="text" class="mt-1 block w-full font-mono text-xs"
+                                              value="{{ old('exchange_user', $settings->exchange_user) }}"
+                                              placeholder="admin@lra.lan oder LRA\admin" autocomplete="off" />
+                                <x-input-error :messages="$errors->get('exchange_user')" class="mt-1" />
+                            </div>
+                            <div>
+                                <x-input-label for="exchange_auth" value="Authentifizierungsmethode" />
+                                <select id="exchange_auth" name="exchange_auth"
+                                        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                    @foreach(['Negotiate' => 'Negotiate (empfohlen)', 'Basic' => 'Basic', 'Kerberos' => 'Kerberos', 'NTLM' => 'NTLM'] as $val => $label)
+                                        <option value="{{ $val }}" @selected(old('exchange_auth', $settings->exchange_auth ?? 'Negotiate') === $val)>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <x-input-label for="exchange_password" value="Passwort" />
+                            <x-text-input id="exchange_password" name="exchange_password" type="password" class="mt-1 block w-full"
+                                          placeholder="{{ $settings->exchange_user ? '(gespeichert – leer lassen zum Beibehalten)' : 'Passwort eingeben' }}"
+                                          autocomplete="new-password" />
+                            <x-input-error :messages="$errors->get('exchange_password')" class="mt-1" />
+                        </div>
+
+                        {{-- Exchange-Verbindungstest --}}
+                        <div x-data="{
+                                testing: false, result: null, ok: null,
+                                async test() {
+                                    this.testing = true; this.result = null;
+                                    try {
+                                        const r = await fetch('{{ route('onboarding.settings.test-exchange') }}', {
+                                            method: 'POST',
+                                            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' }
+                                        });
+                                        const j = await r.json();
+                                        this.ok = j.ok; this.result = j.message;
+                                    } catch(e) { this.ok = false; this.result = e.toString(); }
+                                    finally { this.testing = false; }
+                                }
+                             }">
+                            <div class="flex items-center gap-3 flex-wrap">
+                                <button type="button" @click="test()" :disabled="testing"
+                                        class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+                                    <span x-text="testing ? 'Teste …' : 'Verbindung testen'">Verbindung testen</span>
+                                </button>
+                                <span x-show="result !== null" :class="ok ? 'text-green-700' : 'text-red-700'"
+                                      class="text-xs" x-text="result" x-cloak></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- E-Mail-Vorlagen --}}
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-sm font-semibold text-gray-700 mb-2">E-Mail-Vorlagen (global)</h3>

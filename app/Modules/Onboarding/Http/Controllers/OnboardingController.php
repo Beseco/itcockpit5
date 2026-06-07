@@ -11,6 +11,7 @@ use App\Modules\Onboarding\Models\OnboardingRecord;
 use App\Modules\Onboarding\Models\OnboardingSettings;
 use App\Modules\Onboarding\Models\OnboardingVorlage;
 use App\Modules\Onboarding\Services\AdProvisioningService;
+use App\Modules\Onboarding\Services\ExchangeMailboxService;
 use App\Modules\Onboarding\Services\PhoneNumberService;
 use App\Modules\Onboarding\Services\UsernameGeneratorService;
 use App\Services\PasswordGeneratorService;
@@ -132,6 +133,17 @@ class OnboardingController extends Controller
             // Mails nur versenden wenn Passwort gesetzt werden konnte
             if (!$result['password_warning']) {
                 $this->sendMails($record, $vorlage, $password);
+            }
+
+            // Exchange-Postfach aktivieren (nicht-kritisch, schlägt lautlos fehl)
+            $exchange = new ExchangeMailboxService();
+            if ($exchange->isConfigured()) {
+                $mbResult = $exchange->enableMailbox($record->samaccountname);
+                $record->update([
+                    'mailbox_status'     => $mbResult['success'] ? 'aktiviert' : 'fehler',
+                    'mailbox_enabled_at' => $mbResult['success'] ? now() : null,
+                    'mailbox_error'      => $mbResult['success'] ? null : ($mbResult['error'] ?: $mbResult['output']),
+                ]);
             }
 
         } catch (\Throwable $e) {

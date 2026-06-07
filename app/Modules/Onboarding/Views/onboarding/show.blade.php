@@ -132,6 +132,23 @@
                             <span class="text-xs text-gray-400">({{ $record->supervisor_mail_sent_at->format('H:i') }})</span>
                         @endif
                     </li>
+                    @if($record->mailbox_status)
+                    <li class="flex items-start gap-2">
+                        @if($record->mailbox_status === 'aktiviert')
+                            <span class="text-green-500">✓</span>
+                            <span>Exchange-Postfach aktiviert
+                                <span class="text-xs text-gray-400">({{ $record->mailbox_enabled_at?->format('H:i') }})</span>
+                            </span>
+                        @else
+                            <span class="text-red-400">✗</span>
+                            <span>Exchange-Postfach konnte nicht aktiviert werden
+                                @if($record->mailbox_error)
+                                    <span class="block text-xs text-red-600 mt-0.5 font-mono">{{ $record->mailbox_error }}</span>
+                                @endif
+                            </span>
+                        @endif
+                    </li>
+                    @endif
                 </ul>
             </div>
 

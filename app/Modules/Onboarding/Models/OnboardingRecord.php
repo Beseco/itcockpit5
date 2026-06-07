@@ -16,12 +16,14 @@ class OnboardingRecord extends Model
         'rufnummer', 'ad_attributes_snapshot',
         'status', 'error_message',
         'welcome_mail_sent_at', 'supervisor_mail_sent_at',
+        'mailbox_status', 'mailbox_enabled_at', 'mailbox_error',
     ];
 
     protected $casts = [
         'ad_attributes_snapshot'  => 'array',
         'welcome_mail_sent_at'    => 'datetime',
         'supervisor_mail_sent_at' => 'datetime',
+        'mailbox_enabled_at'      => 'datetime',
     ];
 
     public function vorlage(): BelongsTo
