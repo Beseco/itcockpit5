@@ -228,9 +228,9 @@
                         :class="activeTab === 'cockpit' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-800'"
                         class="px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition whitespace-nowrap">
                     IT Cockpit
-                    @if($onboardingRecords->isNotEmpty())
-                        <span class="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">{{ $onboardingRecords->count() }}</span>
-                    @endif
+                    <span x-show="{{ $onboardingRecords->count() }} > 0 || changeLogs.length > 0"
+                          x-text="{{ $onboardingRecords->count() }} + changeLogs.length"
+                          class="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700"></span>
                 </button>
                 <button @click="switchTab('vergleich')"
                         :class="activeTab === 'vergleich' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-800'"
@@ -456,74 +456,6 @@
                     </div>
                 </div>
 
-                {{-- Änderungsprotokoll --}}
-                <div class="bg-white shadow-sm rounded-lg overflow-hidden">
-                    <div class="px-5 py-3 border-b border-gray-100 bg-gray-50">
-                        <h4 class="text-sm font-semibold text-gray-700">
-                            Änderungsprotokoll
-                            <span class="ml-1 text-gray-400 font-normal" x-text="'(' + changeLogs.length + ' Einträge)'"></span>
-                        </h4>
-                    </div>
-
-                    <div x-show="changeLogs.length === 0" class="p-5 text-sm text-gray-400">
-                        Noch keine Gruppenänderungen über IT Cockpit vorgenommen.
-                    </div>
-
-                    <div x-show="changeLogs.length > 0" class="overflow-x-auto">
-                        <table class="min-w-full text-sm divide-y divide-gray-100">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Zeitpunkt</th>
-                                    <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Aktion</th>
-                                    <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Gruppe</th>
-                                    <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Von</th>
-                                    <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Status</th>
-                                    <th class="px-4 py-2.5"></th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-50">
-                                <template x-for="log in changeLogs" :key="log.id">
-                                    <tr :class="log.is_reverted ? 'opacity-60' : ''">
-                                        <td class="px-4 py-2.5 text-xs text-gray-500 whitespace-nowrap" x-text="log.performed_at"></td>
-                                        <td class="px-4 py-2.5">
-                                            <span :class="log.action === 'add'
-                                                    ? 'bg-green-100 text-green-700'
-                                                    : 'bg-red-100 text-red-700'"
-                                                  class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium"
-                                                  x-text="log.action_label"></span>
-                                        </td>
-                                        <td class="px-4 py-2.5">
-                                            <div class="text-xs font-medium text-gray-800" x-text="log.group_name"></div>
-                                            <div class="text-xs text-gray-400 break-all" x-text="log.group_dn"></div>
-                                        </td>
-                                        <td class="px-4 py-2.5 text-xs text-gray-500" x-text="log.performed_by"></td>
-                                        <td class="px-4 py-2.5">
-                                            <span x-show="!log.is_reverted"
-                                                  class="inline-flex px-2 py-0.5 rounded-full text-xs bg-indigo-50 text-indigo-600">
-                                                Aktiv
-                                            </span>
-                                            <span x-show="log.is_reverted" class="text-xs text-gray-400">
-                                                Rückgängig (<span x-text="log.reverted_at"></span>)
-                                            </span>
-                                        </td>
-                                        <td class="px-4 py-2.5 text-right">
-                                            @can('module.adusers.config')
-                                            <button x-show="!log.is_reverted"
-                                                    @click="revertChange(log.id)"
-                                                    :disabled="groupActionLoading === 'revert:' + log.id"
-                                                    class="inline-flex items-center gap-1 px-2 py-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded hover:bg-amber-100 disabled:opacity-40 transition whitespace-nowrap">
-                                                <span x-show="groupActionLoading !== 'revert:' + log.id">↩ Rückgängig</span>
-                                                <span x-show="groupActionLoading === 'revert:' + log.id">Wird zurückgesetzt …</span>
-                                            </button>
-                                            @endcan
-                                        </td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
             </div>
 
             {{-- ══════════════ TAB: IT COCKPIT ══════════════ --}}
@@ -639,6 +571,70 @@
                     </div>
                     @endforeach
                 @endif
+
+                {{-- Gruppenänderungs-Protokoll --}}
+                <div class="bg-white shadow-sm rounded-lg overflow-hidden">
+                    <div class="px-5 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                        <h4 class="text-sm font-semibold text-gray-700">
+                            Gruppenänderungen
+                        </h4>
+                        <span class="text-xs text-gray-400" x-text="changeLogs.length + ' Einträge'"></span>
+                    </div>
+
+                    <div x-show="changeLogs.length === 0" class="p-5 text-sm text-gray-400">
+                        Noch keine Gruppenänderungen über IT Cockpit vorgenommen.
+                    </div>
+
+                    <div x-show="changeLogs.length > 0" class="overflow-x-auto">
+                        <table class="min-w-full text-sm divide-y divide-gray-100">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Zeitpunkt</th>
+                                    <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Aktion</th>
+                                    <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Gruppe</th>
+                                    <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Von</th>
+                                    <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Status</th>
+                                    <th class="px-4 py-2.5"></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-50">
+                                <template x-for="log in changeLogs" :key="log.id">
+                                    <tr :class="log.is_reverted ? 'opacity-50' : ''">
+                                        <td class="px-4 py-2.5 text-xs text-gray-500 whitespace-nowrap" x-text="log.performed_at"></td>
+                                        <td class="px-4 py-2.5">
+                                            <span :class="log.action === 'add' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+                                                  class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium"
+                                                  x-text="log.action_label"></span>
+                                        </td>
+                                        <td class="px-4 py-2.5">
+                                            <div class="text-xs font-medium text-gray-800" x-text="log.group_name"></div>
+                                            <div class="text-xs text-gray-400 break-all" x-text="log.group_dn"></div>
+                                        </td>
+                                        <td class="px-4 py-2.5 text-xs text-gray-500 whitespace-nowrap" x-text="log.performed_by"></td>
+                                        <td class="px-4 py-2.5">
+                                            <span x-show="!log.is_reverted" class="text-xs text-indigo-600">Aktiv</span>
+                                            <span x-show="log.is_reverted" class="text-xs text-gray-400">
+                                                Rückgängig <span x-text="log.reverted_at ? '(' + log.reverted_at + ')' : ''"></span>
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-2.5 text-right">
+                                            @can('module.adusers.config')
+                                            <button x-show="!log.is_reverted"
+                                                    @click="revertChange(log.id)"
+                                                    :disabled="groupActionLoading === 'revert:' + log.id"
+                                                    class="inline-flex items-center gap-1 px-2 py-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded hover:bg-amber-100 disabled:opacity-40 transition whitespace-nowrap">
+                                                <span x-show="groupActionLoading !== 'revert:' + log.id">↩ Rückgängig</span>
+                                                <span x-show="groupActionLoading === 'revert:' + log.id">Wird zurückgesetzt …</span>
+                                            </button>
+                                            @endcan
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
 
             {{-- ══════════════ TAB: VERGLEICHEN ══════════════ --}}
