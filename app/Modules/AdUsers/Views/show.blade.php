@@ -29,28 +29,36 @@
 
     @include('adusers::_subnav')
 
-    @php
-        $groupChangeLogsJson = $groupChangeLogs->map(fn($l) => [
-            'id'           => $l->id,
-            'action'       => $l->action,
-            'action_label' => $l->actionLabel(),
-            'group_name'   => $l->group_name,
-            'group_dn'     => $l->group_dn,
-            'performed_by' => $l->performedBy?->name ?? 'Unbekannt',
-            'performed_at' => $l->created_at->format('d.m.Y H:i'),
-            'reverted_at'  => $l->reverted_at?->format('d.m.Y H:i'),
-            'reverted_by'  => $l->revertedBy?->name,
-            'is_reverted'  => $l->isReverted(),
-        ])->values()->toJson(JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT);
-    @endphp
-
-    <div class="py-6"
-         x-data="{
+    {{-- Seitendaten als JS-Variablen – JSON ist in script-Tags sicher, nicht in HTML-Attributen --}}
+    <script>
+    window._adUserGroups     = @json($groups);
+    window._adUserChangeLogs = @json($groupChangeLogs->map(fn($l) => [
+        'id'           => $l->id,
+        'action'       => $l->action,
+        'action_label' => $l->actionLabel(),
+        'group_name'   => $l->group_name,
+        'group_dn'     => $l->group_dn,
+        'performed_by' => $l->performedBy?->name ?? 'Unbekannt',
+        'performed_at' => $l->created_at->format('d.m.Y H:i'),
+        'reverted_at'  => $l->reverted_at?->format('d.m.Y H:i'),
+        'reverted_by'  => $l->revertedBy?->name,
+        'is_reverted'  => $l->isReverted(),
+    ])->values());
+    window._adUserRoutes = {
+        groupSearch:     '{{ route('adusers.groups.search') }}',
+        groupAdd:        '{{ route('adusers.groups.add', $user) }}',
+        groupRemove:     '{{ route('adusers.groups.remove', $user) }}',
+        groupRevertBase: '{{ url('adusers/show/' . $user->id . '/groups/revert') }}',
+        compareUser:     '{{ route('adusers.compare-user', [$user, '__TARGET__']) }}',
+        compareOu:       '{{ route('adusers.compare-ou', $user) }}',
+        userSearch:      '{{ route('adusers.search-json') }}',
+    };
+    function adUserShowData() {
+        return {
             activeTab: window.location.hash.replace('#','') || 'uebersicht',
 
-            // ── Gruppen-Management ──
-            groups: @json($groups),
-            changeLogs: {!! $groupChangeLogsJson !!},
+            groups:     window._adUserGroups,
+            changeLogs: window._adUserChangeLogs,
             addSearchQuery: '',
             addSearchResults: [],
             addSearchLoading: false,
@@ -58,91 +66,6 @@
             groupError: null,
             groupSuccess: null,
 
-            async searchGroupsToAdd(q) {
-                if (q.length < 2) { this.addSearchResults = []; return; }
-                this.addSearchLoading = true;
-                const r = await fetch('{{ route('adusers.groups.search') }}?q=' + encodeURIComponent(q));
-                if (r.ok) this.addSearchResults = await r.json();
-                this.addSearchLoading = false;
-            },
-
-            async addGroup(groupDn, groupName) {
-                this.groupActionLoading = 'add:' + groupDn;
-                this.groupError = null;
-                const r = await fetch('{{ route('adusers.groups.add', $user) }}', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content },
-                    body: JSON.stringify({ group_dn: groupDn, group_name: groupName })
-                });
-                const data = await r.json();
-                if (r.ok && data.success) {
-                    this.groups.push({ dn: groupDn, name: groupName });
-                    this.groups.sort((a,b) => a.name.localeCompare(b.name));
-                    this.changeLogs.unshift(data.log);
-                    this.addSearchQuery = '';
-                    this.addSearchResults = [];
-                    this.groupSuccess = 'Gruppe «' + groupName + '» wurde hinzugefügt.';
-                    setTimeout(() => this.groupSuccess = null, 4000);
-                } else {
-                    this.groupError = data.error ?? 'Unbekannter Fehler';
-                }
-                this.groupActionLoading = null;
-            },
-
-            async removeGroup(groupDn, groupName) {
-                if (!confirm('Benutzer wirklich aus «' + groupName + '» entfernen?')) return;
-                this.groupActionLoading = 'remove:' + groupDn;
-                this.groupError = null;
-                const r = await fetch('{{ route('adusers.groups.remove', $user) }}', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content },
-                    body: JSON.stringify({ group_dn: groupDn, group_name: groupName })
-                });
-                const data = await r.json();
-                if (r.ok && data.success) {
-                    this.groups = this.groups.filter(g => g.dn.toLowerCase() !== groupDn.toLowerCase());
-                    this.changeLogs.unshift(data.log);
-                    this.groupSuccess = 'Gruppe «' + groupName + '» wurde entfernt.';
-                    setTimeout(() => this.groupSuccess = null, 4000);
-                } else {
-                    this.groupError = data.error ?? 'Unbekannter Fehler';
-                }
-                this.groupActionLoading = null;
-            },
-
-            async revertChange(logId) {
-                const log = this.changeLogs.find(l => l.id === logId);
-                if (!log) return;
-                const verb = log.action === 'add' ? 'Hinzufügen rückgängig machen (Gruppe wird entfernt)' : 'Entfernen rückgängig machen (Gruppe wird wieder hinzugefügt)';
-                if (!confirm(verb + '?\n«' + log.group_name + '»')) return;
-                this.groupActionLoading = 'revert:' + logId;
-                this.groupError = null;
-                const r = await fetch('{{ url('adusers/show/' . $user->id . '/groups/revert') }}/' + logId, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content },
-                    body: JSON.stringify({})
-                });
-                const data = await r.json();
-                if (r.ok && data.success) {
-                    log.is_reverted = true;
-                    log.reverted_at = data.reverted_at;
-                    log.reverted_by = data.reverted_by_name;
-                    // Gruppen-Liste anpassen
-                    if (data.group_action === 'remove') {
-                        this.groups = this.groups.filter(g => g.dn.toLowerCase() !== log.group_dn.toLowerCase());
-                    } else {
-                        this.groups.push({ dn: log.group_dn, name: log.group_name });
-                        this.groups.sort((a,b) => a.name.localeCompare(b.name));
-                    }
-                    this.groupSuccess = 'Änderung wurde rückgängig gemacht.';
-                    setTimeout(() => this.groupSuccess = null, 4000);
-                } else {
-                    this.groupError = data.error ?? 'Unbekannter Fehler';
-                }
-                this.groupActionLoading = null;
-            },
-
-            // ── Vergleich ──
             compareLoading: false,
             compareResult: null,
             compareSearch: '',
@@ -156,11 +79,96 @@
                 window.location.hash = tab;
             },
 
+            async searchGroupsToAdd(q) {
+                if (q.length < 2) { this.addSearchResults = []; return; }
+                this.addSearchLoading = true;
+                const r = await fetch(window._adUserRoutes.groupSearch + '?q=' + encodeURIComponent(q));
+                if (r.ok) this.addSearchResults = await r.json();
+                this.addSearchLoading = false;
+            },
+
+            async addGroup(groupDn, groupName) {
+                this.groupActionLoading = 'add:' + groupDn;
+                this.groupError = null;
+                const r = await fetch(window._adUserRoutes.groupAdd, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content },
+                    body: JSON.stringify({ group_dn: groupDn, group_name: groupName })
+                });
+                const data = await r.json();
+                if (r.ok && data.success) {
+                    this.groups.push({ dn: groupDn, name: groupName });
+                    this.groups.sort((a, b) => a.name.localeCompare(b.name));
+                    this.changeLogs.unshift(data.log);
+                    this.addSearchQuery = '';
+                    this.addSearchResults = [];
+                    this.groupSuccess = 'Gruppe wurde hinzugefügt.';
+                    setTimeout(() => this.groupSuccess = null, 4000);
+                } else {
+                    this.groupError = data.error ?? 'Unbekannter Fehler';
+                }
+                this.groupActionLoading = null;
+            },
+
+            async removeGroup(groupDn, groupName) {
+                if (!confirm('Benutzer wirklich aus dieser Gruppe entfernen?\n' + groupName)) return;
+                this.groupActionLoading = 'remove:' + groupDn;
+                this.groupError = null;
+                const r = await fetch(window._adUserRoutes.groupRemove, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content },
+                    body: JSON.stringify({ group_dn: groupDn, group_name: groupName })
+                });
+                const data = await r.json();
+                if (r.ok && data.success) {
+                    this.groups = this.groups.filter(g => g.dn.toLowerCase() !== groupDn.toLowerCase());
+                    this.changeLogs.unshift(data.log);
+                    this.groupSuccess = 'Gruppe wurde entfernt.';
+                    setTimeout(() => this.groupSuccess = null, 4000);
+                } else {
+                    this.groupError = data.error ?? 'Unbekannter Fehler';
+                }
+                this.groupActionLoading = null;
+            },
+
+            async revertChange(logId) {
+                const log = this.changeLogs.find(l => l.id === logId);
+                if (!log) return;
+                const verb = log.action === 'add'
+                    ? 'Hinzufügen rückgängig machen (Gruppe wird entfernt)'
+                    : 'Entfernen rückgängig machen (Gruppe wird wieder hinzugefügt)';
+                if (!confirm(verb + '?\n' + log.group_name)) return;
+                this.groupActionLoading = 'revert:' + logId;
+                this.groupError = null;
+                const r = await fetch(window._adUserRoutes.groupRevertBase + '/' + logId, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content },
+                    body: JSON.stringify({})
+                });
+                const data = await r.json();
+                if (r.ok && data.success) {
+                    log.is_reverted  = true;
+                    log.reverted_at  = data.reverted_at;
+                    log.reverted_by  = data.reverted_by_name;
+                    if (data.group_action === 'remove') {
+                        this.groups = this.groups.filter(g => g.dn.toLowerCase() !== log.group_dn.toLowerCase());
+                    } else {
+                        this.groups.push({ dn: log.group_dn, name: log.group_name });
+                        this.groups.sort((a, b) => a.name.localeCompare(b.name));
+                    }
+                    this.groupSuccess = 'Änderung wurde rückgängig gemacht.';
+                    setTimeout(() => this.groupSuccess = null, 4000);
+                } else {
+                    this.groupError = data.error ?? 'Unbekannter Fehler';
+                }
+                this.groupActionLoading = null;
+            },
+
             async compareWith(targetId) {
                 this.compareLoading = true;
                 this.compareResult = null;
                 this.ouResult = null;
-                const r = await fetch('{{ route('adusers.compare-user', [$user, '__TARGET__']) }}'.replace('__TARGET__', targetId));
+                const r = await fetch(window._adUserRoutes.compareUser.replace('__TARGET__', targetId));
                 if (r.ok) this.compareResult = await r.json();
                 this.compareLoading = false;
                 this.compareSearch = '';
@@ -171,11 +179,23 @@
                 this.ouLoading = true;
                 this.compareResult = null;
                 this.ouResult = null;
-                const r = await fetch('{{ route('adusers.compare-ou', $user) }}');
+                const r = await fetch(window._adUserRoutes.compareOu);
                 if (r.ok) this.ouResult = await r.json();
                 this.ouLoading = false;
-            }
-         }">
+            },
+
+            async searchUsersForCompare(q) {
+                if (q.length < 2) { this.compareSearchResults = []; return; }
+                this.compareSearchLoading = true;
+                const r = await fetch(window._adUserRoutes.userSearch + '?q=' + encodeURIComponent(q));
+                if (r.ok) this.compareSearchResults = await r.json();
+                this.compareSearchLoading = false;
+            },
+        };
+    }
+    </script>
+
+    <div class="py-6" x-data="adUserShowData()">
 
         <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
 
@@ -622,15 +642,7 @@
                         <div class="flex-1 min-w-[220px] relative" x-data>
                             <input type="text"
                                    x-model="compareSearch"
-                                   @input.debounce.300ms="
-                                       if (compareSearch.length >= 2) {
-                                           compareSearchLoading = true;
-                                           fetch('/adusers/search-json?q=' + encodeURIComponent(compareSearch))
-                                               .then(r => r.json())
-                                               .then(d => { compareSearchResults = d; compareSearchLoading = false; })
-                                               .catch(() => { compareSearchLoading = false; });
-                                       } else { compareSearchResults = []; }
-                                   "
+                                   @input.debounce.300ms="searchUsersForCompare(compareSearch)"
                                    placeholder="Benutzer suchen (min. 2 Zeichen) …"
                                    class="w-full border-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 pr-8">
                             <div x-show="compareSearchLoading" class="absolute right-2 top-2">
