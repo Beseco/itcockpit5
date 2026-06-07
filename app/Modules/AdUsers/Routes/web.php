@@ -1,6 +1,7 @@
 <?php
 
 use App\Modules\AdUsers\Http\Controllers\AdUserController;
+use App\Modules\AdUsers\Http\Controllers\AdUserManageController;
 use App\Modules\AdUsers\Http\Controllers\AdUserSettingsController;
 use App\Modules\AdUsers\Http\Controllers\OffboardingController;
 use Illuminate\Support\Facades\Route;
@@ -25,6 +26,14 @@ Route::middleware(['auth', 'module.permission:adusers,view'])->group(function ()
     Route::post('/offboarding/{record}/upload',             [OffboardingController::class, 'upload'])->name('offboarding.upload');
     Route::get('/offboarding/{record}/download/{type}',     [OffboardingController::class, 'download'])->name('offboarding.download');
     Route::delete('/offboarding/{record}',                  [OffboardingController::class, 'destroy'])->name('offboarding.destroy');
+});
+
+Route::middleware(['auth', 'module.permission:adusers,config'])->group(function () {
+    // Gruppenmanagement (schreibende LDAP-Operationen)
+    Route::get('/groups/search',                                [AdUserManageController::class, 'searchGroups'])->name('groups.search');
+    Route::post('/show/{user}/groups/add',                      [AdUserManageController::class, 'addGroup'])->name('groups.add');
+    Route::post('/show/{user}/groups/remove',                   [AdUserManageController::class, 'removeGroup'])->name('groups.remove');
+    Route::post('/show/{user}/groups/revert/{log}',             [AdUserManageController::class, 'revertChange'])->name('groups.revert');
 });
 
 Route::middleware(['auth', 'module.permission:adusers,config'])->group(function () {

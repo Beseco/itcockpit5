@@ -3,6 +3,7 @@
 namespace App\Modules\AdUsers\Http\Controllers;
 
 use App\Modules\AdUsers\Models\AdUser;
+use App\Modules\AdUsers\Models\AdUserGroupChangeLog;
 use App\Modules\AdUsers\Models\AdUserSettings;
 use App\Modules\AdUsers\Models\OffboardingRecord;
 use App\Modules\Onboarding\Models\OnboardingRecord;
@@ -69,7 +70,6 @@ class AdUserController extends Controller
     {
         $groups = $this->extractGroups($user->raw_data ?? []);
 
-        // Onboarding-Verlauf: alle Records mit diesem samaccountname
         $onboardingRecords = class_exists(OnboardingRecord::class)
             ? OnboardingRecord::with(['vorlage', 'createdBy'])
                 ->where('samaccountname', $user->samaccountname)
@@ -77,7 +77,12 @@ class AdUserController extends Controller
                 ->get()
             : collect();
 
-        return view('adusers::show', compact('user', 'groups', 'onboardingRecords'));
+        $groupChangeLogs = AdUserGroupChangeLog::with(['performedBy', 'revertedBy'])
+            ->where('samaccountname', $user->samaccountname)
+            ->latest()
+            ->get();
+
+        return view('adusers::show', compact('user', 'groups', 'onboardingRecords', 'groupChangeLogs'));
     }
 
     /** AJAX: Benutzersuche für Vergleichs-Picker */

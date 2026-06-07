@@ -133,6 +133,48 @@ class AdProvisioningService
         }
     }
 
+    // ─── Public write operations (für AdUserManageController) ─────────────────
+
+    /** Fügt einen Benutzer zu einer AD-Gruppe hinzu. */
+    public function addUserToGroup(string $userDn, string $groupDn): void
+    {
+        $adSettings = AdUserSettings::getSingleton();
+        $obSettings = OnboardingSettings::getSingleton();
+        $conn       = $this->connect($adSettings);
+        $this->bind($conn, $adSettings, $obSettings);
+
+        if (!@ldap_mod_add($conn, $groupDn, ['member' => [$userDn]])) {
+            $err = ldap_error($conn);
+            $diagMsg = '';
+            @ldap_get_option($conn, LDAP_OPT_DIAGNOSTIC_MESSAGE, $diagMsg);
+            ldap_unbind($conn);
+            $detail = $diagMsg ? " – Details: {$diagMsg}" : '';
+            throw new \RuntimeException("Benutzer konnte nicht zur Gruppe hinzugefügt werden: {$err}{$detail}");
+        }
+
+        ldap_unbind($conn);
+    }
+
+    /** Entfernt einen Benutzer aus einer AD-Gruppe. */
+    public function removeUserFromGroup(string $userDn, string $groupDn): void
+    {
+        $adSettings = AdUserSettings::getSingleton();
+        $obSettings = OnboardingSettings::getSingleton();
+        $conn       = $this->connect($adSettings);
+        $this->bind($conn, $adSettings, $obSettings);
+
+        if (!@ldap_mod_del($conn, $groupDn, ['member' => [$userDn]])) {
+            $err = ldap_error($conn);
+            $diagMsg = '';
+            @ldap_get_option($conn, LDAP_OPT_DIAGNOSTIC_MESSAGE, $diagMsg);
+            ldap_unbind($conn);
+            $detail = $diagMsg ? " – Details: {$diagMsg}" : '';
+            throw new \RuntimeException("Benutzer konnte nicht aus der Gruppe entfernt werden: {$err}{$detail}");
+        }
+
+        ldap_unbind($conn);
+    }
+
     /** Sucht AD-Gruppen (Sicherheits- und Verteilergruppen) anhand eines Suchbegriffs. */
     public function searchGroups(string $query): array
     {

@@ -32,6 +32,113 @@
     <div class="py-6"
          x-data="{
             activeTab: window.location.hash.replace('#','') || 'uebersicht',
+
+            // ── Gruppen-Management ──
+            groups: @json($groups),
+            changeLogs: @json($groupChangeLogs->map(fn($l) => [
+                'id'           => $l->id,
+                'action'       => $l->action,
+                'action_label' => $l->actionLabel(),
+                'group_name'   => $l->group_name,
+                'group_dn'     => $l->group_dn,
+                'performed_by' => $l->performedBy?->name ?? 'Unbekannt',
+                'performed_at' => $l->created_at->format('d.m.Y H:i'),
+                'reverted_at'  => $l->reverted_at?->format('d.m.Y H:i'),
+                'reverted_by'  => $l->revertedBy?->name,
+                'is_reverted'  => $l->isReverted(),
+            ])),
+            addSearchQuery: '',
+            addSearchResults: [],
+            addSearchLoading: false,
+            groupActionLoading: null,
+            groupError: null,
+            groupSuccess: null,
+
+            async searchGroupsToAdd(q) {
+                if (q.length < 2) { this.addSearchResults = []; return; }
+                this.addSearchLoading = true;
+                const r = await fetch('{{ route('adusers.groups.search') }}?q=' + encodeURIComponent(q));
+                if (r.ok) this.addSearchResults = await r.json();
+                this.addSearchLoading = false;
+            },
+
+            async addGroup(groupDn, groupName) {
+                this.groupActionLoading = 'add:' + groupDn;
+                this.groupError = null;
+                const r = await fetch('{{ route('adusers.groups.add', $user) }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content },
+                    body: JSON.stringify({ group_dn: groupDn, group_name: groupName })
+                });
+                const data = await r.json();
+                if (r.ok && data.success) {
+                    this.groups.push({ dn: groupDn, name: groupName });
+                    this.groups.sort((a,b) => a.name.localeCompare(b.name));
+                    this.changeLogs.unshift(data.log);
+                    this.addSearchQuery = '';
+                    this.addSearchResults = [];
+                    this.groupSuccess = 'Gruppe «' + groupName + '» wurde hinzugefügt.';
+                    setTimeout(() => this.groupSuccess = null, 4000);
+                } else {
+                    this.groupError = data.error ?? 'Unbekannter Fehler';
+                }
+                this.groupActionLoading = null;
+            },
+
+            async removeGroup(groupDn, groupName) {
+                if (!confirm('Benutzer wirklich aus «' + groupName + '» entfernen?')) return;
+                this.groupActionLoading = 'remove:' + groupDn;
+                this.groupError = null;
+                const r = await fetch('{{ route('adusers.groups.remove', $user) }}', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content },
+                    body: JSON.stringify({ group_dn: groupDn, group_name: groupName })
+                });
+                const data = await r.json();
+                if (r.ok && data.success) {
+                    this.groups = this.groups.filter(g => g.dn.toLowerCase() !== groupDn.toLowerCase());
+                    this.changeLogs.unshift(data.log);
+                    this.groupSuccess = 'Gruppe «' + groupName + '» wurde entfernt.';
+                    setTimeout(() => this.groupSuccess = null, 4000);
+                } else {
+                    this.groupError = data.error ?? 'Unbekannter Fehler';
+                }
+                this.groupActionLoading = null;
+            },
+
+            async revertChange(logId) {
+                const log = this.changeLogs.find(l => l.id === logId);
+                if (!log) return;
+                const verb = log.action === 'add' ? 'Hinzufügen rückgängig machen (Gruppe wird entfernt)' : 'Entfernen rückgängig machen (Gruppe wird wieder hinzugefügt)';
+                if (!confirm(verb + '?\n«' + log.group_name + '»')) return;
+                this.groupActionLoading = 'revert:' + logId;
+                this.groupError = null;
+                const r = await fetch('{{ url('adusers/show/' . $user->id . '/groups/revert') }}/' + logId, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content },
+                    body: JSON.stringify({})
+                });
+                const data = await r.json();
+                if (r.ok && data.success) {
+                    log.is_reverted = true;
+                    log.reverted_at = data.reverted_at;
+                    log.reverted_by = data.reverted_by_name;
+                    // Gruppen-Liste anpassen
+                    if (data.group_action === 'remove') {
+                        this.groups = this.groups.filter(g => g.dn.toLowerCase() !== log.group_dn.toLowerCase());
+                    } else {
+                        this.groups.push({ dn: log.group_dn, name: log.group_name });
+                        this.groups.sort((a,b) => a.name.localeCompare(b.name));
+                    }
+                    this.groupSuccess = 'Änderung wurde rückgängig gemacht.';
+                    setTimeout(() => this.groupSuccess = null, 4000);
+                } else {
+                    this.groupError = data.error ?? 'Unbekannter Fehler';
+                }
+                this.groupActionLoading = null;
+            },
+
+            // ── Vergleich ──
             compareLoading: false,
             compareResult: null,
             compareSearch: '',
@@ -43,19 +150,6 @@
             switchTab(tab) {
                 this.activeTab = tab;
                 window.location.hash = tab;
-            },
-
-            async searchUsers(q) {
-                if (q.length < 2) { this.compareSearchResults = []; return; }
-                this.compareSearchLoading = true;
-                const r = await fetch('{{ route('adusers.index') }}?search=' + encodeURIComponent(q) + '&per_page=10', {
-                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
-                // Parse HTML ist unhandlich – stattdessen eigener AJAX-Endpunkt via inline search
-                // Wir nutzen den bereits geladenen users-Index nicht, daher eigene Route
-                const res = await fetch('/adusers-search?q=' + encodeURIComponent(q));
-                if (res.ok) this.compareSearchResults = await res.json();
-                this.compareSearchLoading = false;
             },
 
             async compareWith(targetId) {
@@ -92,9 +186,9 @@
                         :class="activeTab === 'gruppen' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-800'"
                         class="px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition whitespace-nowrap">
                     Gruppen
-                    @if(count($groups) > 0)
-                        <span class="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">{{ count($groups) }}</span>
-                    @endif
+                    <span x-show="groups.length > 0"
+                          x-text="groups.length"
+                          class="ml-1 inline-flex items-center justify-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700"></span>
                 </button>
                 <button @click="switchTab('cockpit')"
                         :class="activeTab === 'cockpit' ? 'border-indigo-600 text-indigo-700 bg-white' : 'border-transparent text-gray-500 hover:text-gray-800'"
@@ -223,38 +317,179 @@
 
             {{-- ══════════════ TAB: GRUPPEN ══════════════ --}}
             <div x-show="activeTab === 'gruppen'" class="space-y-4">
-                <div class="bg-white shadow-sm rounded-lg p-6">
-                    <h3 class="text-base font-semibold text-gray-800 mb-4">
-                        Gruppenmitgliedschaften
-                        <span class="ml-2 text-sm font-normal text-gray-400">{{ count($groups) }} Gruppen</span>
-                    </h3>
 
-                    @if(empty($groups))
-                        <p class="text-sm text-gray-400">
-                            @if(!empty($user->raw_data['memberof']))
-                                Keine Gruppen gefunden.
-                            @else
-                                Keine Gruppendaten vorhanden – bitte Synchronisation ausführen.
-                                Die Gruppen werden ab der nächsten Synchronisation angezeigt.
-                            @endif
-                        </p>
-                    @else
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            @foreach($groups as $group)
-                            <div class="flex items-start gap-2 p-3 rounded-md border border-gray-100 hover:bg-gray-50">
-                                <svg class="w-4 h-4 mt-0.5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {{-- Feedback --}}
+                <div x-show="groupSuccess" x-transition
+                     class="p-3 bg-green-50 border border-green-200 text-green-800 rounded-md text-sm" x-text="groupSuccess"></div>
+                <div x-show="groupError" x-transition
+                     class="p-3 bg-red-50 border border-red-200 text-red-800 rounded-md text-sm flex justify-between items-start">
+                    <span x-text="groupError"></span>
+                    <button @click="groupError = null" class="ml-2 text-red-400 hover:text-red-600 shrink-0">✕</button>
+                </div>
+
+                {{-- Gruppe hinzufügen --}}
+                @can('module.adusers.config')
+                <div class="bg-white shadow-sm rounded-lg p-5">
+                    <h4 class="text-sm font-semibold text-gray-700 mb-3">Gruppe hinzufügen</h4>
+                    <div class="relative">
+                        <div class="flex gap-2">
+                            <div class="relative flex-1">
+                                <input type="text"
+                                       x-model="addSearchQuery"
+                                       @input.debounce.300ms="searchGroupsToAdd(addSearchQuery)"
+                                       @keydown.escape="addSearchResults = []; addSearchQuery = ''"
+                                       placeholder="Gruppenname suchen (min. 2 Zeichen) …"
+                                       class="w-full border-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500 pr-8">
+                                <div x-show="addSearchLoading" class="absolute right-2 top-2.5">
+                                    <svg class="animate-spin w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Suchergebnis-Dropdown --}}
+                        <div x-show="addSearchResults.length > 0"
+                             @click.outside="addSearchResults = []"
+                             class="absolute top-full left-0 right-0 z-20 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-64 overflow-y-auto">
+                            <template x-for="g in addSearchResults" :key="g.dn">
+                                <button @click="addGroup(g.dn, g.name)"
+                                        :disabled="groupActionLoading === 'add:' + g.dn || groups.some(eg => eg.dn.toLowerCase() === g.dn.toLowerCase())"
+                                        class="w-full text-left px-4 py-3 hover:bg-indigo-50 border-b border-gray-50 last:border-0 disabled:opacity-40 disabled:cursor-not-allowed">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <div>
+                                            <div class="text-sm font-medium text-gray-800" x-text="g.name"></div>
+                                            <div class="text-xs text-gray-400 break-all" x-text="g.dn"></div>
+                                        </div>
+                                        <div class="flex items-center gap-2 shrink-0">
+                                            <span :class="g.type === 'security' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'"
+                                                  class="inline-flex px-1.5 py-0.5 rounded text-xs font-medium"
+                                                  x-text="g.type === 'security' ? 'Sicherheit' : 'Verteiler'"></span>
+                                            <span x-show="groups.some(eg => eg.dn.toLowerCase() === g.dn.toLowerCase())"
+                                                  class="text-xs text-green-600">✓ bereits Mitglied</span>
+                                            <span x-show="groupActionLoading === 'add:' + g.dn"
+                                                  class="text-xs text-indigo-500">Wird hinzugefügt …</span>
+                                            <span x-show="!groups.some(eg => eg.dn.toLowerCase() === g.dn.toLowerCase()) && groupActionLoading !== 'add:' + g.dn"
+                                                  class="text-xs text-indigo-600 font-medium">+ Hinzufügen</span>
+                                        </div>
+                                    </div>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+                @endcan
+
+                {{-- Aktuelle Gruppen --}}
+                <div class="bg-white shadow-sm rounded-lg p-5">
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="text-sm font-semibold text-gray-700">
+                            Aktuelle Mitgliedschaften
+                            <span class="ml-1 text-gray-400 font-normal" x-text="'(' + groups.length + ' Gruppen)'"></span>
+                        </h4>
+                    </div>
+
+                    <div x-show="groups.length === 0" class="text-sm text-gray-400">
+                        @if(!empty($user->raw_data['memberof']) || count($groups) > 0)
+                            Keine Gruppen vorhanden.
+                        @else
+                            Keine Gruppendaten – bitte erst eine Synchronisation ausführen.
+                        @endif
+                    </div>
+
+                    <div class="space-y-1">
+                        <template x-for="group in groups" :key="group.dn">
+                            <div class="flex items-center gap-3 px-3 py-2.5 rounded-md border border-gray-100 hover:bg-gray-50 group/row">
+                                <svg class="w-4 h-4 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                           d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
                                 </svg>
-                                <div class="min-w-0">
-                                    <div class="text-sm font-medium text-gray-800 truncate" title="{{ $group['name'] }}">{{ $group['name'] }}</div>
-                                    <div class="text-xs text-gray-400 break-all">{{ $group['dn'] }}</div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="text-sm font-medium text-gray-800" x-text="group.name"></div>
+                                    <div class="text-xs text-gray-400 truncate" x-text="group.dn"></div>
                                 </div>
+                                @can('module.adusers.config')
+                                <button @click="removeGroup(group.dn, group.name)"
+                                        :disabled="groupActionLoading === 'remove:' + group.dn"
+                                        class="opacity-0 group-hover/row:opacity-100 inline-flex items-center gap-1 px-2 py-1 text-xs text-red-600 bg-red-50 border border-red-200 rounded hover:bg-red-100 disabled:opacity-40 transition-opacity">
+                                    <span x-show="groupActionLoading !== 'remove:' + group.dn">Entfernen</span>
+                                    <span x-show="groupActionLoading === 'remove:' + group.dn">Wird entfernt …</span>
+                                </button>
+                                @endcan
                             </div>
-                            @endforeach
-                        </div>
-                    @endif
+                        </template>
+                    </div>
                 </div>
+
+                {{-- Änderungsprotokoll --}}
+                <div class="bg-white shadow-sm rounded-lg overflow-hidden">
+                    <div class="px-5 py-3 border-b border-gray-100 bg-gray-50">
+                        <h4 class="text-sm font-semibold text-gray-700">
+                            Änderungsprotokoll
+                            <span class="ml-1 text-gray-400 font-normal" x-text="'(' + changeLogs.length + ' Einträge)'"></span>
+                        </h4>
+                    </div>
+
+                    <div x-show="changeLogs.length === 0" class="p-5 text-sm text-gray-400">
+                        Noch keine Gruppenänderungen über IT Cockpit vorgenommen.
+                    </div>
+
+                    <div x-show="changeLogs.length > 0" class="overflow-x-auto">
+                        <table class="min-w-full text-sm divide-y divide-gray-100">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Zeitpunkt</th>
+                                    <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Aktion</th>
+                                    <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Gruppe</th>
+                                    <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Von</th>
+                                    <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Status</th>
+                                    <th class="px-4 py-2.5"></th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-50">
+                                <template x-for="log in changeLogs" :key="log.id">
+                                    <tr :class="log.is_reverted ? 'opacity-60' : ''">
+                                        <td class="px-4 py-2.5 text-xs text-gray-500 whitespace-nowrap" x-text="log.performed_at"></td>
+                                        <td class="px-4 py-2.5">
+                                            <span :class="log.action === 'add'
+                                                    ? 'bg-green-100 text-green-700'
+                                                    : 'bg-red-100 text-red-700'"
+                                                  class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium"
+                                                  x-text="log.action_label"></span>
+                                        </td>
+                                        <td class="px-4 py-2.5">
+                                            <div class="text-xs font-medium text-gray-800" x-text="log.group_name"></div>
+                                            <div class="text-xs text-gray-400 break-all" x-text="log.group_dn"></div>
+                                        </td>
+                                        <td class="px-4 py-2.5 text-xs text-gray-500" x-text="log.performed_by"></td>
+                                        <td class="px-4 py-2.5">
+                                            <span x-show="!log.is_reverted"
+                                                  class="inline-flex px-2 py-0.5 rounded-full text-xs bg-indigo-50 text-indigo-600">
+                                                Aktiv
+                                            </span>
+                                            <span x-show="log.is_reverted" class="text-xs text-gray-400">
+                                                Rückgängig (<span x-text="log.reverted_at"></span>)
+                                            </span>
+                                        </td>
+                                        <td class="px-4 py-2.5 text-right">
+                                            @can('module.adusers.config')
+                                            <button x-show="!log.is_reverted"
+                                                    @click="revertChange(log.id)"
+                                                    :disabled="groupActionLoading === 'revert:' + log.id"
+                                                    class="inline-flex items-center gap-1 px-2 py-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded hover:bg-amber-100 disabled:opacity-40 transition whitespace-nowrap">
+                                                <span x-show="groupActionLoading !== 'revert:' + log.id">↩ Rückgängig</span>
+                                                <span x-show="groupActionLoading === 'revert:' + log.id">Wird zurückgesetzt …</span>
+                                            </button>
+                                            @endcan
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
 
             {{-- ══════════════ TAB: IT COCKPIT ══════════════ --}}
