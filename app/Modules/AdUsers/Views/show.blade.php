@@ -201,6 +201,58 @@
                 if (r.ok) this.compareSearchResults = await r.json();
                 this.compareSearchLoading = false;
             },
+
+            async compareAddGroup(dn) {
+                const name = dn.match(/^CN=([^,]+)/i)?.[1] ?? dn;
+                if (!confirm('Gruppe zum Benutzer hinzufügen?\n' + name)) return;
+                this.groupActionLoading = 'add:' + dn;
+                this.groupError = null;
+                const r = await fetch(window._adUserRoutes.groupAdd, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content },
+                    body: JSON.stringify({ group_dn: dn, group_name: name })
+                });
+                const data = await r.json();
+                if (r.ok && data.success) {
+                    this.groups.push({ dn, name });
+                    this.groups.sort((a, b) => a.name.localeCompare(b.name));
+                    this.changeLogs.unshift(data.log);
+                    if (this.compareResult?.groups) {
+                        this.compareResult.groups.only_user2 = this.compareResult.groups.only_user2.filter(d => d.toLowerCase() !== dn.toLowerCase());
+                        this.compareResult.groups.common = [...this.compareResult.groups.common, dn].sort((a, b) => a.localeCompare(b));
+                    }
+                    this.groupSuccess = 'Gruppe wurde hinzugefügt.';
+                    setTimeout(() => this.groupSuccess = null, 4000);
+                } else {
+                    this.groupError = data.error ?? 'Unbekannter Fehler';
+                }
+                this.groupActionLoading = null;
+            },
+
+            async compareRemoveGroup(dn) {
+                const name = dn.match(/^CN=([^,]+)/i)?.[1] ?? dn;
+                if (!confirm('Benutzer wirklich aus dieser Gruppe entfernen?\n' + name)) return;
+                this.groupActionLoading = 'remove:' + dn;
+                this.groupError = null;
+                const r = await fetch(window._adUserRoutes.groupRemove, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content },
+                    body: JSON.stringify({ group_dn: dn, group_name: name })
+                });
+                const data = await r.json();
+                if (r.ok && data.success) {
+                    this.groups = this.groups.filter(g => g.dn.toLowerCase() !== dn.toLowerCase());
+                    this.changeLogs.unshift(data.log);
+                    if (this.compareResult?.groups) {
+                        this.compareResult.groups.only_user1 = this.compareResult.groups.only_user1.filter(d => d.toLowerCase() !== dn.toLowerCase());
+                    }
+                    this.groupSuccess = 'Gruppe wurde entfernt.';
+                    setTimeout(() => this.groupSuccess = null, 4000);
+                } else {
+                    this.groupError = data.error ?? 'Unbekannter Fehler';
+                }
+                this.groupActionLoading = null;
+            },
         };
     }
     </script>
@@ -734,7 +786,17 @@
                                     (<span x-text="(compareResult?.groups?.only_user1 ?? []).length"></span>)
                                 </h5>
                                 <template x-for="dn in compareResult?.groups?.only_user1 ?? []" :key="dn">
-                                    <div class="text-xs text-red-700 bg-red-50 rounded px-2 py-1 mb-1 break-all" x-text="dn.match(/^CN=([^,]+)/i)?.[1] ?? dn"></div>
+                                    <div class="flex items-center justify-between gap-2 bg-red-50 rounded px-2 py-1 mb-1">
+                                        <span class="text-xs text-red-700 break-all min-w-0" x-text="dn.match(/^CN=([^,]+)/i)?.[1] ?? dn"></span>
+                                        @can('module.adusers.config')
+                                        <button @click="compareRemoveGroup(dn)"
+                                                :disabled="groupActionLoading === 'remove:' + dn"
+                                                class="shrink-0 inline-flex items-center px-1.5 py-0.5 text-xs text-red-700 border border-red-300 bg-white rounded hover:bg-red-100 disabled:opacity-40 transition whitespace-nowrap">
+                                            <span x-show="groupActionLoading !== 'remove:' + dn">✕ Entfernen</span>
+                                            <span x-show="groupActionLoading === 'remove:' + dn">…</span>
+                                        </button>
+                                        @endcan
+                                    </div>
                                 </template>
                                 <p x-show="(compareResult?.groups?.only_user1 ?? []).length === 0" class="text-xs text-gray-400 italic">Keine exklusiven Gruppen</p>
                             </div>
@@ -753,7 +815,17 @@
                                     (<span x-text="(compareResult?.groups?.only_user2 ?? []).length"></span>)
                                 </h5>
                                 <template x-for="dn in compareResult?.groups?.only_user2 ?? []" :key="dn">
-                                    <div class="text-xs text-blue-700 bg-blue-50 rounded px-2 py-1 mb-1 break-all" x-text="dn.match(/^CN=([^,]+)/i)?.[1] ?? dn"></div>
+                                    <div class="flex items-center justify-between gap-2 bg-blue-50 rounded px-2 py-1 mb-1">
+                                        <span class="text-xs text-blue-700 break-all min-w-0" x-text="dn.match(/^CN=([^,]+)/i)?.[1] ?? dn"></span>
+                                        @can('module.adusers.config')
+                                        <button @click="compareAddGroup(dn)"
+                                                :disabled="groupActionLoading === 'add:' + dn"
+                                                class="shrink-0 inline-flex items-center px-1.5 py-0.5 text-xs text-green-700 border border-green-300 bg-white rounded hover:bg-green-100 disabled:opacity-40 transition whitespace-nowrap">
+                                            <span x-show="groupActionLoading !== 'add:' + dn">+ Hinzufügen</span>
+                                            <span x-show="groupActionLoading === 'add:' + dn">…</span>
+                                        </button>
+                                        @endcan
+                                    </div>
                                 </template>
                                 <p x-show="(compareResult?.groups?.only_user2 ?? []).length === 0" class="text-xs text-gray-400 italic">Keine exklusiven Gruppen</p>
                             </div>
