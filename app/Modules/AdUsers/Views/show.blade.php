@@ -498,7 +498,7 @@
                                 @can('module.adusers.config')
                                 <button @click="removeGroup(group.dn, group.name)"
                                         :disabled="groupActionLoading === 'remove:' + group.dn"
-                                        class="opacity-0 group-hover/row:opacity-100 inline-flex items-center gap-1 px-2 py-1 text-xs text-red-600 bg-red-50 border border-red-200 rounded hover:bg-red-100 disabled:opacity-40 transition-opacity">
+                                        class="inline-flex items-center gap-1 px-2 py-1 text-xs text-red-600 bg-red-50 border border-red-200 rounded hover:bg-red-100 disabled:opacity-40 transition-opacity">
                                     <span x-show="groupActionLoading !== 'remove:' + group.dn">Entfernen</span>
                                     <span x-show="groupActionLoading === 'remove:' + group.dn">Wird entfernt …</span>
                                 </button>
