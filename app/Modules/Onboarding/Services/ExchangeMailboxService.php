@@ -155,11 +155,17 @@ try {
         -Authentication    $env:EX_AUTH `
         -Credential        $cred `
         -ErrorAction       Stop
-    Import-PSSession $session -DisableNameChecking -AllowClobber -CommandName Enable-Mailbox | Out-Null
-    Enable-Mailbox -Identity $env:EX_IDENTITY -ErrorAction Stop
+    Import-PSSession $session -DisableNameChecking -AllowClobber -CommandName Enable-Mailbox,Get-Mailbox | Out-Null
+
+    Enable-Mailbox -Identity $env:EX_IDENTITY -ErrorAction Stop | Out-Null
+
+    # Sofortige Verifikation: Postfach muss abrufbar sein
+    $mb = Get-Mailbox -Identity $env:EX_IDENTITY -ErrorAction Stop
+    Write-Output "OK: Postfach aktiviert | Alias=$($mb.Alias) | Datenbank=$($mb.Database) | E-Mail=$($mb.PrimarySmtpAddress)"
+
     Remove-PSSession $session
-    Write-Output "OK: Postfach für $env:EX_IDENTITY aktiviert."
 } catch {
+    if ($session) { try { Remove-PSSession $session } catch {} }
     Write-Error $_.Exception.Message
     exit 1
 }

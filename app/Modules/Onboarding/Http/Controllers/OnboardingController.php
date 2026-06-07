@@ -142,7 +142,11 @@ class OnboardingController extends Controller
                 $record->update([
                     'mailbox_status'     => $mbResult['success'] ? 'aktiviert' : 'fehler',
                     'mailbox_enabled_at' => $mbResult['success'] ? now() : null,
-                    'mailbox_error'      => $mbResult['success'] ? null : ($mbResult['error'] ?: $mbResult['output']),
+                    // Bei Erfolg: PS-Ausgabe (enthält Alias/DB/E-Mail zur Verifikation)
+                    // Bei Fehler: Fehlermeldung aus stderr, fallback auf stdout
+                    'mailbox_error'      => $mbResult['success']
+                        ? ($mbResult['output'] ?: null)
+                        : ($mbResult['error'] ?: $mbResult['output']),
                 ]);
             }
 
