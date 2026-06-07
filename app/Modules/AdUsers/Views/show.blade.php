@@ -79,6 +79,29 @@
             groupNameFilter: '',
             confirmModal: { show: false, title: '', message: '', resolve: null },
 
+            get ouAllUsers() {
+                if (!this.ouResult) return [];
+                const all = [...(this.ouResult.ou_users ?? [])];
+                if (this.ouResult.current_user) all.push(this.ouResult.current_user);
+                return all.sort((a, b) => a.name.localeCompare(b.name));
+            },
+            get ouFilteredUsers() {
+                const q = this.ouUserSearch.toLowerCase();
+                return this.ouAllUsers.filter(u =>
+                    !q || u.name.toLowerCase().includes(q) || (u.sam ?? '').toLowerCase().includes(q)
+                );
+            },
+            get ouGroupIn() {
+                if (!this.ouSelectedGroup || !this.ouResult) return [];
+                const dn = this.ouSelectedGroup.dn.toLowerCase();
+                return this.ouAllUsers.filter(u => u.groups.includes(dn));
+            },
+            get ouGroupOut() {
+                if (!this.ouSelectedGroup || !this.ouResult) return [];
+                const dn = this.ouSelectedGroup.dn.toLowerCase();
+                return this.ouAllUsers.filter(u => !u.groups.includes(dn));
+            },
+
             get filteredGroups() {
                 return this.groups.filter(g => {
                     const matchType = this.groupTypeFilter === 'all' || g.type === this.groupTypeFilter;
@@ -97,6 +120,9 @@
             compareSearchLoading: false,
             ouLoading: false,
             ouResult: null,
+            ouSelectedGroup: null,
+            ouShowUserList: false,
+            ouUserSearch: '',
 
             switchTab(tab) {
                 this.activeTab = tab;
@@ -243,6 +269,12 @@
                         this.compareResult.groups.only_user2 = this.compareResult.groups.only_user2.filter(d => d.toLowerCase() !== dn.toLowerCase());
                         this.compareResult.groups.common = [...this.compareResult.groups.common, dn].sort((a, b) => a.localeCompare(b));
                     }
+                    if (this.ouResult?.groups_analysis) {
+                        const g = this.ouResult.groups_analysis.find(x => x.dn.toLowerCase() === dn.toLowerCase());
+                        if (g) g.i_have = true;
+                        if (this.ouSelectedGroup?.dn?.toLowerCase() === dn.toLowerCase()) this.ouSelectedGroup.i_have = true;
+                        if (this.ouResult.current_user) this.ouResult.current_user.groups.push(dn.toLowerCase());
+                    }
                     this.groupSuccess = 'Gruppe wurde hinzugefügt.';
                     setTimeout(() => this.groupSuccess = null, 4000);
                 } else {
@@ -267,6 +299,14 @@
                     this.changeLogs.unshift(data.log);
                     if (this.compareResult?.groups) {
                         this.compareResult.groups.only_user1 = this.compareResult.groups.only_user1.filter(d => d.toLowerCase() !== dn.toLowerCase());
+                    }
+                    if (this.ouResult?.groups_analysis) {
+                        const g = this.ouResult.groups_analysis.find(x => x.dn.toLowerCase() === dn.toLowerCase());
+                        if (g) g.i_have = false;
+                        if (this.ouSelectedGroup?.dn?.toLowerCase() === dn.toLowerCase()) this.ouSelectedGroup.i_have = false;
+                        if (this.ouResult.current_user) {
+                            this.ouResult.current_user.groups = this.ouResult.current_user.groups.filter(d => d !== dn.toLowerCase());
+                        }
                     }
                     this.groupSuccess = 'Gruppe wurde entfernt.';
                     setTimeout(() => this.groupSuccess = null, 4000);
@@ -896,7 +936,7 @@
                     </div>
                 </div>
 
-                {{-- OU-Vergleich Ergebnis --}}
+                {{-- OU-Vergleich: Lade-Spinner --}}
                 <div x-show="ouLoading" class="text-center py-8 text-sm text-gray-400">
                     <svg class="animate-spin w-6 h-6 mx-auto mb-2 text-indigo-400" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
@@ -905,72 +945,223 @@
                     OU-Vergleich wird geladen …
                 </div>
 
-                <div x-show="ouResult !== null" class="bg-white shadow-sm rounded-lg overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-                        <div>
-                            <h4 class="text-sm font-semibold text-gray-700">OU-Gruppenvergleich</h4>
-                            <p class="text-xs text-gray-400 mt-0.5 break-all" x-text="ouResult?.ou"></p>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            <span class="text-xs text-gray-500" x-text="ouResult?.users_count + ' andere Benutzer in der OU'"></span>
-                            <button @click="ouResult = null" class="text-gray-400 hover:text-gray-600 text-xs">✕</button>
-                        </div>
-                    </div>
+                <div x-show="ouResult !== null" class="space-y-4">
 
-                    <div x-show="ouResult?.users_count === 0" class="p-6 text-sm text-gray-400">
-                        Keine anderen Benutzer in derselben OU gefunden.
-                    </div>
+                    {{-- ══ GRUPPEN-ÜBERSICHT ══ --}}
+                    <div class="bg-white shadow-sm rounded-lg overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                            <div>
+                                <h4 class="text-sm font-semibold text-gray-700">OU-Gruppenvergleich</h4>
+                                <p class="text-xs text-gray-400 mt-0.5 break-all" x-text="ouResult?.ou"></p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <button @click="ouShowUserList = !ouShowUserList"
+                                        :class="ouShowUserList ? 'bg-indigo-100 text-indigo-700 border-indigo-300' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'"
+                                        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border rounded-md transition">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    </svg>
+                                    <span x-text="'Alle Benutzer (' + ouAllUsers.length + ')'"></span>
+                                </button>
+                                <span class="text-xs text-gray-500" x-text="ouResult?.users_count + ' andere Benutzer in der OU'"></span>
+                                <button @click="ouResult = null; ouSelectedGroup = null; ouShowUserList = false" class="text-gray-400 hover:text-gray-600 text-xs">✕</button>
+                            </div>
+                        </div>
 
-                    <div x-show="(ouResult?.groups_analysis ?? []).length > 0" class="overflow-x-auto">
-                        <table class="min-w-full text-sm divide-y divide-gray-100">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Gruppe</th>
-                                    <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500 w-32">Dieser Benutzer</th>
-                                    <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500 w-44">Verbreitung in OU</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-50">
-                                <template x-for="g in ouResult?.groups_analysis ?? []" :key="g.dn">
-                                    <tr :class="g.notable ? (g.i_have && g.pct <= 20 ? 'bg-amber-50' : (!g.i_have && g.pct >= 80 ? 'bg-red-50' : '')) : ''">
-                                        <td class="px-4 py-2">
-                                            <div class="font-medium text-gray-800 text-xs" x-text="g.name"></div>
-                                            <div class="text-xs text-gray-400 break-all" x-text="g.dn"></div>
-                                        </td>
-                                        <td class="px-4 py-2">
-                                            <span x-show="g.i_have" class="inline-flex items-center gap-1 text-xs text-green-700 font-medium">
-                                                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                                                Ja
-                                            </span>
-                                            <span x-show="!g.i_have" class="inline-flex items-center gap-1 text-xs text-gray-400">
-                                                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
-                                                Nein
-                                            </span>
-                                        </td>
-                                        <td class="px-4 py-2">
-                                            <div class="flex items-center gap-2">
-                                                <div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                                    <div class="h-full rounded-full"
-                                                         :class="g.pct >= 80 ? 'bg-indigo-500' : g.pct >= 50 ? 'bg-indigo-300' : 'bg-gray-300'"
-                                                         :style="'width:' + g.pct + '%'"></div>
-                                                </div>
-                                                <span class="text-xs text-gray-500 w-16 shrink-0"
-                                                      x-text="g.count + '/' + g.total + ' (' + g.pct + '%)'"></span>
-                                            </div>
-                                            <div x-show="g.notable && !g.i_have && g.pct >= 80"
-                                                 class="text-xs text-red-600 mt-1 font-medium">
-                                                ⚠ Gruppe fehlt (fast alle haben sie)
-                                            </div>
-                                            <div x-show="g.notable && g.i_have && g.pct <= 20"
-                                                 class="text-xs text-amber-600 mt-1 font-medium">
-                                                ⚠ Exklusive Gruppe (kaum jemand hat sie)
-                                            </div>
-                                        </td>
+                        <div x-show="ouResult?.users_count === 0" class="p-6 text-sm text-gray-400">
+                            Keine anderen Benutzer in derselben OU gefunden.
+                        </div>
+
+                        {{-- Gruppenanalyse-Tabelle (klickbar) --}}
+                        <div x-show="(ouResult?.groups_analysis ?? []).length > 0" class="overflow-x-auto">
+                            <table class="min-w-full text-sm divide-y divide-gray-100">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Gruppe <span class="font-normal text-gray-400">(klicken für Details)</span></th>
+                                        <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500 w-32">Dieser Benutzer</th>
+                                        <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500 w-44">Verbreitung in OU</th>
                                     </tr>
-                                </template>
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody class="divide-y divide-gray-50">
+                                    <template x-for="g in ouResult?.groups_analysis ?? []" :key="g.dn">
+                                        <tr @click="ouSelectedGroup = (ouSelectedGroup?.dn === g.dn ? null : g)"
+                                            :class="{
+                                                'bg-indigo-50 ring-1 ring-inset ring-indigo-200': ouSelectedGroup?.dn === g.dn,
+                                                'bg-amber-50': g.notable && g.i_have && g.pct <= 20 && ouSelectedGroup?.dn !== g.dn,
+                                                'bg-red-50':   g.notable && !g.i_have && g.pct >= 80 && ouSelectedGroup?.dn !== g.dn,
+                                                'hover:bg-gray-50 cursor-pointer': ouSelectedGroup?.dn !== g.dn
+                                            }"
+                                            class="cursor-pointer transition">
+                                            <td class="px-4 py-2.5">
+                                                <div class="font-medium text-gray-800 text-xs" x-text="g.name"></div>
+                                                <div class="text-xs text-gray-400 break-all" x-text="g.dn"></div>
+                                            </td>
+                                            <td class="px-4 py-2.5">
+                                                <span x-show="g.i_have" class="inline-flex items-center gap-1 text-xs text-green-700 font-medium">
+                                                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                                    Ja
+                                                </span>
+                                                <span x-show="!g.i_have" class="inline-flex items-center gap-1 text-xs text-gray-400">
+                                                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                                                    Nein
+                                                </span>
+                                            </td>
+                                            <td class="px-4 py-2.5">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                                        <div class="h-full rounded-full"
+                                                             :class="g.pct >= 80 ? 'bg-indigo-500' : g.pct >= 50 ? 'bg-indigo-300' : 'bg-gray-300'"
+                                                             :style="'width:' + g.pct + '%'"></div>
+                                                    </div>
+                                                    <span class="text-xs text-gray-500 w-16 shrink-0" x-text="g.count + '/' + g.total + ' (' + g.pct + '%)'"></span>
+                                                </div>
+                                                <div x-show="g.notable && !g.i_have && g.pct >= 80" class="text-xs text-red-600 mt-1 font-medium">⚠ Gruppe fehlt (fast alle haben sie)</div>
+                                                <div x-show="g.notable && g.i_have && g.pct <= 20" class="text-xs text-amber-600 mt-1 font-medium">⚠ Exklusive Gruppe (kaum jemand hat sie)</div>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
+
+                    {{-- ══ GRUPPEN-DETAIL (Mitgliedschaft) ══ --}}
+                    <div x-show="ouSelectedGroup !== null"
+                         x-transition:enter="transition ease-out duration-150"
+                         x-transition:enter-start="opacity-0 -translate-y-1"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         class="bg-white shadow-sm rounded-lg overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-100 bg-indigo-50 flex items-center justify-between">
+                            <div>
+                                <h4 class="text-sm font-semibold text-indigo-800" x-text="ouSelectedGroup?.name"></h4>
+                                <p class="text-xs text-indigo-400 mt-0.5 break-all" x-text="ouSelectedGroup?.dn"></p>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                @can('module.adusers.config')
+                                <template x-if="ouSelectedGroup && !ouSelectedGroup.i_have">
+                                    <button @click="compareAddGroup(ouSelectedGroup.dn)"
+                                            :disabled="groupActionLoading === 'add:' + ouSelectedGroup?.dn"
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-md hover:bg-green-100 disabled:opacity-40 transition">
+                                        + Zu dieser Gruppe hinzufügen
+                                    </button>
+                                </template>
+                                <template x-if="ouSelectedGroup && ouSelectedGroup.i_have">
+                                    <button @click="compareRemoveGroup(ouSelectedGroup.dn)"
+                                            :disabled="groupActionLoading === 'remove:' + ouSelectedGroup?.dn"
+                                            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 disabled:opacity-40 transition">
+                                        ✕ Aus dieser Gruppe entfernen
+                                    </button>
+                                </template>
+                                @endcan
+                                <button @click="ouSelectedGroup = null" class="text-gray-400 hover:text-gray-600 text-xs">✕</button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-gray-100">
+                            {{-- In der Gruppe --}}
+                            <div class="p-5">
+                                <h5 class="text-xs font-semibold text-green-700 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                    In der Gruppe
+                                    <span class="font-normal text-green-500" x-text="'(' + ouGroupIn.length + ')'"></span>
+                                </h5>
+                                <div class="space-y-2">
+                                    <template x-for="u in ouGroupIn" :key="u.sam">
+                                        <div :class="u.is_current ? 'bg-indigo-50 border-indigo-200' : 'bg-gray-50 border-gray-100'"
+                                             class="rounded-md border px-3 py-2">
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="text-xs font-medium text-gray-800" x-text="u.name"></span>
+                                                <span x-show="u.is_current" class="text-xs text-indigo-600 font-medium">(dieser Benutzer)</span>
+                                            </div>
+                                            <div class="text-xs text-gray-400 font-mono" x-text="u.sam"></div>
+                                            <div x-show="u.abteilung" class="text-xs text-gray-500 mt-0.5" x-text="u.abteilung"></div>
+                                            <div x-show="u.title" class="text-xs text-gray-500" x-text="u.title"></div>
+                                            <div x-show="u.description" class="text-xs text-gray-400 italic" x-text="u.description"></div>
+                                        </div>
+                                    </template>
+                                    <p x-show="ouGroupIn.length === 0" class="text-xs text-gray-400 italic">Niemand in der OU ist Mitglied.</p>
+                                </div>
+                            </div>
+                            {{-- Nicht in der Gruppe --}}
+                            <div class="p-5">
+                                <h5 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                                    Nicht in der Gruppe
+                                    <span class="font-normal" x-text="'(' + ouGroupOut.length + ')'"></span>
+                                </h5>
+                                <div class="space-y-2">
+                                    <template x-for="u in ouGroupOut" :key="u.sam">
+                                        <div :class="u.is_current ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-100'"
+                                             class="rounded-md border px-3 py-2">
+                                            <div class="flex items-center gap-1.5">
+                                                <span class="text-xs font-medium text-gray-800" x-text="u.name"></span>
+                                                <span x-show="u.is_current" class="text-xs text-amber-600 font-medium">(dieser Benutzer)</span>
+                                            </div>
+                                            <div class="text-xs text-gray-400 font-mono" x-text="u.sam"></div>
+                                            <div x-show="u.abteilung" class="text-xs text-gray-500 mt-0.5" x-text="u.abteilung"></div>
+                                            <div x-show="u.title" class="text-xs text-gray-500" x-text="u.title"></div>
+                                            <div x-show="u.description" class="text-xs text-gray-400 italic" x-text="u.description"></div>
+                                        </div>
+                                    </template>
+                                    <p x-show="ouGroupOut.length === 0" class="text-xs text-gray-400 italic">Alle Benutzer der OU sind Mitglied.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- ══ ALLE BENUTZER DER OU ══ --}}
+                    <div x-show="ouShowUserList"
+                         x-transition:enter="transition ease-out duration-150"
+                         x-transition:enter-start="opacity-0 -translate-y-1"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         class="bg-white shadow-sm rounded-lg overflow-hidden">
+                        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between gap-3">
+                            <h4 class="text-sm font-semibold text-gray-700 shrink-0">
+                                Alle Benutzer der OU
+                                <span class="ml-1 font-normal text-gray-400" x-text="'(' + ouAllUsers.length + ')'"></span>
+                            </h4>
+                            <input type="text"
+                                   x-model="ouUserSearch"
+                                   placeholder="Name oder SAM suchen …"
+                                   class="border-gray-200 rounded-md text-xs py-1.5 px-2.5 w-48 focus:border-indigo-400 focus:ring-indigo-400">
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-sm divide-y divide-gray-100">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Name</th>
+                                        <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500">SAM</th>
+                                        <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Abteilung / Position</th>
+                                        <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Beschreibung</th>
+                                        <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500 w-16">Gruppen</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-50">
+                                    <template x-for="u in ouFilteredUsers" :key="u.sam">
+                                        <tr :class="u.is_current ? 'bg-indigo-50' : 'hover:bg-gray-50'" class="transition">
+                                            <td class="px-4 py-2.5">
+                                                <div class="flex items-center gap-1.5">
+                                                    <a x-show="u.id && !u.is_current"
+                                                       :href="'/adusers/show/' + u.id"
+                                                       class="text-xs font-medium text-indigo-700 hover:underline" x-text="u.name"></a>
+                                                    <span x-show="u.is_current" class="text-xs font-medium text-gray-800" x-text="u.name"></span>
+                                                    <span x-show="u.is_current" class="text-xs text-indigo-600 font-medium">★</span>
+                                                </div>
+                                                <div x-show="u.email" class="text-xs text-gray-400" x-text="u.email"></div>
+                                            </td>
+                                            <td class="px-4 py-2.5 font-mono text-xs text-gray-500" x-text="u.sam"></td>
+                                            <td class="px-4 py-2.5">
+                                                <div x-show="u.abteilung" class="text-xs text-gray-700" x-text="u.abteilung"></div>
+                                                <div x-show="u.title" class="text-xs text-gray-400" x-text="u.title"></div>
+                                            </td>
+                                            <td class="px-4 py-2.5 text-xs text-gray-400 italic" x-text="u.description ?? '–'"></td>
+                                            <td class="px-4 py-2.5 text-xs text-gray-500 text-center" x-text="u.groups_count"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
                 </div>
 
             </div>

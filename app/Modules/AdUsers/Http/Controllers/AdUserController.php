@@ -249,10 +249,55 @@ class AdUserController extends Controller
 
         usort($analysis, fn($a, $b) => $b['pct'] <=> $a['pct'] ?: strcasecmp($a['name'], $b['name']));
 
+        // OU-Benutzer mit Details + Gruppen-DNs (für Frontend-Filterung)
+        $ouUsersData = $ouUsers->map(function ($u) {
+            $raw      = $u->raw_data ?? [];
+            $memberOf = $raw['memberof'] ?? [];
+            $cnt      = (int)($memberOf['count'] ?? 0);
+            $groupDns = [];
+            for ($i = 0; $i < $cnt; $i++) {
+                if ($g = $memberOf[$i] ?? '') $groupDns[] = strtolower($g);
+            }
+            return [
+                'id'          => $u->id,
+                'name'        => $u->anzeigename_or_name,
+                'sam'         => $u->samaccountname,
+                'email'       => $u->email,
+                'abteilung'   => $u->abteilung,
+                'title'       => $raw['title'][0] ?? null,
+                'description' => $raw['description'][0] ?? null,
+                'groups'      => $groupDns,
+                'groups_count'=> $cnt,
+            ];
+        })->sortBy('name')->values()->toArray();
+
+        // Aktueller Benutzer ebenfalls aufbereiten (für Mitgliedschaftsprüfung)
+        $myRaw      = $user->raw_data ?? [];
+        $myMemberOf = $myRaw['memberof'] ?? [];
+        $myCnt      = (int)($myMemberOf['count'] ?? 0);
+        $myGroupDns = [];
+        for ($i = 0; $i < $myCnt; $i++) {
+            if ($g = $myMemberOf[$i] ?? '') $myGroupDns[] = strtolower($g);
+        }
+        $currentUser = [
+            'id'          => $user->id,
+            'name'        => $user->anzeigename_or_name,
+            'sam'         => $user->samaccountname,
+            'email'       => $user->email,
+            'abteilung'   => $user->abteilung,
+            'title'       => $myRaw['title'][0] ?? null,
+            'description' => $myRaw['description'][0] ?? null,
+            'groups'      => $myGroupDns,
+            'groups_count'=> $myCnt,
+            'is_current'  => true,
+        ];
+
         return response()->json([
-            'ou'             => $ouDn,
-            'users_count'    => $total,
+            'ou'              => $ouDn,
+            'users_count'     => $total,
             'groups_analysis' => $analysis,
+            'ou_users'        => $ouUsersData,
+            'current_user'    => $currentUser,
         ]);
     }
 
