@@ -922,10 +922,9 @@
             </div>
 
         </div>
-    </div>
 
-    {{-- Bestätigungs-Modal --}}
-    <div x-show="confirmModal.show"
+        {{-- Bestätigungs-Modal --}}
+        <div x-show="confirmModal.show"
          x-transition:enter="ease-out duration-200"
          x-transition:enter-start="opacity-0"
          x-transition:enter-end="opacity-100"
@@ -973,5 +972,6 @@
             </div>
         </div>
     </div>
+</div>
 
 </x-app-layout>
