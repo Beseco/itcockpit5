@@ -34,6 +34,7 @@ class ExchangeMailboxService
 
         $script = <<<'PS'
 $ErrorActionPreference = 'Stop'
+if ($PSStyle) { $PSStyle.OutputRendering = [System.Management.Automation.OutputRendering]::PlainText }
 try {
     $secPwd  = ConvertTo-SecureString $env:EX_PASSWORD -AsPlainText -Force
     $cred    = New-Object System.Management.Automation.PSCredential($env:EX_USER, $secPwd)
@@ -56,6 +57,8 @@ PS;
             'EX_USER'     => $this->settings->exchange_user,
             'EX_PASSWORD' => $this->settings->exchange_password,
             'EX_AUTH'     => $this->settings->exchange_auth ?? 'Negotiate',
+            'TERM'        => 'dumb',
+            'NO_COLOR'    => '1',
         ]);
 
         $descriptors = [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
@@ -104,6 +107,9 @@ PS;
             'EX_PASSWORD' => $this->settings->exchange_password,
             'EX_AUTH'     => $this->settings->exchange_auth ?? 'Negotiate',
             'EX_IDENTITY' => $samAccountName,
+            // Verhindert ANSI/VT100-Escape-Sequenzen von PSReadLine
+            'TERM'        => 'dumb',
+            'NO_COLOR'    => '1',
         ]);
 
         $descriptors = [
@@ -146,6 +152,7 @@ PS;
         // Credentials und Identity kommen aus Umgebungsvariablen – kein Injection-Risiko
         return <<<'PS'
 $ErrorActionPreference = 'Stop'
+if ($PSStyle) { $PSStyle.OutputRendering = [System.Management.Automation.OutputRendering]::PlainText }
 try {
     $secPwd  = ConvertTo-SecureString $env:EX_PASSWORD -AsPlainText -Force
     $cred    = New-Object System.Management.Automation.PSCredential($env:EX_USER, $secPwd)
