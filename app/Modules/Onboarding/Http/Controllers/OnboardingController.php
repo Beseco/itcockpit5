@@ -95,9 +95,10 @@ class OnboardingController extends Controller
         $password = (new PasswordGeneratorService())->generate();
 
         $data = array_merge($request->only(['vorname', 'nachname', 'samaccountname', 'upn', 'rufnummer', 'mobile', 'fax', 'buero', 'vorgesetzter_dn']), [
-            'password'          => $password,
-            'profilpfad'        => $this->resolvePattern($vorlage->profilpfad_pattern, $request),
-            'heimatverzeichnis' => $this->resolvePattern($vorlage->heimatverzeichnis_pattern, $request),
+            'password'                   => $password,
+            'profilpfad'                 => $this->resolvePattern($vorlage->profilpfad_pattern, $request),
+            'heimatverzeichnis'          => $this->resolvePattern($vorlage->heimatverzeichnis_pattern, $request),
+            'heimatverzeichnis_laufwerk' => $vorlage->heimatverzeichnis_laufwerk ?: null,
         ]);
 
         $todoToken = Str::random(48);

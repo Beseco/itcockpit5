@@ -74,6 +74,15 @@
                                 <span :class="todos.includes('{{ $key }}') ? 'line-through text-gray-400' : 'text-gray-700'"
                                       class="text-sm">{{ $def['label'] }}</span>
 
+                                @if(($def['auto_clear_home'] ?? false) && $record->ad_attributes_snapshot['heimatverzeichnis'] ?? null)
+                                    <div x-show="todos.includes('{{ $key }}')" x-cloak
+                                         class="mt-1 text-xs text-green-700">
+                                        ✓ homeDirectory/homeDrive wird automatisch aus dem AD-Profil entfernt.
+                                    </div>
+                                    <p class="text-xs text-gray-400 mt-0.5">
+                                        Bitte zuerst den Benutzer einmal anmelden lassen, damit der Ordner erstellt wird.
+                                    </p>
+                                @endif
                                 @if($def['mail_test'] ?? false)
                                     <div x-show="todos.includes('{{ $key }}')" x-cloak class="mt-2 flex items-center gap-3 flex-wrap">
                                         <button type="button"

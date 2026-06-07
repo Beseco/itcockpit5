@@ -11,12 +11,12 @@ class OnboardingRecord extends Model
     protected $table = 'onboarding_records';
 
     const TODOS = [
-        'mailbox'       => ['label' => 'E-Mail-Postfach anlegen',  'mail_test' => true],
-        'h_laufwerk'    => ['label' => 'H-Laufwerk verfügbar',     'mail_test' => false],
-        'e_laufwerk'    => ['label' => 'E-Laufwerk verfügbar',     'mail_test' => false],
-        'p_laufwerk'    => ['label' => 'P-Laufwerk verfügbar',     'mail_test' => false],
-        'outlook'       => ['label' => 'Outlook einrichten',       'mail_test' => false],
-        'fachverfahren' => ['label' => 'Fachverfahren einrichten', 'mail_test' => false],
+        'mailbox'       => ['label' => 'E-Mail-Postfach anlegen',                 'mail_test' => true,  'auto_clear_home' => false],
+        'h_laufwerk'    => ['label' => 'H-Laufwerk verfügbar',                    'mail_test' => false, 'auto_clear_home' => false],
+        'e_laufwerk'    => ['label' => 'E-Laufwerk verfügbar (Heimatverzeichnis)', 'mail_test' => false, 'auto_clear_home' => true],
+        'p_laufwerk'    => ['label' => 'P-Laufwerk verfügbar',                    'mail_test' => false, 'auto_clear_home' => false],
+        'outlook'       => ['label' => 'Outlook einrichten',                      'mail_test' => false, 'auto_clear_home' => false],
+        'fachverfahren' => ['label' => 'Fachverfahren einrichten',                'mail_test' => false, 'auto_clear_home' => false],
     ];
 
     protected $fillable = [

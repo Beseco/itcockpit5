@@ -175,9 +175,24 @@
             </div>
             <div>
                 <x-input-label for="heimatverzeichnis_pattern" value="Heimatverzeichnis-Muster" />
-                <x-text-input id="heimatverzeichnis_pattern" name="heimatverzeichnis_pattern" type="text" class="mt-1 block w-full font-mono text-xs"
-                              value="{{ old('heimatverzeichnis_pattern', $vorlage->heimatverzeichnis_pattern ?? '') }}"
-                              placeholder="\\srv01\home\%benutzername%" />
+                <div class="mt-1 flex gap-2">
+                    <x-text-input id="heimatverzeichnis_pattern" name="heimatverzeichnis_pattern" type="text" class="block flex-1 font-mono text-xs"
+                                  value="{{ old('heimatverzeichnis_pattern', $vorlage->heimatverzeichnis_pattern ?? '') }}"
+                                  placeholder="\\lra.lan\dfs\User\%benutzername%" />
+                    <div class="shrink-0">
+                        <select name="heimatverzeichnis_laufwerk"
+                                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm h-full">
+                            <option value="">– kein –</option>
+                            @foreach(range('A', 'Z') as $letter)
+                                <option value="{{ $letter }}:"
+                                    @selected(old('heimatverzeichnis_laufwerk', $vorlage->heimatverzeichnis_laufwerk ?? 'E:') === $letter . ':')>
+                                    {{ $letter }}:
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <p class="mt-1 text-xs text-gray-400">Pfad + Laufwerksbuchstabe werden beim Anlegen als homeDirectory/homeDrive ins AD gesetzt. Nach erstem Login (Ordner erstellt) wird der Pfad automatisch beim Abhaken des Laufwerk-Todos wieder entfernt.</p>
                 <x-input-error :messages="$errors->get('heimatverzeichnis_pattern')" class="mt-1" />
             </div>
             <div>
