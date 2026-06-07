@@ -1025,135 +1025,182 @@
                         </div>
                     </div>
 
-                    {{-- ══ GRUPPEN-DETAIL (Mitgliedschaft) ══ --}}
-                    <div x-show="ouSelectedGroup !== null"
-                         x-transition:enter="transition ease-out duration-150"
-                         x-transition:enter-start="opacity-0 -translate-y-1"
-                         x-transition:enter-end="opacity-100 translate-y-0"
-                         class="bg-white shadow-sm rounded-lg overflow-hidden">
-                        <div class="px-6 py-4 border-b border-gray-100 bg-indigo-50 flex items-center justify-between">
-                            <div>
-                                <h4 class="text-sm font-semibold text-indigo-800" x-text="ouSelectedGroup?.name"></h4>
+                </div>
+
+            </div>
+
+        </div>
+
+        {{-- OU-Detail-Modal (Gruppe oder Benutzerliste) --}}
+        <div x-show="ouSelectedGroup !== null || ouShowUserList"
+             x-transition:enter="ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 z-40 flex items-start justify-center p-4 pt-16 overflow-y-auto"
+             style="display:none">
+            {{-- Backdrop --}}
+            <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm"
+                 @click="ouSelectedGroup = null; ouShowUserList = false"></div>
+
+            {{-- Panel --}}
+            <div x-show="ouSelectedGroup !== null || ouShowUserList"
+                 x-transition:enter="ease-out duration-200"
+                 x-transition:enter-start="opacity-0 scale-95"
+                 x-transition:enter-end="opacity-100 scale-100"
+                 x-transition:leave="ease-in duration-150"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="relative w-full max-w-4xl bg-white rounded-xl shadow-2xl z-10 overflow-hidden mb-8">
+
+                {{-- ══ GRUPPEN-DETAIL ══ --}}
+                <template x-if="ouSelectedGroup !== null">
+                    <div>
+                        {{-- Header --}}
+                        <div class="px-6 py-4 border-b border-gray-100 bg-indigo-50 flex items-start justify-between gap-4">
+                            <div class="min-w-0">
+                                <h3 class="text-sm font-semibold text-indigo-900" x-text="ouSelectedGroup?.name"></h3>
                                 <p class="text-xs text-indigo-400 mt-0.5 break-all" x-text="ouSelectedGroup?.dn"></p>
+                                <div class="mt-2 flex items-center gap-3">
+                                    <span class="inline-flex items-center gap-1 text-xs text-gray-500">
+                                        <svg class="w-3.5 h-3.5 text-green-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                                        <span x-text="ouGroupIn.length + ' Mitglieder'"></span>
+                                    </span>
+                                    <span class="inline-flex items-center gap-1 text-xs text-gray-500">
+                                        <svg class="w-3.5 h-3.5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                                        <span x-text="ouGroupOut.length + ' nicht Mitglied'"></span>
+                                    </span>
+                                </div>
                             </div>
-                            <div class="flex items-center gap-3">
+                            <div class="flex items-center gap-2 shrink-0">
                                 @can('module.adusers.config')
                                 <template x-if="ouSelectedGroup && !ouSelectedGroup.i_have">
                                     <button @click="compareAddGroup(ouSelectedGroup.dn)"
                                             :disabled="groupActionLoading === 'add:' + ouSelectedGroup?.dn"
                                             class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 border border-green-200 rounded-md hover:bg-green-100 disabled:opacity-40 transition">
-                                        + Zu dieser Gruppe hinzufügen
+                                        + Hinzufügen
                                     </button>
                                 </template>
                                 <template x-if="ouSelectedGroup && ouSelectedGroup.i_have">
                                     <button @click="compareRemoveGroup(ouSelectedGroup.dn)"
                                             :disabled="groupActionLoading === 'remove:' + ouSelectedGroup?.dn"
                                             class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 disabled:opacity-40 transition">
-                                        ✕ Aus dieser Gruppe entfernen
+                                        ✕ Entfernen
                                     </button>
                                 </template>
                                 @endcan
-                                <button @click="ouSelectedGroup = null" class="text-gray-400 hover:text-gray-600 text-xs">✕</button>
+                                <button @click="ouSelectedGroup = null"
+                                        class="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
                             </div>
                         </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-gray-100">
-                            {{-- In der Gruppe --}}
-                            <div class="p-5">
-                                <h5 class="text-xs font-semibold text-green-700 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                        {{-- Split: In / Nicht in Gruppe --}}
+                        <div class="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-gray-100 max-h-[65vh] overflow-hidden">
+                            <div class="overflow-y-auto p-5">
+                                <h5 class="text-xs font-semibold text-green-700 uppercase tracking-wide mb-3 flex items-center gap-1.5 sticky top-0 bg-white pb-1">
                                     <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                                    In der Gruppe
-                                    <span class="font-normal text-green-500" x-text="'(' + ouGroupIn.length + ')'"></span>
+                                    In der Gruppe <span class="font-normal text-green-500" x-text="'(' + ouGroupIn.length + ')'"></span>
                                 </h5>
-                                <div class="space-y-2">
+                                <div class="space-y-1.5">
                                     <template x-for="u in ouGroupIn" :key="u.sam">
                                         <div :class="u.is_current ? 'bg-indigo-50 border-indigo-200' : 'bg-gray-50 border-gray-100'"
                                              class="rounded-md border px-3 py-2">
-                                            <div class="flex items-center gap-1.5">
-                                                <span class="text-xs font-medium text-gray-800" x-text="u.name"></span>
-                                                <span x-show="u.is_current" class="text-xs text-indigo-600 font-medium">(dieser Benutzer)</span>
+                                            <div class="flex items-center gap-1.5 flex-wrap">
+                                                <a x-show="u.id && !u.is_current" :href="'/adusers/show/' + u.id"
+                                                   class="text-xs font-medium text-indigo-700 hover:underline" x-text="u.name"></a>
+                                                <span x-show="u.is_current" class="text-xs font-medium text-gray-800" x-text="u.name"></span>
+                                                <span x-show="u.is_current" class="text-xs bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-medium">Dieser Benutzer</span>
                                             </div>
-                                            <div class="text-xs text-gray-400 font-mono" x-text="u.sam"></div>
-                                            <div x-show="u.abteilung" class="text-xs text-gray-500 mt-0.5" x-text="u.abteilung"></div>
-                                            <div x-show="u.title" class="text-xs text-gray-500" x-text="u.title"></div>
-                                            <div x-show="u.description" class="text-xs text-gray-400 italic" x-text="u.description"></div>
+                                            <div class="text-xs text-gray-400 font-mono mt-0.5" x-text="u.sam"></div>
+                                            <div x-show="u.abteilung || u.title" class="text-xs text-gray-500 mt-0.5" x-text="[u.abteilung, u.title].filter(Boolean).join(' · ')"></div>
+                                            <div x-show="u.description" class="text-xs text-gray-400 italic mt-0.5" x-text="u.description"></div>
                                         </div>
                                     </template>
-                                    <p x-show="ouGroupIn.length === 0" class="text-xs text-gray-400 italic">Niemand in der OU ist Mitglied.</p>
+                                    <p x-show="ouGroupIn.length === 0" class="text-xs text-gray-400 italic py-2">Niemand in der OU ist Mitglied.</p>
                                 </div>
                             </div>
-                            {{-- Nicht in der Gruppe --}}
-                            <div class="p-5">
-                                <h5 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                            <div class="overflow-y-auto p-5">
+                                <h5 class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-1.5 sticky top-0 bg-white pb-1">
                                     <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
-                                    Nicht in der Gruppe
-                                    <span class="font-normal" x-text="'(' + ouGroupOut.length + ')'"></span>
+                                    Nicht in der Gruppe <span class="font-normal" x-text="'(' + ouGroupOut.length + ')'"></span>
                                 </h5>
-                                <div class="space-y-2">
+                                <div class="space-y-1.5">
                                     <template x-for="u in ouGroupOut" :key="u.sam">
                                         <div :class="u.is_current ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-100'"
                                              class="rounded-md border px-3 py-2">
-                                            <div class="flex items-center gap-1.5">
-                                                <span class="text-xs font-medium text-gray-800" x-text="u.name"></span>
-                                                <span x-show="u.is_current" class="text-xs text-amber-600 font-medium">(dieser Benutzer)</span>
+                                            <div class="flex items-center gap-1.5 flex-wrap">
+                                                <a x-show="u.id && !u.is_current" :href="'/adusers/show/' + u.id"
+                                                   class="text-xs font-medium text-indigo-700 hover:underline" x-text="u.name"></a>
+                                                <span x-show="u.is_current" class="text-xs font-medium text-gray-800" x-text="u.name"></span>
+                                                <span x-show="u.is_current" class="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">Dieser Benutzer</span>
                                             </div>
-                                            <div class="text-xs text-gray-400 font-mono" x-text="u.sam"></div>
-                                            <div x-show="u.abteilung" class="text-xs text-gray-500 mt-0.5" x-text="u.abteilung"></div>
-                                            <div x-show="u.title" class="text-xs text-gray-500" x-text="u.title"></div>
-                                            <div x-show="u.description" class="text-xs text-gray-400 italic" x-text="u.description"></div>
+                                            <div class="text-xs text-gray-400 font-mono mt-0.5" x-text="u.sam"></div>
+                                            <div x-show="u.abteilung || u.title" class="text-xs text-gray-500 mt-0.5" x-text="[u.abteilung, u.title].filter(Boolean).join(' · ')"></div>
+                                            <div x-show="u.description" class="text-xs text-gray-400 italic mt-0.5" x-text="u.description"></div>
                                         </div>
                                     </template>
-                                    <p x-show="ouGroupOut.length === 0" class="text-xs text-gray-400 italic">Alle Benutzer der OU sind Mitglied.</p>
+                                    <p x-show="ouGroupOut.length === 0" class="text-xs text-gray-400 italic py-2">Alle Benutzer der OU sind Mitglied.</p>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </template>
 
-                    {{-- ══ ALLE BENUTZER DER OU ══ --}}
-                    <div x-show="ouShowUserList"
-                         x-transition:enter="transition ease-out duration-150"
-                         x-transition:enter-start="opacity-0 -translate-y-1"
-                         x-transition:enter-end="opacity-100 translate-y-0"
-                         class="bg-white shadow-sm rounded-lg overflow-hidden">
-                        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between gap-3">
-                            <h4 class="text-sm font-semibold text-gray-700 shrink-0">
+                {{-- ══ ALLE BENUTZER ══ --}}
+                <template x-if="ouShowUserList && ouSelectedGroup === null">
+                    <div>
+                        <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between gap-4">
+                            <h3 class="text-sm font-semibold text-gray-800 shrink-0">
                                 Alle Benutzer der OU
                                 <span class="ml-1 font-normal text-gray-400" x-text="'(' + ouAllUsers.length + ')'"></span>
-                            </h4>
-                            <input type="text"
-                                   x-model="ouUserSearch"
-                                   placeholder="Name oder SAM suchen …"
-                                   class="border-gray-200 rounded-md text-xs py-1.5 px-2.5 w-48 focus:border-indigo-400 focus:ring-indigo-400">
+                            </h3>
+                            <div class="flex items-center gap-3 flex-1 justify-end">
+                                <input type="text"
+                                       x-model="ouUserSearch"
+                                       placeholder="Name oder SAM suchen …"
+                                       class="border-gray-200 rounded-md text-xs py-1.5 px-2.5 w-52 focus:border-indigo-400 focus:ring-indigo-400">
+                                <button @click="ouShowUserList = false"
+                                        class="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
-                        <div class="overflow-x-auto">
+                        <div class="overflow-y-auto max-h-[70vh] overflow-x-auto">
                             <table class="min-w-full text-sm divide-y divide-gray-100">
-                                <thead class="bg-gray-50">
+                                <thead class="bg-gray-50 sticky top-0">
                                     <tr>
                                         <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Name</th>
                                         <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500">SAM</th>
                                         <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Abteilung / Position</th>
                                         <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Beschreibung</th>
-                                        <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500 w-16">Gruppen</th>
+                                        <th class="px-4 py-2.5 text-center text-xs font-medium text-gray-500 w-16">Gruppen</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-50">
                                     <template x-for="u in ouFilteredUsers" :key="u.sam">
                                         <tr :class="u.is_current ? 'bg-indigo-50' : 'hover:bg-gray-50'" class="transition">
                                             <td class="px-4 py-2.5">
-                                                <div class="flex items-center gap-1.5">
-                                                    <a x-show="u.id && !u.is_current"
-                                                       :href="'/adusers/show/' + u.id"
+                                                <div class="flex items-center gap-1.5 flex-wrap">
+                                                    <a x-show="u.id && !u.is_current" :href="'/adusers/show/' + u.id"
                                                        class="text-xs font-medium text-indigo-700 hover:underline" x-text="u.name"></a>
                                                     <span x-show="u.is_current" class="text-xs font-medium text-gray-800" x-text="u.name"></span>
-                                                    <span x-show="u.is_current" class="text-xs text-indigo-600 font-medium">★</span>
+                                                    <span x-show="u.is_current" class="text-xs bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-medium">★ Dieser Benutzer</span>
                                                 </div>
-                                                <div x-show="u.email" class="text-xs text-gray-400" x-text="u.email"></div>
+                                                <div x-show="u.email" class="text-xs text-gray-400 font-mono mt-0.5" x-text="u.email"></div>
                                             </td>
-                                            <td class="px-4 py-2.5 font-mono text-xs text-gray-500" x-text="u.sam"></td>
+                                            <td class="px-4 py-2.5 font-mono text-xs text-gray-500 whitespace-nowrap" x-text="u.sam"></td>
                                             <td class="px-4 py-2.5">
                                                 <div x-show="u.abteilung" class="text-xs text-gray-700" x-text="u.abteilung"></div>
                                                 <div x-show="u.title" class="text-xs text-gray-400" x-text="u.title"></div>
                                             </td>
-                                            <td class="px-4 py-2.5 text-xs text-gray-400 italic" x-text="u.description ?? '–'"></td>
+                                            <td class="px-4 py-2.5 text-xs text-gray-400 italic" x-text="u.description || '–'"></td>
                                             <td class="px-4 py-2.5 text-xs text-gray-500 text-center" x-text="u.groups_count"></td>
                                         </tr>
                                     </template>
@@ -1161,11 +1208,9 @@
                             </table>
                         </div>
                     </div>
-
-                </div>
+                </template>
 
             </div>
-
         </div>
 
         {{-- Bestätigungs-Modal --}}
