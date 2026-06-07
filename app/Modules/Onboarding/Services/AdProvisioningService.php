@@ -217,6 +217,37 @@ class AdProvisioningService
         }
     }
 
+    /** Gibt Gruppentypen (security|distribution) für eine Liste von DNs zurück. */
+    public function getGroupTypes(array $groupDns): array
+    {
+        if (empty($groupDns) || !extension_loaded('ldap')) return [];
+
+        $adSettings = AdUserSettings::getSingleton();
+        $obSettings = OnboardingSettings::getSingleton();
+        $conn       = $this->connect($adSettings);
+        $this->bind($conn, $adSettings, $obSettings);
+
+        $escaped   = array_map(fn($dn) => '(distinguishedName=' . ldap_escape($dn, '', LDAP_ESCAPE_FILTER) . ')', $groupDns);
+        $dnFilter  = count($escaped) === 1 ? $escaped[0] : '(|' . implode('', $escaped) . ')';
+        $filter    = "(&(objectClass=group){$dnFilter})";
+        $baseDn    = $adSettings->base_dn;
+
+        $result = @ldap_search($conn, $baseDn, $filter, ['distinguishedname', 'grouptype'], 0, 500);
+
+        $types = [];
+        if ($result) {
+            $entries = ldap_get_entries($conn, $result);
+            for ($i = 0; $i < ($entries['count'] ?? 0); $i++) {
+                $dn        = strtolower($entries[$i]['distinguishedname'][0] ?? '');
+                $groupType = (int)($entries[$i]['grouptype'][0] ?? 0);
+                if ($dn) $types[$dn] = $groupType < 0 ? 'security' : 'distribution';
+            }
+        }
+
+        ldap_unbind($conn);
+        return $types;
+    }
+
     /** Zählt alle Gruppen in der konfigurierten Suchbasis (für den Test-Button). */
     public function countGroups(): array
     {

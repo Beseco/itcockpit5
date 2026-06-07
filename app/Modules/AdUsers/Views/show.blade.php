@@ -75,7 +75,20 @@
             groupActionLoading: null,
             groupError: null,
             groupSuccess: null,
+            groupTypeFilter: 'all',
+            groupNameFilter: '',
             confirmModal: { show: false, title: '', message: '', resolve: null },
+
+            get filteredGroups() {
+                return this.groups.filter(g => {
+                    const matchType = this.groupTypeFilter === 'all' || g.type === this.groupTypeFilter;
+                    const matchName = !this.groupNameFilter || g.name.toLowerCase().includes(this.groupNameFilter.toLowerCase());
+                    return matchType && matchName;
+                });
+            },
+            groupCount(type) {
+                return type === 'all' ? this.groups.length : this.groups.filter(g => g.type === type).length;
+            },
 
             compareLoading: false,
             compareResult: null,
@@ -106,7 +119,7 @@
                 this.addSearchLoading = false;
             },
 
-            async addGroup(groupDn, groupName) {
+            async addGroup(groupDn, groupName, groupType = 'unknown') {
                 this.groupActionLoading = 'add:' + groupDn;
                 this.groupError = null;
                 const r = await fetch(window._adUserRoutes.groupAdd, {
@@ -116,7 +129,7 @@
                 });
                 const data = await r.json();
                 if (r.ok && data.success) {
-                    this.groups.push({ dn: groupDn, name: groupName });
+                    this.groups.push({ dn: groupDn, name: groupName, type: groupType });
                     this.groups.sort((a, b) => a.name.localeCompare(b.name));
                     this.changeLogs.unshift(data.log);
                     this.addSearchQuery = '';
@@ -449,7 +462,7 @@
                              @click.outside="addSearchResults = []"
                              class="absolute top-full left-0 right-0 z-20 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-64 overflow-y-auto">
                             <template x-for="g in addSearchResults" :key="g.dn">
-                                <button @click="addGroup(g.dn, g.name)"
+                                <button @click="addGroup(g.dn, g.name, g.type)"
                                         :disabled="groupActionLoading === 'add:' + g.dn || groups.some(eg => eg.dn.toLowerCase() === g.dn.toLowerCase())"
                                         class="w-full text-left px-4 py-3 hover:bg-indigo-50 border-b border-gray-50 last:border-0 disabled:opacity-40 disabled:cursor-not-allowed">
                                     <div class="flex items-center justify-between gap-2">
@@ -478,11 +491,38 @@
 
                 {{-- Aktuelle Gruppen --}}
                 <div class="bg-white shadow-sm rounded-lg p-5">
-                    <div class="flex items-center justify-between mb-3">
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
                         <h4 class="text-sm font-semibold text-gray-700">
                             Aktuelle Mitgliedschaften
-                            <span class="ml-1 text-gray-400 font-normal" x-text="'(' + groups.length + ' Gruppen)'"></span>
+                            <span class="ml-1 text-gray-400 font-normal" x-text="'(' + filteredGroups.length + (filteredGroups.length !== groups.length ? ' / ' + groups.length : '') + ' Gruppen)'"></span>
                         </h4>
+
+                        {{-- Filter --}}
+                        <div class="flex flex-wrap items-center gap-2">
+                            {{-- Typ-Filter --}}
+                            <div class="flex rounded-md border border-gray-200 overflow-hidden text-xs font-medium">
+                                <button @click="groupTypeFilter = 'all'"
+                                        :class="groupTypeFilter === 'all' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'"
+                                        class="px-2.5 py-1.5 transition">
+                                    Alle <span x-text="'(' + groupCount('all') + ')'"></span>
+                                </button>
+                                <button @click="groupTypeFilter = 'security'"
+                                        :class="groupTypeFilter === 'security' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'"
+                                        class="px-2.5 py-1.5 border-l border-gray-200 transition">
+                                    Sicherheit <span x-text="'(' + groupCount('security') + ')'"></span>
+                                </button>
+                                <button @click="groupTypeFilter = 'distribution'"
+                                        :class="groupTypeFilter === 'distribution' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-50'"
+                                        class="px-2.5 py-1.5 border-l border-gray-200 transition">
+                                    Verteiler <span x-text="'(' + groupCount('distribution') + ')'"></span>
+                                </button>
+                            </div>
+                            {{-- Textsuche --}}
+                            <input type="text"
+                                   x-model="groupNameFilter"
+                                   placeholder="Suchen …"
+                                   class="border-gray-200 rounded-md text-xs py-1.5 px-2.5 w-36 focus:border-indigo-400 focus:ring-indigo-400">
+                        </div>
                     </div>
 
                     <div x-show="groups.length === 0" class="text-sm text-gray-400">
@@ -493,15 +533,29 @@
                         @endif
                     </div>
 
+                    <div x-show="groups.length > 0 && filteredGroups.length === 0" class="text-sm text-gray-400 py-2">
+                        Keine Gruppen entsprechen dem Filter.
+                    </div>
+
                     <div class="space-y-1">
-                        <template x-for="group in groups" :key="group.dn">
+                        <template x-for="group in filteredGroups" :key="group.dn">
                             <div class="flex items-center gap-3 px-3 py-2.5 rounded-md border border-gray-100 hover:bg-gray-50 group/row">
                                 <svg class="w-4 h-4 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                           d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
                                 </svg>
                                 <div class="flex-1 min-w-0">
-                                    <div class="text-sm font-medium text-gray-800" x-text="group.name"></div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm font-medium text-gray-800" x-text="group.name"></span>
+                                        <span x-show="group.type === 'security'"
+                                              class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">
+                                            Sicherheit
+                                        </span>
+                                        <span x-show="group.type === 'distribution'"
+                                              class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-emerald-50 text-emerald-700">
+                                            Verteiler
+                                        </span>
+                                    </div>
                                     <div class="text-xs text-gray-400 truncate" x-text="group.dn"></div>
                                 </div>
                                 @can('module.adusers.config')

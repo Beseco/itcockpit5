@@ -7,6 +7,7 @@ use App\Modules\AdUsers\Models\AdUserGroupChangeLog;
 use App\Modules\AdUsers\Models\AdUserSettings;
 use App\Modules\AdUsers\Models\OffboardingRecord;
 use App\Modules\Onboarding\Models\OnboardingRecord;
+use App\Modules\Onboarding\Services\AdProvisioningService;
 use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,7 +16,10 @@ use Illuminate\Support\Facades\Auth;
 
 class AdUserController extends Controller
 {
-    public function __construct(private AuditLogger $auditLogger) {}
+    public function __construct(
+        private AuditLogger $auditLogger,
+        private AdProvisioningService $provisioner,
+    ) {}
 
     public function index(Request $request)
     {
@@ -69,6 +73,17 @@ class AdUserController extends Controller
     public function show(AdUser $user)
     {
         $groups = $this->extractGroups($user->raw_data ?? []);
+
+        // Gruppentypen per LDAP ermitteln (nicht-kritisch, schlägt lautlos fehl)
+        try {
+            $groupTypes = $this->provisioner->getGroupTypes(array_column($groups, 'dn'));
+            $groups = array_map(function ($g) use ($groupTypes) {
+                $g['type'] = $groupTypes[strtolower($g['dn'])] ?? 'unknown';
+                return $g;
+            }, $groups);
+        } catch (\Throwable) {
+            $groups = array_map(fn($g) => array_merge($g, ['type' => 'unknown']), $groups);
+        }
 
         $onboardingRecords = class_exists(OnboardingRecord::class)
             ? OnboardingRecord::with(['vorlage', 'createdBy'])
