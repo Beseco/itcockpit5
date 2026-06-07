@@ -21,9 +21,10 @@ class OnboardingRecordController extends Controller
     public function show(OnboardingRecord $record)
     {
         $record->load(['vorlage', 'createdBy']);
-        $password = session('onboarding_password');
+        $password          = session('onboarding_password');
+        $exchangeConfigured = (new ExchangeMailboxService())->isConfigured();
 
-        return view('onboarding::onboarding.show', compact('record', 'password'));
+        return view('onboarding::onboarding.show', compact('record', 'password', 'exchangeConfigured'));
     }
 
     public function retryMailbox(OnboardingRecord $record): JsonResponse

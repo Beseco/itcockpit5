@@ -132,7 +132,7 @@
                             <span class="text-xs text-gray-400">({{ $record->supervisor_mail_sent_at->format('H:i') }})</span>
                         @endif
                     </li>
-                    @if($record->mailbox_status || (new \App\Modules\Onboarding\Services\ExchangeMailboxService)->isConfigured())
+                    @if($record->mailbox_status || $exchangeConfigured)
                     <li class="flex items-start gap-2"
                         x-data="{
                             loading: false, msg: null, ok: null,
