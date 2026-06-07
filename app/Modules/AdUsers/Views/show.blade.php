@@ -75,6 +75,7 @@
             groupActionLoading: null,
             groupError: null,
             groupSuccess: null,
+            confirmModal: { show: false, title: '', message: '', resolve: null },
 
             compareLoading: false,
             compareResult: null,
@@ -88,6 +89,14 @@
                 this.activeTab = tab;
                 window.location.hash = tab;
             },
+
+            showConfirm(title, message) {
+                return new Promise(resolve => {
+                    this.confirmModal = { show: true, title, message, resolve };
+                });
+            },
+            confirmOk()     { this.confirmModal.resolve(true);  this.confirmModal.show = false; },
+            confirmCancel() { this.confirmModal.resolve(false); this.confirmModal.show = false; },
 
             async searchGroupsToAdd(q) {
                 if (q.length < 2) { this.addSearchResults = []; return; }
@@ -121,7 +130,7 @@
             },
 
             async removeGroup(groupDn, groupName) {
-                if (!confirm('Benutzer wirklich aus dieser Gruppe entfernen?\n' + groupName)) return;
+                if (!await this.showConfirm('Gruppe entfernen', 'Benutzer wirklich aus dieser Gruppe entfernen?\n' + groupName)) return;
                 this.groupActionLoading = 'remove:' + groupDn;
                 this.groupError = null;
                 const r = await fetch(window._adUserRoutes.groupRemove, {
@@ -145,9 +154,9 @@
                 const log = this.changeLogs.find(l => l.id === logId);
                 if (!log) return;
                 const verb = log.action === 'add'
-                    ? 'Hinzufügen rückgängig machen (Gruppe wird entfernt)'
-                    : 'Entfernen rückgängig machen (Gruppe wird wieder hinzugefügt)';
-                if (!confirm(verb + '?\n' + log.group_name)) return;
+                    ? 'Hinzufügen rückgängig machen – Gruppe wird entfernt'
+                    : 'Entfernen rückgängig machen – Gruppe wird wieder hinzugefügt';
+                if (!await this.showConfirm('Änderung rückgängig machen', verb + ':\n' + log.group_name)) return;
                 this.groupActionLoading = 'revert:' + logId;
                 this.groupError = null;
                 const r = await fetch(window._adUserRoutes.groupRevertBase + '/' + logId, {
@@ -204,7 +213,7 @@
 
             async compareAddGroup(dn) {
                 const name = dn.match(/^CN=([^,]+)/i)?.[1] ?? dn;
-                if (!confirm('Gruppe zum Benutzer hinzufügen?\n' + name)) return;
+                if (!await this.showConfirm('Gruppe hinzufügen', 'Benutzer zu dieser Gruppe hinzufügen?\n' + name)) return;
                 this.groupActionLoading = 'add:' + dn;
                 this.groupError = null;
                 const r = await fetch(window._adUserRoutes.groupAdd, {
@@ -231,7 +240,7 @@
 
             async compareRemoveGroup(dn) {
                 const name = dn.match(/^CN=([^,]+)/i)?.[1] ?? dn;
-                if (!confirm('Benutzer wirklich aus dieser Gruppe entfernen?\n' + name)) return;
+                if (!await this.showConfirm('Gruppe entfernen', 'Benutzer wirklich aus dieser Gruppe entfernen?\n' + name)) return;
                 this.groupActionLoading = 'remove:' + dn;
                 this.groupError = null;
                 const r = await fetch(window._adUserRoutes.groupRemove, {
@@ -914,4 +923,55 @@
 
         </div>
     </div>
+
+    {{-- Bestätigungs-Modal --}}
+    <div x-show="confirmModal.show"
+         x-transition:enter="ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 flex items-center justify-center p-4"
+         style="display:none">
+        {{-- Backdrop --}}
+        <div class="absolute inset-0 bg-gray-900/50 backdrop-blur-sm" @click="confirmCancel()"></div>
+
+        {{-- Dialog --}}
+        <div x-show="confirmModal.show"
+             x-transition:enter="ease-out duration-200"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100"
+             x-transition:leave="ease-in duration-150"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             class="relative bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 z-10">
+            {{-- Icon --}}
+            <div class="flex items-start gap-4">
+                <div class="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-full bg-amber-100">
+                    <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                    </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <h3 class="text-sm font-semibold text-gray-900 mb-1" x-text="confirmModal.title"></h3>
+                    <p class="text-sm text-gray-500 whitespace-pre-line" x-text="confirmModal.message"></p>
+                </div>
+            </div>
+
+            {{-- Buttons --}}
+            <div class="mt-5 flex justify-end gap-3">
+                <button @click="confirmCancel()"
+                        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                    Abbrechen
+                </button>
+                <button @click="confirmOk()"
+                        class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition">
+                    Bestätigen
+                </button>
+            </div>
+        </div>
+    </div>
+
 </x-app-layout>
