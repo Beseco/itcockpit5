@@ -38,5 +38,6 @@ Route::middleware(['auth', 'module.permission:onboarding,edit'])->group(function
 Route::middleware(['auth', 'module.permission:onboarding,view'])->group(function () {
     Route::get('/',                      [OnboardingController::class, 'index'])->name('index');
     Route::get('/history',               [OnboardingRecordController::class, 'index'])->name('records.index');
-    Route::get('/records/{record}',      [OnboardingRecordController::class, 'show'])->name('records.show');
+    Route::get('/records/{record}',           [OnboardingRecordController::class, 'show'])->name('records.show');
+    Route::post('/records/{record}/mailbox',  [OnboardingRecordController::class, 'retryMailbox'])->name('records.retry-mailbox');
 });

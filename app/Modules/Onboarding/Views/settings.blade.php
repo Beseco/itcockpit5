@@ -175,12 +175,21 @@
                                 </select>
                             </div>
                         </div>
-                        <div>
-                            <x-input-label for="exchange_password" value="Passwort" />
-                            <x-text-input id="exchange_password" name="exchange_password" type="password" class="mt-1 block w-full"
-                                          placeholder="{{ $settings->exchange_user ? '(gespeichert – leer lassen zum Beibehalten)' : 'Passwort eingeben' }}"
-                                          autocomplete="new-password" />
-                            <x-input-error :messages="$errors->get('exchange_password')" class="mt-1" />
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <x-input-label for="exchange_password" value="Passwort" />
+                                <x-text-input id="exchange_password" name="exchange_password" type="password" class="mt-1 block w-full"
+                                              placeholder="{{ $settings->exchange_user ? '(gespeichert – leer lassen zum Beibehalten)' : 'Passwort eingeben' }}"
+                                              autocomplete="new-password" />
+                                <x-input-error :messages="$errors->get('exchange_password')" class="mt-1" />
+                            </div>
+                            <div>
+                                <x-input-label for="exchange_mailbox_db" value="Postfach-Datenbank (optional)" />
+                                <x-text-input id="exchange_mailbox_db" name="exchange_mailbox_db" type="text" class="mt-1 block w-full font-mono text-xs"
+                                              value="{{ old('exchange_mailbox_db', $settings->exchange_mailbox_db) }}"
+                                              placeholder="Mailbox-DB01" />
+                                <p class="mt-1 text-xs text-gray-400">Leer = Exchange wählt Standard-Datenbank.</p>
+                            </div>
                         </div>
 
                         {{-- Exchange-Verbindungstest --}}

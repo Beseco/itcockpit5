@@ -132,8 +132,24 @@
                             <span class="text-xs text-gray-400">({{ $record->supervisor_mail_sent_at->format('H:i') }})</span>
                         @endif
                     </li>
-                    @if($record->mailbox_status)
-                    <li class="flex items-start gap-2">
+                    @if($record->mailbox_status || (new \App\Modules\Onboarding\Services\ExchangeMailboxService)->isConfigured())
+                    <li class="flex items-start gap-2"
+                        x-data="{
+                            loading: false, msg: null, ok: null,
+                            async retry() {
+                                this.loading = true; this.msg = null;
+                                try {
+                                    const r = await fetch('{{ route('onboarding.records.retry-mailbox', $record) }}', {
+                                        method: 'POST',
+                                        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' }
+                                    });
+                                    const j = await r.json();
+                                    this.ok = j.ok; this.msg = j.message;
+                                    if (j.ok) setTimeout(() => location.reload(), 2000);
+                                } catch(e) { this.ok = false; this.msg = e.toString(); }
+                                finally { this.loading = false; }
+                            }
+                        }">
                         @if($record->mailbox_status === 'aktiviert')
                             <span class="text-green-500 mt-0.5">✓</span>
                             <span>Exchange-Postfach aktiviert
@@ -143,11 +159,22 @@
                                 @endif
                             </span>
                         @else
-                            <span class="text-red-400 mt-0.5">✗</span>
-                            <span>Exchange-Postfach konnte nicht aktiviert werden
+                            <span class="{{ $record->mailbox_status === 'fehler' ? 'text-red-400' : 'text-gray-300' }} mt-0.5">
+                                {{ $record->mailbox_status === 'fehler' ? '✗' : '○' }}
+                            </span>
+                            <span>Exchange-Postfach
+                                @if($record->mailbox_status === 'fehler') <span class="text-red-700">konnte nicht aktiviert werden</span>
+                                @else noch nicht aktiviert @endif
                                 @if($record->mailbox_error)
                                     <span class="block text-xs text-red-600 mt-0.5 font-mono">{{ $record->mailbox_error }}</span>
                                 @endif
+                                <button type="button" @click="retry()" :disabled="loading"
+                                        class="ml-2 text-xs text-indigo-600 underline hover:text-indigo-800 disabled:opacity-50"
+                                        x-text="loading ? 'Aktiviere … (bis 30s)' : 'Nochmal versuchen'">
+                                    Nochmal versuchen
+                                </button>
+                                <span x-show="msg !== null" x-cloak :class="ok ? 'text-green-700' : 'text-red-700'"
+                                      class="block text-xs mt-1 font-mono" x-text="msg"></span>
                             </span>
                         @endif
                     </li>

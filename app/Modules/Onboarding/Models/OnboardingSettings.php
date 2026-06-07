@@ -17,6 +17,7 @@ class OnboardingSettings extends Model
         'exchange_user',
         'exchange_password',
         'exchange_auth',
+        'exchange_mailbox_db',
         'welcome_mail_subject',
         'welcome_mail_body',
         'supervisor_mail_subject',
