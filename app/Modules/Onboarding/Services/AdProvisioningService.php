@@ -55,8 +55,8 @@ class AdProvisioningService
         $passwordWarning = null;
         try {
             $this->setPassword($conn, $userDn, $password);
-            // Schritt 3: Nur wenn Passwort gesetzt wurde, Konto aktivieren
-            $this->enableAccount($conn, $userDn);
+            // Schritt 3: Konto aktivieren – temporäres Passwort, kein Zwang zur Änderung (Phase 1)
+            $this->enableAccount($conn, $userDn, forceChange: false);
         } catch (\RuntimeException $e) {
             $passwordWarning = $e->getMessage();
             \Illuminate\Support\Facades\Log::warning("Onboarding: Passwort konnte nicht gesetzt werden für {$userDn}: {$passwordWarning}");
@@ -353,12 +353,34 @@ class AdProvisioningService
         }
     }
 
-    private function enableAccount(mixed $conn, string $userDn): void
+    /** Setzt das finale Passwort eines bereits angelegten Benutzers (Phase 2). */
+    public function setFinalPassword(string $userDn, string $password): void
+    {
+        if (!extension_loaded('ldap')) {
+            throw new \RuntimeException('PHP LDAP-Extension ist nicht aktiviert.');
+        }
+
+        $adSettings = AdUserSettings::getSingleton();
+        $obSettings = OnboardingSettings::getSingleton();
+        $conn       = $this->connect($adSettings);
+        $this->bind($conn, $adSettings, $obSettings);
+
+        try {
+            $this->setPassword($conn, $userDn, $password);
+            // pwdLastSet = 0 → Passwort muss beim nächsten Login geändert werden
+            @ldap_modify($conn, $userDn, ['pwdLastSet' => ['0']]);
+        } finally {
+            ldap_unbind($conn);
+        }
+    }
+
+    private function enableAccount(mixed $conn, string $userDn, bool $forceChange = false): void
     {
         // 512 = normales Konto, aktiviert
         @ldap_modify($conn, $userDn, ['userAccountControl' => ['512']]);
-        // pwdLastSet = 0 → Passwort muss beim nächsten Login geändert werden
-        @ldap_modify($conn, $userDn, ['pwdLastSet' => ['0']]);
+        // pwdLastSet = -1 → kein Zwang zur Änderung (Phase 1 / temporäres Passwort)
+        // pwdLastSet =  0 → Änderung beim nächsten Login erzwungen (Phase 2 / finales Passwort)
+        @ldap_modify($conn, $userDn, ['pwdLastSet' => [$forceChange ? '0' : '-1']]);
     }
 
     private function addToGroup(mixed $conn, string $userDn, string $groupDn): void

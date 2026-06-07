@@ -3,6 +3,7 @@
 use App\Modules\Onboarding\Http\Controllers\OnboardingController;
 use App\Modules\Onboarding\Http\Controllers\OnboardingRecordController;
 use App\Modules\Onboarding\Http\Controllers\OnboardingSettingsController;
+use App\Modules\Onboarding\Http\Controllers\OnboardingTodoController;
 use App\Modules\Onboarding\Http\Controllers\VorlageController;
 use Illuminate\Support\Facades\Route;
 
@@ -38,6 +39,19 @@ Route::middleware(['auth', 'module.permission:onboarding,edit'])->group(function
 Route::middleware(['auth', 'module.permission:onboarding,view'])->group(function () {
     Route::get('/',                      [OnboardingController::class, 'index'])->name('index');
     Route::get('/history',               [OnboardingRecordController::class, 'index'])->name('records.index');
-    Route::get('/records/{record}',           [OnboardingRecordController::class, 'show'])->name('records.show');
-    Route::post('/records/{record}/mailbox',  [OnboardingRecordController::class, 'retryMailbox'])->name('records.retry-mailbox');
+    Route::get('/records/{record}',      [OnboardingRecordController::class, 'show'])->name('records.show');
 });
+
+// Todo-Workflow (auth erforderlich)
+Route::middleware(['auth', 'module.permission:onboarding,edit'])->group(function () {
+    Route::get('/todo/{token}',                 [OnboardingTodoController::class, 'show'])->name('todo.show');
+    Route::post('/todo/{token}/check',          [OnboardingTodoController::class, 'checkItem'])->name('todo.check');
+    Route::post('/todo/{token}/mail-test',      [OnboardingTodoController::class, 'sendMailTest'])->name('todo.mail-test');
+    Route::get('/todo/{token}/status',          [OnboardingTodoController::class, 'status'])->name('todo.status');
+    Route::post('/todo/{token}/complete',       [OnboardingTodoController::class, 'complete'])->name('todo.complete');
+    Route::get('/todo/{token}/completed',       [OnboardingTodoController::class, 'completed'])->name('todo.completed');
+});
+
+// Mail-Verifikationslink (kein Login – neuer Benutzer klickt den Link)
+Route::get('/todo/{token}/verify-mail/{mailToken}', [OnboardingTodoController::class, 'verifyMail'])
+    ->name('todo.verify-mail');

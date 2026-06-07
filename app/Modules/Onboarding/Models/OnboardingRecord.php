@@ -10,6 +10,15 @@ class OnboardingRecord extends Model
 {
     protected $table = 'onboarding_records';
 
+    const TODOS = [
+        'mailbox'       => ['label' => 'E-Mail-Postfach anlegen',  'mail_test' => true],
+        'h_laufwerk'    => ['label' => 'H-Laufwerk verfügbar',     'mail_test' => false],
+        'e_laufwerk'    => ['label' => 'E-Laufwerk verfügbar',     'mail_test' => false],
+        'p_laufwerk'    => ['label' => 'P-Laufwerk verfügbar',     'mail_test' => false],
+        'outlook'       => ['label' => 'Outlook einrichten',       'mail_test' => false],
+        'fachverfahren' => ['label' => 'Fachverfahren einrichten', 'mail_test' => false],
+    ];
+
     protected $fillable = [
         'vorlage_id', 'created_by_user_id',
         'vorname', 'nachname', 'samaccountname', 'upn', 'distinguished_name',
@@ -17,6 +26,7 @@ class OnboardingRecord extends Model
         'status', 'error_message',
         'welcome_mail_sent_at', 'supervisor_mail_sent_at',
         'mailbox_status', 'mailbox_enabled_at', 'mailbox_error',
+        'phase', 'todo_token', 'todos', 'mail_test_token', 'mail_verified_at', 'completed_at',
     ];
 
     protected $casts = [
@@ -24,6 +34,9 @@ class OnboardingRecord extends Model
         'welcome_mail_sent_at'    => 'datetime',
         'supervisor_mail_sent_at' => 'datetime',
         'mailbox_enabled_at'      => 'datetime',
+        'todos'                   => 'array',
+        'mail_verified_at'        => 'datetime',
+        'completed_at'            => 'datetime',
     ];
 
     public function vorlage(): BelongsTo
@@ -39,6 +52,22 @@ class OnboardingRecord extends Model
     public function getAnzeigenameAttribute(): string
     {
         return trim("{$this->vorname} {$this->nachname}");
+    }
+
+    public function isTodoDone(string $key): bool
+    {
+        return in_array($key, $this->todos ?? [], true);
+    }
+
+    public function allTodosDone(): bool
+    {
+        $done = $this->todos ?? [];
+        return count(array_diff(array_keys(self::TODOS), $done)) === 0;
+    }
+
+    public function isSetupPhase(): bool
+    {
+        return $this->phase === 'setup';
     }
 
     public function getStatusBadgeAttribute(): array

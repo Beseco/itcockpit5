@@ -18,6 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'offboarding/bestaetigung/*',
             'offboarding/admin/*',
             'revision/*',
+            'onboarding/todo/*/verify-mail/*',
         ]);
 
         $middleware->appendToGroup('web', [

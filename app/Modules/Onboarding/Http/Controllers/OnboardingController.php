@@ -5,13 +5,10 @@ namespace App\Modules\Onboarding\Http\Controllers;
 use App\Models\AuditLog;
 use App\Modules\AdUsers\Models\AdUser;
 use App\Modules\AdUsers\Services\LdapConnectionService;
-use App\Modules\Onboarding\Mail\OnboardingSupervisorMail;
-use App\Modules\Onboarding\Mail\OnboardingWelcomeMail;
+use App\Modules\Onboarding\Mail\OnboardingAdminSetupMail;
 use App\Modules\Onboarding\Models\OnboardingRecord;
-use App\Modules\Onboarding\Models\OnboardingSettings;
 use App\Modules\Onboarding\Models\OnboardingVorlage;
 use App\Modules\Onboarding\Services\AdProvisioningService;
-use App\Modules\Onboarding\Services\ExchangeMailboxService;
 use App\Modules\Onboarding\Services\PhoneNumberService;
 use App\Modules\Onboarding\Services\UsernameGeneratorService;
 use App\Services\PasswordGeneratorService;
@@ -19,6 +16,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class OnboardingController extends Controller
 {
@@ -102,6 +100,8 @@ class OnboardingController extends Controller
             'heimatverzeichnis' => $this->resolvePattern($vorlage->heimatverzeichnis_pattern, $request),
         ]);
 
+        $todoToken = Str::random(48);
+
         $record = OnboardingRecord::create([
             'vorlage_id'          => $vorlage->id,
             'created_by_user_id'  => auth()->id(),
@@ -111,6 +111,9 @@ class OnboardingController extends Controller
             'upn'                 => $request->input('upn'),
             'rufnummer'           => $request->input('rufnummer'),
             'status'              => 'ausstehend',
+            'phase'               => 'setup',
+            'todo_token'          => $todoToken,
+            'todos'               => [],
         ]);
 
         try {
@@ -130,24 +133,13 @@ class OnboardingController extends Controller
                 'payload' => ['samaccountname' => $record->samaccountname, 'upn' => $record->upn],
             ]);
 
-            // Mails nur versenden wenn Passwort gesetzt werden konnte
-            if (!$result['password_warning']) {
-                $this->sendMails($record, $vorlage, $password);
-            }
-
-            // Exchange-Postfach aktivieren (nicht-kritisch, schlägt lautlos fehl)
-            $exchange = new ExchangeMailboxService();
-            if ($exchange->isConfigured()) {
-                $mbResult = $exchange->enableMailbox($record->samaccountname);
-                $record->update([
-                    'mailbox_status'     => $mbResult['success'] ? 'aktiviert' : 'fehler',
-                    'mailbox_enabled_at' => $mbResult['success'] ? now() : null,
-                    // Bei Erfolg: PS-Ausgabe (enthält Alias/DB/E-Mail zur Verifikation)
-                    // Bei Fehler: Fehlermeldung aus stderr, fallback auf stdout
-                    'mailbox_error'      => $mbResult['success']
-                        ? ($mbResult['output'] ?: null)
-                        : ($mbResult['error'] ?: $mbResult['output']),
-                ]);
+            // Admin-Mail mit temporärem Passwort + Todo-Link
+            $todoUrl = route('onboarding.todo.show', $todoToken);
+            $adminEmail = auth()->user()->email;
+            try {
+                Mail::to($adminEmail)->send(new OnboardingAdminSetupMail($record, $password, $todoUrl));
+            } catch (\Throwable) {
+                // Mail-Fehler soll Onboarding nicht abbrechen
             }
 
         } catch (\Throwable $e) {
@@ -157,20 +149,11 @@ class OnboardingController extends Controller
                 ->with('error', 'Fehler beim Anlegen: ' . $e->getMessage());
         }
 
-        // Passwort nur als Session-Flash speichern – niemals in DB persistiert
+        // Temporäres Passwort nur als Session-Flash – niemals in DB
         session()->flash('onboarding_password', $password);
-        session()->flash('onboarding_record_id', $record->id);
+        session()->flash('onboarding_todo_token', $todoToken);
 
         return redirect()->route('onboarding.records.show', $record);
-    }
-
-    /** Ergebnis-Seite (Passwort-Anzeige einmalig via Session-Flash) */
-    public function show(OnboardingRecord $record)
-    {
-        $record->load(['vorlage', 'createdBy']);
-        $password = session('onboarding_password');
-
-        return view('onboarding::onboarding.show', compact('record', 'password'));
     }
 
     // ─── private ─────────────────────────────────────────────────────────────
@@ -184,47 +167,5 @@ class OnboardingController extends Controller
             [$request->input('samaccountname'), $request->input('vorname'), $request->input('nachname')],
             $pattern
         );
-    }
-
-    private function sendMails(OnboardingRecord $record, OnboardingVorlage $vorlage, string $password): void
-    {
-        $obSettings = OnboardingSettings::getSingleton();
-
-        $snapshot = $record->ad_attributes_snapshot ?? [];
-        $vars = [
-            '%vorname%'      => $record->vorname,
-            '%nachname%'     => $record->nachname,
-            '%benutzername%' => $record->samaccountname,
-            '%upn%'          => $record->upn,
-            '%rufnummer%'    => $record->rufnummer ?? '–',
-            '%mobil%'        => $snapshot['mobile'] ?? '–',
-            '%buero%'        => $snapshot['buero'] ?? '–',
-            '%passwort%'     => $password,
-        ];
-
-        // Begrüßungsmail an neuen User
-        try {
-            $subject = $obSettings->welcome_mail_subject;
-            $body    = strtr($vorlage->welcome_mail_override ?: $obSettings->welcome_mail_body, $vars);
-
-            Mail::to($record->upn)->send(new OnboardingWelcomeMail($subject, $body));
-            $record->update(['welcome_mail_sent_at' => now()]);
-        } catch (\Throwable) {
-            // Mail-Fehler soll Onboarding nicht abbrechen
-        }
-
-        // Info-Mail an Vorgesetzten
-        try {
-            $vorgesetzterEmail = $vorlage->vorgesetzter?->email;
-            if ($vorgesetzterEmail) {
-                $subject = $obSettings->supervisor_mail_subject;
-                $body    = strtr($vorlage->supervisor_mail_override ?: $obSettings->supervisor_mail_body, $vars);
-
-                Mail::to($vorgesetzterEmail)->send(new OnboardingSupervisorMail($subject, $body, $record));
-                $record->update(['supervisor_mail_sent_at' => now()]);
-            }
-        } catch (\Throwable) {
-            // Mail-Fehler soll Onboarding nicht abbrechen
-        }
     }
 }

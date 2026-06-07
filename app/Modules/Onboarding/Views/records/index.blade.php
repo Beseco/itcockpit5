@@ -43,10 +43,15 @@
                                         <td class="px-4 py-3 text-gray-600">
                                             {{ $record->vorlage?->name ?? '–' }}
                                         </td>
-                                        <td class="px-4 py-3">
+                                        <td class="px-4 py-3 space-y-1">
                                             <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $record->status_badge['class'] }}">
                                                 {{ $record->status_badge['label'] }}
                                             </span>
+                                            @if($record->phase === 'setup')
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">Todo offen</span>
+                                            @elseif($record->phase === 'completed')
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Abgeschlossen</span>
+                                            @endif
                                         </td>
                                         <td class="px-4 py-3 text-xs text-gray-400">
                                             @if($record->welcome_mail_sent_at || $record->supervisor_mail_sent_at)
@@ -62,7 +67,11 @@
                                         <td class="px-4 py-3 text-xs text-gray-500">
                                             {{ $record->createdBy?->name ?? '–' }}
                                         </td>
-                                        <td class="px-4 py-3 text-right">
+                                        <td class="px-4 py-3 text-right space-x-3">
+                                            @if($record->isSetupPhase())
+                                                <a href="{{ route('onboarding.todo.show', $record->todo_token) }}"
+                                                   class="text-xs font-medium text-amber-600 hover:text-amber-800">Todo-Liste</a>
+                                            @endif
                                             <a href="{{ route('onboarding.records.show', $record) }}"
                                                class="text-xs text-indigo-600 hover:text-indigo-800">Details</a>
                                         </td>
