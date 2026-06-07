@@ -157,21 +157,28 @@ PS;
 
     private function runScript(string $script, array $env, string $pwsh): array
     {
+        // Temp-Datei statt stdin: zuverlässiger auf Linux (kein PSReadLine-Konflikt)
+        $tmpFile = tempnam(sys_get_temp_dir(), 'exchg_') . '.ps1';
+        file_put_contents($tmpFile, $script);
+
         $descriptors = [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
-        $proc = proc_open([$pwsh, '-NonInteractive', '-NoProfile', '-Command', '-'], $descriptors, $pipes, null, $env);
+        $proc = proc_open(
+            [$pwsh, '-NonInteractive', '-NoProfile', '-File', $tmpFile],
+            $descriptors, $pipes, null, $env
+        );
 
         if (!is_resource($proc)) {
+            @unlink($tmpFile);
             return ['success' => false, 'output' => '', 'error' => 'Prozess konnte nicht gestartet werden.'];
         }
 
-        fwrite($pipes[0], $script);
         fclose($pipes[0]);
-
         $stdout = trim(stream_get_contents($pipes[1]));
         $stderr = trim(stream_get_contents($pipes[2]));
         fclose($pipes[1]);
         fclose($pipes[2]);
         $exitCode = proc_close($proc);
+        @unlink($tmpFile);
 
         return [
             'success' => $exitCode === 0,
