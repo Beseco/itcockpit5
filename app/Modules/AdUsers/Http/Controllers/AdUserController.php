@@ -5,7 +5,9 @@ namespace App\Modules\AdUsers\Http\Controllers;
 use App\Modules\AdUsers\Models\AdUser;
 use App\Modules\AdUsers\Models\AdUserSettings;
 use App\Modules\AdUsers\Models\OffboardingRecord;
+use App\Modules\Onboarding\Models\OnboardingRecord;
 use App\Services\AuditLogger;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -65,7 +67,190 @@ class AdUserController extends Controller
 
     public function show(AdUser $user)
     {
-        return view('adusers::show', compact('user'));
+        $groups = $this->extractGroups($user->raw_data ?? []);
+
+        // Onboarding-Verlauf: alle Records mit diesem samaccountname
+        $onboardingRecords = class_exists(OnboardingRecord::class)
+            ? OnboardingRecord::with(['vorlage', 'createdBy'])
+                ->where('samaccountname', $user->samaccountname)
+                ->latest()
+                ->get()
+            : collect();
+
+        return view('adusers::show', compact('user', 'groups', 'onboardingRecords'));
+    }
+
+    /** AJAX: Benutzersuche für Vergleichs-Picker */
+    public function searchJson(Request $request): JsonResponse
+    {
+        $q = trim($request->get('q', ''));
+        if (strlen($q) < 2) return response()->json([]);
+
+        $users = AdUser::where(function ($query) use ($q) {
+            $query->where('samaccountname', 'like', "%{$q}%")
+                  ->orWhere('vorname',      'like', "%{$q}%")
+                  ->orWhere('nachname',     'like', "%{$q}%")
+                  ->orWhere('anzeigename',  'like', "%{$q}%")
+                  ->orWhere('email',        'like', "%{$q}%");
+        })->limit(10)->get();
+
+        return response()->json($users->map(fn($u) => [
+            'id'        => $u->id,
+            'name'      => $u->anzeigename_or_name,
+            'sam'       => $u->samaccountname,
+            'abteilung' => $u->abteilung ?? '–',
+        ]));
+    }
+
+    /** AJAX: Einzelvergleich zweier Benutzer */
+    public function compareUser(AdUser $user, AdUser $target): JsonResponse
+    {
+        $labels = [
+            'abteilung'          => 'Abteilung',
+            'organisation'       => 'Organisation',
+            'telefon'            => 'Telefon',
+            'email'              => 'E-Mail',
+            'distinguished_name' => 'OU / Pfad',
+        ];
+
+        $rawLabels = [
+            'title'                       => 'Position / Titel',
+            'description'                 => 'Beschreibung',
+            'physicaldeliveryofficename'  => 'Büro',
+            'mobile'                      => 'Mobilnummer',
+            'manager'                     => 'Manager (DN)',
+        ];
+
+        $attributes = [];
+        foreach ($labels as $key => $label) {
+            $v1 = $user->{$key} ?? '';
+            $v2 = $target->{$key} ?? '';
+            $attributes[] = [
+                'label' => $label,
+                'user1' => $v1,
+                'user2' => $v2,
+                'diff'  => $v1 !== $v2,
+            ];
+        }
+
+        $raw1 = $user->raw_data ?? [];
+        $raw2 = $target->raw_data ?? [];
+        foreach ($rawLabels as $key => $label) {
+            $v1 = $raw1[$key][0] ?? '';
+            $v2 = $raw2[$key][0] ?? '';
+            if ($v1 || $v2) {
+                $attributes[] = [
+                    'label' => $label,
+                    'user1' => $v1,
+                    'user2' => $v2,
+                    'diff'  => $v1 !== $v2,
+                ];
+            }
+        }
+
+        $groups1 = collect($this->extractGroups($raw1))->pluck('dn')->sort()->values()->toArray();
+        $groups2 = collect($this->extractGroups($raw2))->pluck('dn')->sort()->values()->toArray();
+
+        return response()->json([
+            'target'      => ['id' => $target->id, 'name' => $target->anzeigename_or_name, 'sam' => $target->samaccountname],
+            'attributes'  => $attributes,
+            'groups' => [
+                'only_user1' => array_values(array_diff($groups1, $groups2)),
+                'only_user2' => array_values(array_diff($groups2, $groups1)),
+                'common'     => array_values(array_intersect($groups1, $groups2)),
+            ],
+        ]);
+    }
+
+    /** AJAX: Gruppenvergleich mit allen Benutzern in derselben OU */
+    public function compareOu(AdUser $user): JsonResponse
+    {
+        $dn = $user->distinguished_name;
+        if (!$dn) {
+            return response()->json(['error' => 'Kein Distinguished Name vorhanden.'], 422);
+        }
+
+        // OU extrahieren: alles nach dem ersten Komma
+        $ouDn = substr($dn, (int)strpos($dn, ',') + 1);
+
+        // Alle anderen Benutzer in derselben OU
+        $ouUsers = AdUser::where('distinguished_name', 'like', '%,' . $ouDn)
+            ->where('id', '!=', $user->id)
+            ->where('ad_vorhanden', true)
+            ->get();
+
+        if ($ouUsers->isEmpty()) {
+            return response()->json(['ou' => $ouDn, 'users_count' => 0, 'groups_analysis' => []]);
+        }
+
+        $myGroups  = collect($this->extractGroups($user->raw_data ?? []))->pluck('dn')->toArray();
+
+        // Alle Gruppen aller OU-Mitglieder sammeln
+        $groupCounts = []; // dn => [name, count]
+        foreach ($ouUsers as $ou) {
+            foreach ($this->extractGroups($ou->raw_data ?? []) as $g) {
+                if (!isset($groupCounts[$g['dn']])) {
+                    $groupCounts[$g['dn']] = ['name' => $g['name'], 'dn' => $g['dn'], 'count' => 0];
+                }
+                $groupCounts[$g['dn']]['count']++;
+            }
+        }
+
+        $total = $ouUsers->count();
+        $analysis = [];
+        foreach ($groupCounts as $dn => $info) {
+            $iHave = in_array($dn, $myGroups);
+            $pct   = round($info['count'] / $total * 100);
+            $analysis[] = [
+                'name'    => $info['name'],
+                'dn'      => $dn,
+                'i_have'  => $iHave,
+                'count'   => $info['count'],
+                'total'   => $total,
+                'pct'     => $pct,
+                'notable' => (!$iHave && $pct >= 80) || ($iHave && $pct <= 20),
+            ];
+        }
+
+        // Nur dieser Benutzer: Gruppen die kein anderer in der OU hat
+        $myOnlyGroups = array_filter($myGroups, fn($d) => !isset($groupCounts[$d]));
+        foreach ($myOnlyGroups as $dn) {
+            preg_match('/^CN=([^,]+)/i', $dn, $m);
+            $analysis[] = [
+                'name'    => $m[1] ?? $dn,
+                'dn'      => $dn,
+                'i_have'  => true,
+                'count'   => 0,
+                'total'   => $total,
+                'pct'     => 0,
+                'notable' => true,
+            ];
+        }
+
+        usort($analysis, fn($a, $b) => $b['pct'] <=> $a['pct'] ?: strcasecmp($a['name'], $b['name']));
+
+        return response()->json([
+            'ou'             => $ouDn,
+            'users_count'    => $total,
+            'groups_analysis' => $analysis,
+        ]);
+    }
+
+    // ─── private ─────────────────────────────────────────────────────────────
+
+    private function extractGroups(array $rawData): array
+    {
+        $memberOf = $rawData['memberof'] ?? [];
+        $groups   = [];
+        $count    = (int)($memberOf['count'] ?? 0);
+        for ($i = 0; $i < $count; $i++) {
+            $dn = $memberOf[$i] ?? '';
+            if (!$dn) continue;
+            preg_match('/^CN=([^,]+)/i', $dn, $match);
+            $groups[] = ['name' => $match[1] ?? $dn, 'dn' => $dn];
+        }
+        usort($groups, fn($a, $b) => strcasecmp($a['name'], $b['name']));
+        return $groups;
     }
 
     public function destroy(AdUser $user)

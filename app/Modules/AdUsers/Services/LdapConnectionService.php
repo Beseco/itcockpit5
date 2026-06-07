@@ -116,6 +116,8 @@ class LdapConnectionService
             'samaccountname', 'givenname', 'sn', 'displayname',
             'mail', 'company', 'department', 'telephonenumber',
             'distinguishedname', 'useraccountcontrol',
+            'memberof', 'description', 'physicaldeliveryofficename',
+            'mobile', 'manager', 'title',
         ];
 
         $result = @ldap_search(
