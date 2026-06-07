@@ -29,21 +29,31 @@
 
     @include('adusers::_subnav')
 
-    {{-- Seitendaten als JS-Variablen – JSON ist in script-Tags sicher, nicht in HTML-Attributen --}}
+    @php
+        $flags = JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE;
+        $changeLogsJs = json_encode(
+            $groupChangeLogs->map(function ($l) {
+                return [
+                    'id'           => $l->id,
+                    'action'       => $l->action,
+                    'action_label' => $l->actionLabel(),
+                    'group_name'   => $l->group_name,
+                    'group_dn'     => $l->group_dn,
+                    'performed_by' => $l->performedBy?->name ?? 'Unbekannt',
+                    'performed_at' => $l->created_at->format('d.m.Y H:i'),
+                    'reverted_at'  => $l->reverted_at?->format('d.m.Y H:i'),
+                    'reverted_by'  => $l->revertedBy?->name,
+                    'is_reverted'  => $l->isReverted(),
+                ];
+            })->values()->all(),
+            $flags
+        );
+    @endphp
+
+    {{-- Seitendaten als JS-Variablen --}}
     <script>
     window._adUserGroups     = @json($groups);
-    window._adUserChangeLogs = @json($groupChangeLogs->map(fn($l) => [
-        'id'           => $l->id,
-        'action'       => $l->action,
-        'action_label' => $l->actionLabel(),
-        'group_name'   => $l->group_name,
-        'group_dn'     => $l->group_dn,
-        'performed_by' => $l->performedBy?->name ?? 'Unbekannt',
-        'performed_at' => $l->created_at->format('d.m.Y H:i'),
-        'reverted_at'  => $l->reverted_at?->format('d.m.Y H:i'),
-        'reverted_by'  => $l->revertedBy?->name,
-        'is_reverted'  => $l->isReverted(),
-    ])->values());
+    window._adUserChangeLogs = {!! $changeLogsJs !!};
     window._adUserRoutes = {
         groupSearch:     '{{ route('adusers.groups.search') }}',
         groupAdd:        '{{ route('adusers.groups.add', $user) }}',
