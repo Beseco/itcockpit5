@@ -69,6 +69,15 @@
                     <option value="offboarding"  @selected(request('status')==='offboarding')>Im Offboarding</option>
                 </select>
 
+                @if(!empty($specialOus))
+                <select name="special_ou" class="border-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="">Spezielle OU (alle)</option>
+                    @foreach($specialOus as $key => $sou)
+                        <option value="{{ $key }}" @selected(request('special_ou')===$key)>{{ $sou['label'] }}</option>
+                    @endforeach
+                </select>
+                @endif
+
                 <select name="vorhanden" class="border-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
                     <option value="">AD-Status (alle)</option>
                     <option value="ja"  @selected(request('vorhanden')==='ja')>Im AD vorhanden</option>
@@ -86,7 +95,7 @@
                 </select>
 
                 <x-primary-button type="submit">Suchen</x-primary-button>
-                @if(request()->hasAny(['search','status','vorhanden','inaktiv_seit']))
+                @if(request()->hasAny(['search','status','vorhanden','inaktiv_seit','special_ou']))
                     <a href="{{ route('adusers.index') }}"
                        class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-600 hover:bg-gray-50">✕</a>
                 @endif

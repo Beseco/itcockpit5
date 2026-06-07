@@ -63,12 +63,17 @@ class AdUserController extends Controller
             $query->where('letzter_import_at', '<', now()->subDays((int) $inaktivSeit));
         }
 
+        $specialOus = $settings->specialOus();
+        if (($specialOuFilter = $request->get('special_ou')) && isset($specialOus[$specialOuFilter])) {
+            $ouDn = $specialOus[$specialOuFilter]['dn'];
+            $query->whereRaw('LOWER(distinguished_name) LIKE ?', ['%,' . strtolower($ouDn)]);
+        }
+
         $perPage = in_array((int) $request->get('per_page', 25), [25, 50, 100, 250]) ? (int) $request->get('per_page', 25) : 25;
         $users     = $query->paginate($perPage)->withQueryString();
         $canDelete = Auth::user()->can('adusers.delete');
 
         // Spezielle OUs für Badge-Anzeige in der Liste
-        $specialOus     = $settings->specialOus();
         $specialOuUsers = [];
         if (!empty($specialOus)) {
             foreach ($users as $u) {
