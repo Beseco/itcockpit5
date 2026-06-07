@@ -1,27 +1,23 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
-            <h2 class="font-semibold text-xl text-gray-800">Onboarding</h2>
+            <h2 class="font-semibold text-xl text-gray-800">AD-Benutzer</h2>
             <div class="flex items-center gap-3">
                 @can('module.onboarding.edit')
                     <a href="{{ route('onboarding.create') }}"
-                       class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">
-                        + Benutzer anlegen
+                       class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">
+                        + Neuer Mitarbeiter
                     </a>
                     <a href="{{ route('onboarding.vorlagen.index') }}"
                        class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50">
                         Vorlagen
                     </a>
                 @endcan
-                @can('module.onboarding.config')
-                    <a href="{{ route('onboarding.settings') }}"
-                       class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50">
-                        Einstellungen
-                    </a>
-                @endcan
             </div>
         </div>
     </x-slot>
+
+    @include('adusers::_subnav')
 
     <div class="py-8">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">

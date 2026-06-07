@@ -9,13 +9,11 @@
                 </a>
             </div>
             <div class="flex items-center gap-3">
-                <a href="{{ route('adusers.offboarding.index') }}"
-                   class="inline-flex items-center px-3 py-1.5 bg-orange-100 text-orange-800 border border-orange-200 rounded-md text-xs font-semibold hover:bg-orange-200 transition">
-                    Ausgeschiedene Mitarbeiter
+                @can('module.onboarding.edit')
+                <a href="{{ route('onboarding.create') }}"
+                   class="inline-flex items-center px-3 py-1.5 bg-green-600 text-white border border-transparent rounded-md text-xs font-semibold hover:bg-green-700 transition">
+                    + Neuer Mitarbeiter
                 </a>
-                @can('adusers.config')
-                <a href="{{ route('adusers.settings') }}"
-                   class="text-sm text-gray-500 hover:text-gray-700">Einstellungen</a>
                 @endcan
                 @can('adusers.sync')
                 <form method="POST" action="{{ route('adusers.sync') }}" class="inline">
@@ -29,6 +27,8 @@
             </div>
         </div>
     </x-slot>
+
+    @include('adusers::_subnav')
 
     <div class="py-8">
         <div class="mx-auto px-4 sm:px-6 lg:px-8 space-y-4"

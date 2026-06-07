@@ -1,9 +1,10 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <a href="{{ route('onboarding.index') }}" class="text-gray-400 hover:text-gray-600">← Zurück</a>
-                <h2 class="font-semibold text-xl text-gray-800">Onboarding-Vorlagen</h2>
+            <div class="flex items-center gap-2">
+                <a href="{{ route('onboarding.index') }}" class="text-gray-400 hover:text-gray-600 text-sm">Onboarding</a>
+                <span class="text-gray-300">/</span>
+                <h2 class="font-semibold text-xl text-gray-800">Vorlagen</h2>
             </div>
             @can('module.onboarding.edit')
                 <a href="{{ route('onboarding.vorlagen.create') }}"
@@ -13,6 +14,8 @@
             @endcan
         </div>
     </x-slot>
+
+    @include('adusers::_subnav')
 
     <div class="py-8">
         <div class="max-w-6xl mx-auto sm:px-6 lg:px-8 space-y-4">
