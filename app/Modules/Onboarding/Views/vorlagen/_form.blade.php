@@ -127,17 +127,19 @@
                 <x-input-error :messages="$errors->get('rufnummer_praefix')" class="mt-1" />
             </div>
             <div>
-                <x-input-label for="fax_praefix" value="Fax-Präfix" />
+                <x-input-label for="fax_praefix" value="Fax (feste Nummer oder Präfix mit XX)" />
                 <x-text-input id="fax_praefix" name="fax_praefix" type="text" class="mt-1 block w-full"
                               value="{{ old('fax_praefix', $vorlage->fax_praefix ?? '') }}"
                               placeholder="+498161600914XX" />
-                <template x-if="sug.fax_praefix">
-                    <p class="mt-1 text-xs text-indigo-600">
-                        Vorschlag: <span class="font-medium font-mono" x-text="sug.fax_praefix.value"></span>
-                        <span class="text-gray-400">(<span x-text="sug.fax_praefix.count"></span>×)</span>
-                        <button type="button" class="underline ml-1" @click="apply('fax_praefix', sug.fax_praefix.value)">übernehmen</button>
-                    </p>
-                </template>
+                <div class="mt-1 text-xs text-indigo-600 space-y-0.5" x-show="(sug.fax_numbers || []).length" x-cloak>
+                    <template x-for="f in (sug.fax_numbers || [])" :key="f.value">
+                        <p>
+                            <span class="font-medium font-mono" x-text="f.value"></span>
+                            <span class="text-gray-400">(<span x-text="f.count"></span>×)</span>
+                            <button type="button" class="underline ml-1" @click="apply('fax_praefix', f.value)">übernehmen</button>
+                        </p>
+                    </template>
+                </div>
                 <x-input-error :messages="$errors->get('fax_praefix')" class="mt-1" />
             </div>
             <div>

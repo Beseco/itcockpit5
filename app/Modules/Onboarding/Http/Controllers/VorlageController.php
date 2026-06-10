@@ -99,16 +99,28 @@ class VorlageController extends Controller
             }
         }
 
-        // Rufnummer-/Fax-Präfix: letzte 2 Ziffern abschneiden, häufigsten Präfix + "XX"
-        foreach (['rufnummer_praefix' => 'telephonenumber', 'fax_praefix' => 'facsimiletelephonenumber'] as $field => $ldapAttr) {
-            $praefixe = $users->map(function ($u) use ($ldapAttr) {
-                $nr = $u[$ldapAttr][0] ?? null;
-                $nr = $nr !== null ? trim((string) $nr) : '';
-                return strlen($nr) > 2 ? substr($nr, 0, -2) . 'XX' : null;
-            })->filter();
-            if ($top = $this->haeufigsterWert($praefixe)) {
-                $suggestions[$field] = $top;
-            }
+        // Rufnummer-Präfix: letzte 2 Ziffern abschneiden, häufigsten Präfix + "XX"
+        $praefixe = $users->map(function ($u) {
+            $nr = $u['telephonenumber'][0] ?? null;
+            $nr = $nr !== null ? trim((string) $nr) : '';
+            return strlen($nr) > 2 ? substr($nr, 0, -2) . 'XX' : null;
+        })->filter();
+        if ($top = $this->haeufigsterWert($praefixe)) {
+            $suggestions['rufnummer_praefix'] = $top;
+        }
+
+        // Fax: OU teilt sich meist eine feste Nummer → alle vorkommenden
+        // vollständigen Faxnummern als Vorschläge anbieten (kein Präfix/XX).
+        $faxZaehlung = $users->map(fn($u) => $u['facsimiletelephonenumber'][0] ?? null)
+            ->filter(fn($v) => $v !== null && trim((string) $v) !== '')
+            ->countBy(fn($v) => trim((string) $v))
+            ->sortDesc();
+        $faxListe = [];
+        foreach ($faxZaehlung as $value => $cnt) {
+            $faxListe[] = ['value' => (string) $value, 'count' => $cnt];
+        }
+        if ($faxListe) {
+            $suggestions['fax_numbers'] = $faxListe;
         }
 
         // Gruppen: memberOf aller OU-Benutzer aggregieren, häufigste zuerst

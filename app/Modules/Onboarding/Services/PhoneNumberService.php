@@ -17,6 +17,12 @@ class PhoneNumberService
      */
     public function findNextFree(string $praefix, LdapConnectionService $ldap): ?string
     {
+        // Ohne "XX"-Platzhalter ist es eine feste Nummer (z.B. gemeinsame OU-Faxnummer)
+        // → unverändert zurückgeben, keine freie Endung suchen.
+        if (!preg_match('/[Xx]{2}$/', $praefix)) {
+            return $praefix;
+        }
+
         $basePreaefix = rtrim($praefix, 'Xx');
         if (empty($basePreaefix)) return null;
 
