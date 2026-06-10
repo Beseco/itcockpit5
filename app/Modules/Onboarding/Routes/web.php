@@ -29,6 +29,7 @@ Route::middleware(['auth', 'module.permission:onboarding,edit'])->group(function
     Route::delete('/vorlagen/{vorlage}', [VorlageController::class, 'destroy'])->name('vorlagen.destroy');
     Route::post('/vorlagen/{vorlage}/clone', [VorlageController::class, 'clone'])->name('vorlagen.clone');
     Route::get('/vorlagen/search-groups', [VorlageController::class, 'searchGroups'])->name('vorlagen.search-groups');
+    Route::get('/vorlagen/ou-suggestions', [VorlageController::class, 'ouSuggestions'])->name('vorlagen.ou-suggestions');
 });
 
 // Onboarding-Workflow

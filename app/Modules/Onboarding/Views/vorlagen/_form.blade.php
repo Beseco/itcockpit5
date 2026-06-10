@@ -10,7 +10,32 @@
         $vorlage->anmeldeskript ?? null,
     ])->filter(fn($v) => trim((string) $v) !== '')->isNotEmpty();
 @endphp
-<div class="space-y-6">
+<div class="space-y-6"
+     x-data="{
+        ouLoading: false,
+        ouCount: 0,
+        ouError: null,
+        sug: {},
+        async fetchOu(id) {
+            this.sug = {}; this.ouCount = 0; this.ouError = null;
+            if (!id) return;
+            this.ouLoading = true;
+            try {
+                const r = await fetch('{{ route('onboarding.vorlagen.ou-suggestions') }}?abteilung_id=' + encodeURIComponent(id), {
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content }
+                });
+                const j = await r.json();
+                this.sug = j.suggestions || {};
+                this.ouCount = j.count || 0;
+                this.ouError = j.error || null;
+            } catch(e) { this.ouError = e.toString(); }
+            finally { this.ouLoading = false; }
+        },
+        apply(field, value) {
+            const el = this.$root.querySelector('[name=\'' + field + '\']');
+            if (el) { el.value = value; el.dispatchEvent(new Event('input')); }
+        }
+     }">
 
     {{-- Basis-Informationen --}}
     <div class="bg-white shadow-sm sm:rounded-lg p-6">
@@ -36,6 +61,8 @@
                 <div>
                     <x-input-label for="abteilung_id" value="Organisationseinheit (aus Abteilungen)" />
                     <select id="abteilung_id" name="abteilung_id"
+                            @change="fetchOu($event.target.value)"
+                            x-init="if ($el.value) fetchOu($el.value)"
                             class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                         <option value="">– Keine –</option>
                         @foreach($abteilungen as $abt)
@@ -46,6 +73,11 @@
                         @endforeach
                     </select>
                     <p class="mt-1 text-xs text-gray-400">Die OU aus der Abteilung wird als Ziel-OU beim Anlegen verwendet.</p>
+                    <p x-show="ouLoading" x-cloak class="mt-1 text-xs text-gray-400">Lese Benutzer der OU …</p>
+                    <p x-show="!ouLoading && ouCount > 0" x-cloak class="mt-1 text-xs text-indigo-600">
+                        <span x-text="ouCount"></span> Benutzer in dieser OU gefunden – Vorschläge werden bei den Adressfeldern angezeigt.
+                    </p>
+                    <p x-show="ouError" x-cloak class="mt-1 text-xs text-red-600" x-text="ouError"></p>
                     <x-input-error :messages="$errors->get('abteilung_id')" class="mt-1" />
                 </div>
 
@@ -84,6 +116,13 @@
                               value="{{ old('rufnummer_praefix', $vorlage->rufnummer_praefix ?? '') }}"
                               placeholder="+498161600314XX" />
                 <p class="mt-1 text-xs text-gray-400">XX wird automatisch als nächste freie 2-stellige Nummer aus dem AD ermittelt.</p>
+                <template x-if="sug.rufnummer_praefix">
+                    <p class="mt-1 text-xs text-indigo-600">
+                        Vorschlag: <span class="font-medium font-mono" x-text="sug.rufnummer_praefix.value"></span>
+                        <span class="text-gray-400">(<span x-text="sug.rufnummer_praefix.count"></span>×)</span>
+                        <button type="button" class="underline ml-1" @click="apply('rufnummer_praefix', sug.rufnummer_praefix.value)">übernehmen</button>
+                    </p>
+                </template>
                 <x-input-error :messages="$errors->get('rufnummer_praefix')" class="mt-1" />
             </div>
             <div>
@@ -91,12 +130,26 @@
                 <x-text-input id="fax_praefix" name="fax_praefix" type="text" class="mt-1 block w-full"
                               value="{{ old('fax_praefix', $vorlage->fax_praefix ?? '') }}"
                               placeholder="+498161600914XX" />
+                <template x-if="sug.fax_praefix">
+                    <p class="mt-1 text-xs text-indigo-600">
+                        Vorschlag: <span class="font-medium font-mono" x-text="sug.fax_praefix.value"></span>
+                        <span class="text-gray-400">(<span x-text="sug.fax_praefix.count"></span>×)</span>
+                        <button type="button" class="underline ml-1" @click="apply('fax_praefix', sug.fax_praefix.value)">übernehmen</button>
+                    </p>
+                </template>
                 <x-input-error :messages="$errors->get('fax_praefix')" class="mt-1" />
             </div>
             <div>
                 <x-input-label for="strasse" value="Straße" />
                 <x-text-input id="strasse" name="strasse" type="text" class="mt-1 block w-full"
                               value="{{ old('strasse', $vorlage->strasse ?? '') }}" />
+                <template x-if="sug.strasse">
+                    <p class="mt-1 text-xs text-indigo-600">
+                        Vorschlag: <span class="font-medium" x-text="sug.strasse.value"></span>
+                        <span class="text-gray-400">(<span x-text="sug.strasse.count"></span>×)</span>
+                        <button type="button" class="underline ml-1" @click="apply('strasse', sug.strasse.value)">übernehmen</button>
+                    </p>
+                </template>
                 <x-input-error :messages="$errors->get('strasse')" class="mt-1" />
             </div>
             <div class="grid grid-cols-3 gap-2">
@@ -104,12 +157,25 @@
                     <x-input-label for="plz" value="PLZ" />
                     <x-text-input id="plz" name="plz" type="text" class="mt-1 block w-full"
                                   value="{{ old('plz', $vorlage->plz ?? '') }}" />
+                    <template x-if="sug.plz">
+                        <p class="mt-1 text-xs text-indigo-600">
+                            <span class="font-medium" x-text="sug.plz.value"></span>
+                            <button type="button" class="underline ml-1" @click="apply('plz', sug.plz.value)">übern.</button>
+                        </p>
+                    </template>
                     <x-input-error :messages="$errors->get('plz')" class="mt-1" />
                 </div>
                 <div class="col-span-2">
                     <x-input-label for="ort" value="Ort" />
                     <x-text-input id="ort" name="ort" type="text" class="mt-1 block w-full"
                                   value="{{ old('ort', $vorlage->ort ?? '') }}" />
+                    <template x-if="sug.ort">
+                        <p class="mt-1 text-xs text-indigo-600">
+                            Vorschlag: <span class="font-medium" x-text="sug.ort.value"></span>
+                            <span class="text-gray-400">(<span x-text="sug.ort.count"></span>×)</span>
+                            <button type="button" class="underline ml-1" @click="apply('ort', sug.ort.value)">übernehmen</button>
+                        </p>
+                    </template>
                     <x-input-error :messages="$errors->get('ort')" class="mt-1" />
                 </div>
             </div>
@@ -117,12 +183,26 @@
                 <x-input-label for="firma" value="Firma (AD-Attribut company)" />
                 <x-text-input id="firma" name="firma" type="text" class="mt-1 block w-full"
                               value="{{ old('firma', $vorlage->firma ?? '') }}" />
+                <template x-if="sug.firma">
+                    <p class="mt-1 text-xs text-indigo-600">
+                        Vorschlag: <span class="font-medium" x-text="sug.firma.value"></span>
+                        <span class="text-gray-400">(<span x-text="sug.firma.count"></span>×)</span>
+                        <button type="button" class="underline ml-1" @click="apply('firma', sug.firma.value)">übernehmen</button>
+                    </p>
+                </template>
                 <x-input-error :messages="$errors->get('firma')" class="mt-1" />
             </div>
             <div>
                 <x-input-label for="abteilung_ad" value="Abteilung (AD-Attribut department)" />
                 <x-text-input id="abteilung_ad" name="abteilung_ad" type="text" class="mt-1 block w-full"
                               value="{{ old('abteilung_ad', $vorlage->abteilung_ad ?? '') }}" />
+                <template x-if="sug.abteilung_ad">
+                    <p class="mt-1 text-xs text-indigo-600">
+                        Vorschlag: <span class="font-medium" x-text="sug.abteilung_ad.value"></span>
+                        <span class="text-gray-400">(<span x-text="sug.abteilung_ad.count"></span>×)</span>
+                        <button type="button" class="underline ml-1" @click="apply('abteilung_ad', sug.abteilung_ad.value)">übernehmen</button>
+                    </p>
+                </template>
                 <x-input-error :messages="$errors->get('abteilung_ad')" class="mt-1" />
             </div>
             <div>
@@ -131,6 +211,13 @@
                               value="{{ old('buero', $vorlage->buero ?? '') }}"
                               placeholder="z.B. Zimmer 103" />
                 <p class="mt-1 text-xs text-gray-400">Standard für diese Vorlage – kann beim Anlegen überschrieben werden.</p>
+                <template x-if="sug.buero">
+                    <p class="mt-1 text-xs text-indigo-600">
+                        Vorschlag: <span class="font-medium" x-text="sug.buero.value"></span>
+                        <span class="text-gray-400">(<span x-text="sug.buero.count"></span>×)</span>
+                        <button type="button" class="underline ml-1" @click="apply('buero', sug.buero.value)">übernehmen</button>
+                    </p>
+                </template>
                 <x-input-error :messages="$errors->get('buero')" class="mt-1" />
             </div>
             <div class="sm:col-span-2">

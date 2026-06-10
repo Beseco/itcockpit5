@@ -138,6 +138,81 @@ class VorlageController extends Controller
         return redirect()->route('onboarding.vorlagen.index')->with('success', $msg);
     }
 
+    /**
+     * AJAX: Liest die Benutzer in der OU der gewählten Abteilung aus und schlägt
+     * für die Standardfelder (Adresse, Firma, Büro, Rufnummer-Präfix) den jeweils
+     * häufigsten Wert vor.
+     */
+    public function ouSuggestions(Request $request, \App\Modules\AdUsers\Services\LdapConnectionService $ldap)
+    {
+        $abteilung = Abteilung::find($request->integer('abteilung_id'));
+        if (!$abteilung || empty($abteilung->ad_path)) {
+            return response()->json(['count' => 0, 'suggestions' => (object) []]);
+        }
+
+        $attrs = [
+            'streetaddress', 'postalcode', 'l', 'company', 'department',
+            'physicaldeliveryofficename', 'telephonenumber', 'facsimiletelephonenumber',
+        ];
+
+        try {
+            $users = $ldap->searchWithBaseDn(
+                $abteilung->ad_path,
+                '(&(objectClass=user)(objectCategory=person))',
+                $attrs,
+            );
+        } catch (\Throwable $e) {
+            return response()->json(['count' => 0, 'suggestions' => (object) [], 'error' => $e->getMessage()]);
+        }
+
+        // Direkte Attribut-Übernahme (häufigster Wert)
+        $direct = [
+            'strasse'      => 'streetaddress',
+            'plz'          => 'postalcode',
+            'ort'          => 'l',
+            'firma'        => 'company',
+            'abteilung_ad' => 'department',
+            'buero'        => 'physicaldeliveryofficename',
+        ];
+
+        $suggestions = [];
+        foreach ($direct as $field => $ldapAttr) {
+            $werte = $users->map(fn($u) => $u[$ldapAttr][0] ?? null)
+                ->filter(fn($v) => $v !== null && trim((string) $v) !== '');
+            if ($top = $this->haeufigsterWert($werte)) {
+                $suggestions[$field] = $top;
+            }
+        }
+
+        // Rufnummer-/Fax-Präfix: letzte 2 Ziffern abschneiden, häufigsten Präfix + "XX"
+        foreach (['rufnummer_praefix' => 'telephonenumber', 'fax_praefix' => 'facsimiletelephonenumber'] as $field => $ldapAttr) {
+            $praefixe = $users->map(function ($u) use ($ldapAttr) {
+                $nr = $u[$ldapAttr][0] ?? null;
+                $nr = $nr !== null ? trim((string) $nr) : '';
+                return strlen($nr) > 2 ? substr($nr, 0, -2) . 'XX' : null;
+            })->filter();
+            if ($top = $this->haeufigsterWert($praefixe)) {
+                $suggestions[$field] = $top;
+            }
+        }
+
+        return response()->json([
+            'count'       => $users->count(),
+            'suggestions' => $suggestions ?: (object) [],
+        ]);
+    }
+
+    /** Ermittelt den häufigsten Wert einer Collection. Gibt ['value','count'] oder null zurück. */
+    private function haeufigsterWert(\Illuminate\Support\Collection $werte): ?array
+    {
+        if ($werte->isEmpty()) {
+            return null;
+        }
+        $zaehlung = $werte->countBy(fn($v) => (string) $v)->sortDesc();
+
+        return ['value' => (string) $zaehlung->keys()->first(), 'count' => $zaehlung->first()];
+    }
+
     /** AJAX: AD-Gruppen suchen */
     public function searchGroups(Request $request, AdProvisioningService $provisioner)
     {
