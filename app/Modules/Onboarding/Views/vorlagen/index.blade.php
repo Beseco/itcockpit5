@@ -32,61 +32,39 @@
                 <a href="{{ route('onboarding.settings') }}" class="underline">Einstellungen</a>; hier ergänzt du pro OE Gruppen, Adresse und Vorgesetzten.
             </div>
 
-            @if($vorlagen->isEmpty())
+            @if($abteilungen->isEmpty())
                 <div class="bg-white shadow-sm sm:rounded-lg p-8 text-center text-gray-400 text-sm">
                     Noch keine Organisationseinheiten vorhanden.
                     <a href="{{ route('abteilungen.index') }}" class="text-indigo-600 hover:underline ml-1">Erste OE anlegen</a>
                 </div>
             @else
                 <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
-                    <table class="min-w-full divide-y divide-gray-200 text-sm">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vorlage</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Abteilung</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">sAMAccountName-Muster</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Gruppen</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                                <th class="px-4 py-3"></th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white divide-y divide-gray-200">
-                            @foreach($vorlagen as $vorlage)
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-4 py-3 font-medium text-gray-900">
-                                        {{ $vorlage->name }}
-                                        @if($vorlage->beschreibung)
-                                            <p class="text-xs text-gray-400 mt-0.5 font-normal">{{ Str::limit($vorlage->beschreibung, 60) }}</p>
-                                        @endif
-                                    </td>
-                                    <td class="px-4 py-3 text-gray-600">
-                                        {{ $vorlage->abteilung?->name ?? '–' }}
-                                    </td>
-                                    <td class="px-4 py-3 font-mono text-xs text-gray-600">
-                                        {{ $vorlage->samaccountname_pattern }}
-                                    </td>
-                                    <td class="px-4 py-3 text-gray-600 text-xs">
-                                        {{ $vorlage->gruppen->count() }} Gruppe(n)
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        @if($vorlage->is_active)
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Aktiv</span>
-                                        @else
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">Inaktiv</span>
-                                        @endif
-                                    </td>
-                                    <td class="px-4 py-3 text-right">
-                                        <div class="flex items-center justify-end gap-3">
-                                            <a href="{{ route('onboarding.create', ['vorlage_id' => $vorlage->id]) }}"
-                                               class="text-xs text-indigo-600 hover:text-indigo-800">Verwenden</a>
-                                            <a href="{{ route('onboarding.vorlagen.edit', $vorlage) }}"
-                                               class="text-xs text-gray-500 hover:text-gray-700">Bearbeiten</a>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                    <div class="divide-y divide-gray-100">
+                        @foreach($abteilungen as $abteilung)
+                            @include('onboarding::vorlagen._tree_row', ['abteilung' => $abteilung, 'depth' => 0])
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            @if($standalone->isNotEmpty())
+                <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
+                    <p class="px-4 py-2 text-xs font-medium text-gray-500 bg-gray-50 border-b border-gray-100">Vorlagen ohne OE</p>
+                    <div class="divide-y divide-gray-100">
+                        @foreach($standalone as $vorlage)
+                            <div class="px-4 py-3 flex items-center justify-between hover:bg-gray-50">
+                                <span class="text-sm font-medium text-gray-900">{{ $vorlage->name }}</span>
+                                <div class="flex items-center gap-3">
+                                    <a href="{{ route('onboarding.create', ['vorlage_id' => $vorlage->id]) }}"
+                                       class="text-xs text-indigo-600 hover:text-indigo-800">Verwenden</a>
+                                    @can('module.onboarding.edit')
+                                        <a href="{{ route('onboarding.vorlagen.edit', $vorlage) }}"
+                                           class="text-xs text-gray-500 hover:text-gray-700">Bearbeiten</a>
+                                    @endcan
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
                 </div>
             @endif
 

@@ -15,11 +15,21 @@ class VorlageController extends Controller
 {
     public function index()
     {
-        $vorlagen = OnboardingVorlage::with(['abteilung', 'gruppen'])
-            ->orderBy('name')
-            ->get();
+        // Baum wie bei den Organisationseinheiten aufbauen (Roots + Kinder).
+        $abteilungen = Abteilung::with([
+            'children.children.children.children',
+            'children.children.children',
+            'children.children',
+            'children',
+        ])->roots()->get();
 
-        return view('onboarding::vorlagen.index', compact('vorlagen'));
+        // Vorlagen je OE für schnellen Zugriff im Baum.
+        $vorlagenByAbteilung = OnboardingVorlage::with('gruppen')->get()->keyBy('abteilung_id');
+
+        // Eventuelle Altbestände ohne OE
+        $standalone = OnboardingVorlage::whereNull('abteilung_id')->with('gruppen')->orderBy('name')->get();
+
+        return view('onboarding::vorlagen.index', compact('abteilungen', 'vorlagenByAbteilung', 'standalone'));
     }
 
     public function edit(OnboardingVorlage $vorlage)
