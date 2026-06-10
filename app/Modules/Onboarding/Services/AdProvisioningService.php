@@ -100,8 +100,18 @@ class AdProvisioningService
         }
 
         // Schritt 5: Sicherheitsgruppen zuweisen
-        foreach ($vorlage->gruppen as $gruppe) {
-            $this->addToGroup($conn, $userDn, $gruppe->ad_group_dn);
+        // Wenn explizit Gruppen-DNs übergeben wurden (Wizard), diese verwenden,
+        // andernfalls die in der Vorlage hinterlegten Gruppen.
+        if (isset($data['gruppen_dns']) && is_array($data['gruppen_dns'])) {
+            foreach ($data['gruppen_dns'] as $dn) {
+                if (trim((string) $dn) !== '') {
+                    $this->addToGroup($conn, $userDn, $dn);
+                }
+            }
+        } else {
+            foreach ($vorlage->gruppen as $gruppe) {
+                $this->addToGroup($conn, $userDn, $gruppe->ad_group_dn);
+            }
         }
 
         // objectSid des neuen Benutzers auslesen – wird für die ACL-Vergabe genutzt

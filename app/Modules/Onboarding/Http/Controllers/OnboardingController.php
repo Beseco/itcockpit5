@@ -41,7 +41,7 @@ class OnboardingController extends Controller
     public function create(Request $request)
     {
         $vorlageId = $request->input('vorlage_id');
-        $vorlagen  = OnboardingVorlage::where('is_active', true)->with('abteilung')->orderBy('name')->get();
+        $vorlagen  = OnboardingVorlage::where('is_active', true)->with(['abteilung', 'gruppen'])->orderBy('name')->get();
         $vorlage   = $vorlageId ? OnboardingVorlage::with(['abteilung', 'gruppen', 'vorgesetzter'])->find($vorlageId) : null;
 
         return view('onboarding::onboarding.create', compact('vorlagen', 'vorlage'));
@@ -89,6 +89,9 @@ class OnboardingController extends Controller
             'fax'            => ['nullable', 'string', 'max:50'],
             'buero'          => ['nullable', 'string', 'max:255'],
             'vorgesetzter_dn' => ['nullable', 'string', 'max:1000'],
+            'gruppen'         => ['nullable', 'array'],
+            'gruppen.*.dn'    => ['required_with:gruppen', 'string', 'max:1000'],
+            'gruppen.*.name'  => ['nullable', 'string', 'max:255'],
         ]);
 
         $vorlage  = OnboardingVorlage::with(['abteilung', 'gruppen'])->findOrFail($request->integer('vorlage_id'));
@@ -102,6 +105,12 @@ class OnboardingController extends Controller
             'heimatverzeichnis'          => $this->resolvePattern($vorlage->effectiveHeimatverzeichnisPattern(), $request),
             'heimatverzeichnis_laufwerk' => $vorlage->effectiveHeimatverzeichnisLaufwerk(),
         ]);
+
+        // Im Wizard ausgewählte Gruppen überschreiben die Vorlagen-Gruppen.
+        if ($request->has('gruppen')) {
+            $data['gruppen_dns'] = collect($request->input('gruppen', []))
+                ->pluck('dn')->filter()->values()->all();
+        }
 
         $todoToken = Str::random(48);
 
