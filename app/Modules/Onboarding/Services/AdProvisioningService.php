@@ -15,6 +15,8 @@ class AdProvisioningService
             throw new \RuntimeException('PHP LDAP-Extension ist nicht aktiviert.');
         }
 
+        $homeDirWarning = null;
+
         $adSettings = AdUserSettings::getSingleton();
         $obSettings = OnboardingSettings::getSingleton();
 
@@ -104,11 +106,32 @@ class AdProvisioningService
 
         ldap_unbind($conn);
 
+        // Schritt 6: Heimatverzeichnis auf dem Fileserver physisch anlegen
+        $heimatverzeichnis = $data['heimatverzeichnis'] ?? null;
+        if ($heimatverzeichnis) {
+            $homeService = new HomeDirectoryService();
+            if ($homeService->isConfigured()) {
+                $obSettings = OnboardingSettings::getSingleton();
+                // Domain aus smb_user ableiten (Format: DOMAIN\user oder user@domain)
+                $smbUser = $obSettings->smb_user ?? '';
+                $domain  = str_contains($smbUser, '\\')
+                    ? strtoupper(explode('\\', $smbUser)[0])
+                    : strtoupper(explode('@', $smbUser)[1] ?? 'DOMAIN');
+
+                $result = $homeService->createDirectory($heimatverzeichnis, $samaccountname, $domain);
+                if (!$result['success']) {
+                    $homeDirWarning = 'Heimatverzeichnis konnte nicht angelegt werden: ' . $result['error'];
+                    \Illuminate\Support\Facades\Log::warning("Onboarding: Heimatverzeichnis-Anlage fehlgeschlagen für {$samaccountname}: " . $result['error']);
+                }
+            }
+        }
+
         return [
             'distinguished_name' => $userDn,
             'samaccountname'     => $samaccountname,
             'upn'                => $upn,
             'password_warning'   => $passwordWarning,
+            'homedir_warning'    => $homeDirWarning,
         ];
     }
 

@@ -220,6 +220,62 @@
                     </div>
                 </div>
 
+                {{-- Heimatverzeichnis / SMB --}}
+                <div class="bg-white shadow-sm sm:rounded-lg p-6">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-2">Heimatverzeichnis – Ordner automatisch anlegen</h3>
+                    <p class="text-xs text-gray-400 mb-4">
+                        Wenn in der Vorlage ein Heimatverzeichnis-Muster hinterlegt ist, wird der Ordner auf dem Fileserver
+                        automatisch angelegt und dem Benutzer wird <strong>Full Control</strong> darauf gewährt.<br>
+                        Zugangsdaten: ein Domain-Konto mit Schreibrecht auf den Basisordner des Shares
+                        (Format: <code class="bg-gray-100 px-1">DOMAIN\Benutzername</code>).
+                        Alle Felder leer lassen um das Feature zu deaktivieren.
+                    </p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <x-input-label for="smb_user" value="SMB-Benutzer (DOMAIN\user)" />
+                            <x-text-input id="smb_user" name="smb_user" type="text" class="mt-1 block w-full font-mono text-xs"
+                                          value="{{ old('smb_user', $settings->smb_user) }}"
+                                          placeholder="LRA\svc-itcockpit" autocomplete="off" />
+                            <x-input-error :messages="$errors->get('smb_user')" class="mt-1" />
+                        </div>
+                        <div>
+                            <x-input-label for="smb_password" value="SMB-Passwort" />
+                            <x-text-input id="smb_password" name="smb_password" type="password" class="mt-1 block w-full"
+                                          placeholder="{{ $settings->smb_user ? '(gespeichert – leer lassen zum Beibehalten)' : 'Passwort eingeben' }}"
+                                          autocomplete="new-password" />
+                            <x-input-error :messages="$errors->get('smb_password')" class="mt-1" />
+                        </div>
+                    </div>
+
+                    {{-- SMB-Verbindungstest --}}
+                    <div class="mt-4"
+                         x-data="{
+                            testing: false, result: null, ok: null,
+                            async test() {
+                                this.testing = true; this.result = null;
+                                try {
+                                    const r = await fetch('{{ route('onboarding.settings.test-smb') }}', {
+                                        method: 'POST',
+                                        headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content, 'Accept': 'application/json' }
+                                    });
+                                    const j = await r.json();
+                                    this.ok = j.ok; this.result = j.message;
+                                } catch(e) { this.ok = false; this.result = e.toString(); }
+                                finally { this.testing = false; }
+                            }
+                         }">
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <button type="button" @click="test()" :disabled="testing"
+                                    class="inline-flex items-center px-3 py-1.5 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50">
+                                <span x-text="testing ? 'Teste …' : 'Verbindung testen'">Verbindung testen</span>
+                            </button>
+                            <span class="text-xs text-gray-400">Testet ob smbclient den Share erreicht. Bitte zuerst Einstellungen speichern.</span>
+                            <span x-show="result !== null" :class="ok ? 'text-green-700' : 'text-red-700'"
+                                  class="text-xs" x-text="result" x-cloak></span>
+                        </div>
+                    </div>
+                </div>
+
                 {{-- E-Mail-Vorlagen --}}
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-sm font-semibold text-gray-700 mb-2">E-Mail-Vorlagen (global)</h3>

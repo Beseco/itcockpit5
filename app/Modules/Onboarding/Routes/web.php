@@ -14,6 +14,7 @@ Route::middleware(['auth', 'module.permission:onboarding,config'])->group(functi
     Route::post('/settings/test-ldap',     [OnboardingSettingsController::class, 'testConnection'])->name('settings.test-ldap');
     Route::post('/settings/test-groups',   [OnboardingSettingsController::class, 'testGroupSearch'])->name('settings.test-groups');
     Route::post('/settings/test-exchange', [OnboardingSettingsController::class, 'testExchange'])->name('settings.test-exchange');
+    Route::post('/settings/test-smb',      [OnboardingSettingsController::class, 'testSmb'])->name('settings.test-smb');
 });
 
 // Vorlagen-CRUD

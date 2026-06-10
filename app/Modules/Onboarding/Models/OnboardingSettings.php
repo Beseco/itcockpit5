@@ -18,13 +18,15 @@ class OnboardingSettings extends Model
         'exchange_password',
         'exchange_auth',
         'exchange_mailbox_db',
+        'smb_user',
+        'smb_password',
         'welcome_mail_subject',
         'welcome_mail_body',
         'supervisor_mail_subject',
         'supervisor_mail_body',
     ];
 
-    protected $hidden = ['ldap_write_bind_password', 'exchange_password'];
+    protected $hidden = ['ldap_write_bind_password', 'exchange_password', 'smb_password'];
 
     public static function getSingleton(): self
     {
@@ -56,5 +58,21 @@ class OnboardingSettings extends Model
     {
         if (!$value) return null;
         try { return Crypt::decryptString($value); } catch (\Exception) { return null; }
+    }
+
+    public function setSmbPasswordAttribute(?string $value): void
+    {
+        $this->attributes['smb_password'] = $value ? Crypt::encryptString($value) : null;
+    }
+
+    public function getSmbPasswordAttribute(?string $value): ?string
+    {
+        if (!$value) return null;
+        try { return Crypt::decryptString($value); } catch (\Exception) { return null; }
+    }
+
+    public function hasSmbCredentials(): bool
+    {
+        return !empty($this->smb_user) && !empty($this->smb_password);
     }
 }

@@ -120,11 +120,15 @@ class OnboardingController extends Controller
         try {
             $result = $this->provisioner->createUser($vorlage, $data);
 
+            $warnings = array_filter([
+                $result['password_warning'] ?? null,
+                $result['homedir_warning']  ?? null,
+            ]);
             $record->update([
                 'distinguished_name'     => $result['distinguished_name'],
                 'ad_attributes_snapshot' => \Illuminate\Support\Arr::except($data, ['password']),
                 'status'                 => 'erfolgreich',
-                'error_message'          => $result['password_warning'] ?? null,
+                'error_message'          => $warnings ? implode(' | ', $warnings) : null,
             ]);
 
             AuditLog::create([

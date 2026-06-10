@@ -5,6 +5,7 @@ namespace App\Modules\Onboarding\Http\Controllers;
 use App\Modules\Onboarding\Models\OnboardingSettings;
 use App\Modules\Onboarding\Services\AdProvisioningService;
 use App\Modules\Onboarding\Services\ExchangeMailboxService;
+use App\Modules\Onboarding\Services\HomeDirectoryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -29,6 +30,8 @@ class OnboardingSettingsController extends Controller
             'exchange_password'        => ['nullable', 'string', 'max:500'],
             'exchange_auth'            => ['nullable', 'in:Negotiate,Basic,Kerberos,NTLM'],
             'exchange_mailbox_db'      => ['nullable', 'string', 'max:255'],
+            'smb_user'                 => ['nullable', 'string', 'max:255'],
+            'smb_password'             => ['nullable', 'string', 'max:500'],
             'welcome_mail_subject'     => ['required', 'string', 'max:255'],
             'welcome_mail_body'        => ['nullable', 'string'],
             'supervisor_mail_subject'  => ['required', 'string', 'max:255'],
@@ -44,6 +47,7 @@ class OnboardingSettingsController extends Controller
             'exchange_user',
             'exchange_auth',
             'exchange_mailbox_db',
+            'smb_user',
             'welcome_mail_subject',
             'welcome_mail_body',
             'supervisor_mail_subject',
@@ -55,6 +59,9 @@ class OnboardingSettingsController extends Controller
         }
         if ($request->filled('exchange_password')) {
             $data['exchange_password'] = $request->input('exchange_password');
+        }
+        if ($request->filled('smb_password')) {
+            $data['smb_password'] = $request->input('smb_password');
         }
 
         $settings->fill($data)->save();
@@ -79,6 +86,37 @@ class OnboardingSettingsController extends Controller
         }
         // Testet nur ob pwsh verfügbar ist + eine Verbindung möglich wäre
         $result = $exchange->testConnection();
+        return response()->json(['ok' => $result['success'], 'message' => $result['message']]);
+    }
+
+    /** AJAX: SMB-Verbindung testen */
+    public function testSmb(): JsonResponse
+    {
+        $svc = new HomeDirectoryService();
+        if (!$svc->isConfigured()) {
+            return response()->json(['ok' => false, 'message' => 'SMB-Zugangsdaten nicht konfiguriert.']);
+        }
+
+        $settings = OnboardingSettings::getSingleton();
+        // Test-Pfad aus der ersten Vorlage mit Heimatverzeichnis-Muster ableiten
+        $vorlage = \App\Modules\Onboarding\Models\OnboardingVorlage::whereNotNull('heimatverzeichnis_pattern')
+            ->where('heimatverzeichnis_pattern', '!=', '')
+            ->first();
+
+        if (!$vorlage) {
+            return response()->json(['ok' => false, 'message' => 'Keine Vorlage mit Heimatverzeichnis-Muster gefunden. Bitte erst eine Vorlage anlegen.']);
+        }
+
+        // Nur den Share-Pfad testen (ohne Benutzernamen-Ordner)
+        $pattern = $vorlage->heimatverzeichnis_pattern;
+        $parts   = array_filter(explode('\\', ltrim(str_replace('/', '\\', $pattern), '\\')));
+        $parts   = array_values($parts);
+        if (count($parts) < 2) {
+            return response()->json(['ok' => false, 'message' => 'Ungültiges Heimatverzeichnis-Muster in der Vorlage.']);
+        }
+        $testPath = '\\\\' . $parts[0] . '\\' . $parts[1];
+
+        $result = $svc->testConnection($testPath . '\\test');
         return response()->json(['ok' => $result['success'], 'message' => $result['message']]);
     }
 
