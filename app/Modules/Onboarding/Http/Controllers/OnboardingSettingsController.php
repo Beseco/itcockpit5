@@ -37,6 +37,12 @@ class OnboardingSettingsController extends Controller
             'welcome_mail_body'        => ['nullable', 'string'],
             'supervisor_mail_subject'  => ['required', 'string', 'max:255'],
             'supervisor_mail_body'     => ['nullable', 'string'],
+            'default_samaccountname_pattern'     => ['nullable', 'string', 'max:255'],
+            'default_upn_pattern'                => ['nullable', 'string', 'max:500'],
+            'default_profilpfad_pattern'         => ['nullable', 'string', 'max:500'],
+            'default_heimatverzeichnis_pattern'  => ['nullable', 'string', 'max:500'],
+            'default_heimatverzeichnis_laufwerk' => ['nullable', 'string', 'max:3'],
+            'default_anmeldeskript'              => ['nullable', 'string', 'max:255'],
         ]);
 
         $settings = OnboardingSettings::getSingleton();
@@ -53,6 +59,12 @@ class OnboardingSettingsController extends Controller
             'welcome_mail_body',
             'supervisor_mail_subject',
             'supervisor_mail_body',
+            'default_samaccountname_pattern',
+            'default_upn_pattern',
+            'default_profilpfad_pattern',
+            'default_heimatverzeichnis_pattern',
+            'default_heimatverzeichnis_laufwerk',
+            'default_anmeldeskript',
         ]);
 
         if ($request->filled('ldap_write_bind_password')) {

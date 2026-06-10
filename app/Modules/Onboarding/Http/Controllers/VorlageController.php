@@ -89,6 +89,55 @@ class VorlageController extends Controller
             ->with('success', 'Vorlage "' . $vorlage->name . '" wurde geklont. Bitte anpassen und aktivieren.');
     }
 
+    /** Massen-Generator: Übersicht aller Abteilungen mit AD-Pfad */
+    public function generate()
+    {
+        $belegteAbteilungen = OnboardingVorlage::whereNotNull('abteilung_id')->pluck('abteilung_id')->all();
+
+        $abteilungen = Abteilung::whereNotNull('ad_path')
+            ->where('ad_path', '!=', '')
+            ->orderBy('name')
+            ->get();
+
+        return view('onboarding::vorlagen.generate', compact('abteilungen', 'belegteAbteilungen'));
+    }
+
+    /** Massen-Generator: Vorlagen für die ausgewählten Abteilungen anlegen */
+    public function storeGenerated(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'abteilung_ids'   => ['required', 'array', 'min:1'],
+            'abteilung_ids.*' => ['integer', 'exists:abteilungen,id'],
+        ]);
+
+        $abteilungen = Abteilung::whereIn('id', $validated['abteilung_ids'])->get();
+        $erstellt    = 0;
+        $uebersprungen = 0;
+
+        foreach ($abteilungen as $abteilung) {
+            // Bereits eine Vorlage für diese OU? → überspringen
+            if (OnboardingVorlage::where('abteilung_id', $abteilung->id)->exists()) {
+                $uebersprungen++;
+                continue;
+            }
+
+            // Alle Muster-Felder bleiben leer → globale Vorgaben werden geerbt.
+            OnboardingVorlage::create([
+                'name'         => $abteilung->name,
+                'abteilung_id' => $abteilung->id,
+                'is_active'    => true,
+            ]);
+            $erstellt++;
+        }
+
+        $msg = "{$erstellt} Vorlage(n) erstellt.";
+        if ($uebersprungen > 0) {
+            $msg .= " {$uebersprungen} übersprungen (bereits vorhanden).";
+        }
+
+        return redirect()->route('onboarding.vorlagen.index')->with('success', $msg);
+    }
+
     /** AJAX: AD-Gruppen suchen */
     public function searchGroups(Request $request, AdProvisioningService $provisioner)
     {
@@ -108,8 +157,8 @@ class VorlageController extends Controller
             'name'                    => ['required', 'string', 'max:255'],
             'beschreibung'            => ['nullable', 'string'],
             'abteilung_id'            => ['nullable', 'exists:abteilungen,id'],
-            'samaccountname_pattern'  => ['required', 'string', 'max:255'],
-            'upn_pattern'             => ['required', 'string', 'max:500'],
+            'samaccountname_pattern'  => ['nullable', 'string', 'max:255'],
+            'upn_pattern'             => ['nullable', 'string', 'max:500'],
             'rufnummer_praefix'       => ['nullable', 'string', 'max:50'],
             'fax_praefix'             => ['nullable', 'string', 'max:50'],
             'strasse'                 => ['nullable', 'string', 'max:255'],

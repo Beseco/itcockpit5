@@ -307,6 +307,74 @@
                     </div>
                 </div>
 
+                {{-- Globale Standard-Vorgaben für Vorlagen --}}
+                <div class="bg-white shadow-sm sm:rounded-lg p-6">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-2">Globale Vorgaben für Vorlagen</h3>
+                    <p class="text-xs text-gray-400 mb-4">
+                        Diese Werte gelten für <strong>alle</strong> Vorlagen, die das jeweilige Feld leer lassen.
+                        In einer einzelnen Vorlage kann jedes Feld unter „Erweitert" individuell überschrieben werden.<br>
+                        Variablen: <code class="bg-gray-100 px-1 rounded">%vorname%</code>, <code class="bg-gray-100 px-1 rounded">%nachname%</code>,
+                        <code class="bg-gray-100 px-1 rounded">%F%</code> (1. Buchstabe Vorname), <code class="bg-gray-100 px-1 rounded">%benutzername%</code>.
+                    </p>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <x-input-label for="default_samaccountname_pattern" value="sAMAccountName-Muster" />
+                                <x-text-input id="default_samaccountname_pattern" name="default_samaccountname_pattern" type="text"
+                                              class="mt-1 block w-full font-mono text-xs"
+                                              value="{{ old('default_samaccountname_pattern', $settings->default_samaccountname_pattern) }}"
+                                              placeholder="%nachname%%F%" />
+                                <x-input-error :messages="$errors->get('default_samaccountname_pattern')" class="mt-1" />
+                            </div>
+                            <div>
+                                <x-input-label for="default_upn_pattern" value="UPN-Muster (E-Mail / Login)" />
+                                <x-text-input id="default_upn_pattern" name="default_upn_pattern" type="text"
+                                              class="mt-1 block w-full font-mono text-xs"
+                                              value="{{ old('default_upn_pattern', $settings->default_upn_pattern) }}"
+                                              placeholder="%vorname%.%nachname%@kreis-fs.de" />
+                                <x-input-error :messages="$errors->get('default_upn_pattern')" class="mt-1" />
+                            </div>
+                        </div>
+                        <div>
+                            <x-input-label for="default_profilpfad_pattern" value="Profilpfad-Muster" />
+                            <x-text-input id="default_profilpfad_pattern" name="default_profilpfad_pattern" type="text"
+                                          class="mt-1 block w-full font-mono text-xs"
+                                          value="{{ old('default_profilpfad_pattern', $settings->default_profilpfad_pattern) }}"
+                                          placeholder="\\srv01\profiles\%benutzername%" />
+                            <x-input-error :messages="$errors->get('default_profilpfad_pattern')" class="mt-1" />
+                        </div>
+                        <div>
+                            <x-input-label value="Heimatverzeichnis-Muster + Laufwerk" />
+                            <div class="mt-1 flex gap-2">
+                                <x-text-input id="default_heimatverzeichnis_pattern" name="default_heimatverzeichnis_pattern" type="text"
+                                              class="block flex-1 font-mono text-xs"
+                                              value="{{ old('default_heimatverzeichnis_pattern', $settings->default_heimatverzeichnis_pattern) }}"
+                                              placeholder="\\lra.lan\dfs\User\%benutzername%" />
+                                <select name="default_heimatverzeichnis_laufwerk"
+                                        class="block w-24 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                    <option value="">– kein –</option>
+                                    @foreach(range('A', 'Z') as $letter)
+                                        <option value="{{ $letter }}:"
+                                            @selected(old('default_heimatverzeichnis_laufwerk', $settings->default_heimatverzeichnis_laufwerk ?? 'E:') === $letter . ':')>
+                                            {{ $letter }}:
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-400">Der Pfad bestimmt, wo der Heimatordner physisch angelegt wird. Die Laufwerkszuweisung erfolgt per GPO.</p>
+                            <x-input-error :messages="$errors->get('default_heimatverzeichnis_pattern')" class="mt-1" />
+                        </div>
+                        <div>
+                            <x-input-label for="default_anmeldeskript" value="Anmeldeskript (scriptPath)" />
+                            <x-text-input id="default_anmeldeskript" name="default_anmeldeskript" type="text"
+                                          class="mt-1 block w-full font-mono text-xs"
+                                          value="{{ old('default_anmeldeskript', $settings->default_anmeldeskript) }}"
+                                          placeholder="logon.bat" />
+                            <x-input-error :messages="$errors->get('default_anmeldeskript')" class="mt-1" />
+                        </div>
+                    </div>
+                </div>
+
                 {{-- E-Mail-Vorlagen --}}
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-sm font-semibold text-gray-700 mb-2">E-Mail-Vorlagen (global)</h3>

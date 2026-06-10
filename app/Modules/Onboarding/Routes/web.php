@@ -20,6 +20,8 @@ Route::middleware(['auth', 'module.permission:onboarding,config'])->group(functi
 // Vorlagen-CRUD
 Route::middleware(['auth', 'module.permission:onboarding,edit'])->group(function () {
     Route::get('/vorlagen',              [VorlageController::class, 'index'])->name('vorlagen.index');
+    Route::get('/vorlagen/generieren',   [VorlageController::class, 'generate'])->name('vorlagen.generate');
+    Route::post('/vorlagen/generieren',  [VorlageController::class, 'storeGenerated'])->name('vorlagen.store-generated');
     Route::get('/vorlagen/create',       [VorlageController::class, 'create'])->name('vorlagen.create');
     Route::post('/vorlagen',             [VorlageController::class, 'store'])->name('vorlagen.store');
     Route::get('/vorlagen/{vorlage}/edit', [VorlageController::class, 'edit'])->name('vorlagen.edit');

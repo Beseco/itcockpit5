@@ -59,8 +59,8 @@ class OnboardingController extends Controller
         $vorlage = OnboardingVorlage::findOrFail($request->integer('vorlage_id'));
         $ldap    = app(LdapConnectionService::class);
 
-        $samRaw      = $this->usernameGen->resolvePattern($vorlage->samaccountname_pattern, $request->input('vorname'), $request->input('nachname'));
-        $upnRaw      = $this->usernameGen->resolvePattern($vorlage->upn_pattern,           $request->input('vorname'), $request->input('nachname'));
+        $samRaw      = $this->usernameGen->resolvePattern($vorlage->effectiveSamaccountnamePattern(), $request->input('vorname'), $request->input('nachname'));
+        $upnRaw      = $this->usernameGen->resolvePattern($vorlage->effectiveUpnPattern(),            $request->input('vorname'), $request->input('nachname'));
         $samResult   = $this->usernameGen->findAvailable($samRaw, $request->input('vorname'), $request->input('nachname'), $ldap);
         $rufnummer   = $vorlage->rufnummer_praefix ? $this->phoneService->findNextFree($vorlage->rufnummer_praefix, $ldap) : null;
         $fax         = $vorlage->fax_praefix       ? $this->phoneService->findNextFree($vorlage->fax_praefix, $ldap)       : null;
@@ -98,9 +98,9 @@ class OnboardingController extends Controller
 
         $data = array_merge($request->only(['vorname', 'nachname', 'samaccountname', 'upn', 'rufnummer', 'mobile', 'fax', 'buero', 'vorgesetzter_dn']), [
             'password'                   => $password,
-            'profilpfad'                 => $this->resolvePattern($vorlage->profilpfad_pattern, $request),
-            'heimatverzeichnis'          => $this->resolvePattern($vorlage->heimatverzeichnis_pattern, $request),
-            'heimatverzeichnis_laufwerk' => $vorlage->heimatverzeichnis_laufwerk ?: null,
+            'profilpfad'                 => $this->resolvePattern($vorlage->effectiveProfilpfadPattern(), $request),
+            'heimatverzeichnis'          => $this->resolvePattern($vorlage->effectiveHeimatverzeichnisPattern(), $request),
+            'heimatverzeichnis_laufwerk' => $vorlage->effectiveHeimatverzeichnisLaufwerk(),
         ]);
 
         $todoToken = Str::random(48);

@@ -81,7 +81,7 @@ class AdProvisioningService
             'profilePath'              => $data['profilpfad'] ?? null,
             // homeDirectory/homeDrive werden bewusst NICHT gesetzt – der Ordner wird
             // physisch angelegt, die Laufwerkszuweisung übernimmt eine GPO.
-            'scriptPath'               => $vorlage->anmeldeskript,
+            'scriptPath'               => $vorlage->effectiveAnmeldeskript(),
             'department'               => $vorlage->abteilung_ad,
             'description'              => $vorlage->ad_beschreibung,
             'company'                  => $vorlage->firma,

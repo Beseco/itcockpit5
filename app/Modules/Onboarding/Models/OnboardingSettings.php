@@ -25,6 +25,17 @@ class OnboardingSettings extends Model
         'welcome_mail_body',
         'supervisor_mail_subject',
         'supervisor_mail_body',
+        'default_samaccountname_pattern',
+        'default_upn_pattern',
+        'default_profilpfad_pattern',
+        'default_heimatverzeichnis_pattern',
+        'default_heimatverzeichnis_laufwerk',
+        'default_anmeldeskript',
+        'default_laufwerke',
+    ];
+
+    protected $casts = [
+        'default_laufwerke' => 'array',
     ];
 
     protected $hidden = ['ldap_write_bind_password', 'exchange_password', 'smb_password', 'temp_password'];
@@ -36,6 +47,9 @@ class OnboardingSettings extends Model
             'welcome_mail_body'      => "Guten Tag %vorname% %nachname%,\n\nherzlich willkommen! Ihr persönliches Windows-Benutzerkonto wurde erfolgreich eingerichtet. Ab sofort können Sie sich an Ihrem Arbeitsplatz anmelden.\n\nIhre Zugangsdaten:\n  Benutzername:        %benutzername%\n  Temporäres Passwort: %passwort%\n  E-Mail-Adresse:      %upn%\n  Rufnummer:           %rufnummer%\n\nWichtig: Sie werden beim ersten Anmelden aufgefordert, ein neues persönliches Passwort zu vergeben. Bitte wählen Sie ein sicheres Passwort.\n\nBei Fragen oder Problemen steht Ihnen die IT-Abteilung gerne zur Verfügung.\n\nMit freundlichen Grüßen\nIT-Abteilung · Landratsamt Freising",
             'supervisor_mail_subject' => 'Information: Neues Benutzerkonto für %vorname% %nachname% angelegt',
             'supervisor_mail_body'   => "Guten Tag,\n\nim Auftrag Ihrer Organisationseinheit wurde für die unten genannte Person ein neues AD-Benutzerkonto eingerichtet. Die betreffende Person kann sich ab sofort an ihrem Arbeitsplatz anmelden.\n\nBitte überprüfen Sie die nachfolgenden Kontodaten und melden Sie der IT-Abteilung umgehend etwaige Fehler oder Änderungswünsche.",
+            'default_samaccountname_pattern' => '%nachname%%F%',
+            'default_upn_pattern'            => '%vorname%.%nachname%@kreis-fs.de',
+            'default_heimatverzeichnis_laufwerk' => 'E:',
         ]);
     }
 

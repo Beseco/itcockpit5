@@ -1,4 +1,15 @@
 {{-- Gemeinsames Formular für Vorlage erstellen/bearbeiten --}}
+@php
+    $defaults = \App\Modules\Onboarding\Models\OnboardingSettings::getSingleton();
+    // Sind in dieser Vorlage individuelle Überschreibungen gesetzt? → Erweitert-Bereich aufklappen
+    $hatOverrides = collect([
+        $vorlage->samaccountname_pattern ?? null,
+        $vorlage->upn_pattern ?? null,
+        $vorlage->profilpfad_pattern ?? null,
+        $vorlage->heimatverzeichnis_pattern ?? null,
+        $vorlage->anmeldeskript ?? null,
+    ])->filter(fn($v) => trim((string) $v) !== '')->isNotEmpty();
+@endphp
 <div class="space-y-6">
 
     {{-- Basis-Informationen --}}
@@ -59,35 +70,6 @@
                        @checked(old('is_active', $vorlage->is_active ?? true))
                        class="rounded border-gray-300 text-indigo-600">
                 <label for="is_active" class="text-sm text-gray-700">Vorlage ist aktiv (erscheint im Onboarding-Formular)</label>
-            </div>
-        </div>
-    </div>
-
-    {{-- Benutzername & UPN --}}
-    <div class="bg-white shadow-sm sm:rounded-lg p-6">
-        <h3 class="text-sm font-semibold text-gray-700 mb-2">Benutzername-Muster</h3>
-        <p class="text-xs text-gray-400 mb-4">
-            Variablen: <code class="bg-gray-100 px-1 rounded">%vorname%</code>,
-            <code class="bg-gray-100 px-1 rounded">%nachname%</code>,
-            <code class="bg-gray-100 px-1 rounded">%F%</code> (erster Buchstabe Vorname, Groß),
-            <code class="bg-gray-100 px-1 rounded">%N%</code> (erster Buchstabe Nachname, Groß),
-            <code class="bg-gray-100 px-1 rounded">%f%</code>,
-            <code class="bg-gray-100 px-1 rounded">%n%</code> (Kleinbuchstaben)
-        </p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-                <x-input-label for="samaccountname_pattern" value="sAMAccountName-Muster *" />
-                <x-text-input id="samaccountname_pattern" name="samaccountname_pattern" type="text" class="mt-1 block w-full font-mono"
-                              value="{{ old('samaccountname_pattern', $vorlage->samaccountname_pattern ?? '%nachname%%F%') }}" required />
-                <p class="mt-1 text-xs text-gray-400">Bsp: <code>%nachname%%F%</code> → BeublF</p>
-                <x-input-error :messages="$errors->get('samaccountname_pattern')" class="mt-1" />
-            </div>
-            <div>
-                <x-input-label for="upn_pattern" value="UPN-Muster (E-Mail / Login) *" />
-                <x-text-input id="upn_pattern" name="upn_pattern" type="text" class="mt-1 block w-full font-mono"
-                              value="{{ old('upn_pattern', $vorlage->upn_pattern ?? '%vorname%.%nachname%@kreis-fs.de') }}" required />
-                <p class="mt-1 text-xs text-gray-400">Bsp: <code>%vorname%.%nachname%@kreis-fs.de</code></p>
-                <x-input-error :messages="$errors->get('upn_pattern')" class="mt-1" />
             </div>
         </div>
     </div>
@@ -161,45 +143,89 @@
         </div>
     </div>
 
-    {{-- Profil & Laufwerke --}}
-    <div class="bg-white shadow-sm sm:rounded-lg p-6">
-        <h3 class="text-sm font-semibold text-gray-700 mb-2">Profil & Laufwerke</h3>
-        <p class="text-xs text-gray-400 mb-4">Variable <code class="bg-gray-100 px-1 rounded">%benutzername%</code> wird durch den sAMAccountName ersetzt.</p>
-        <div class="space-y-4">
+    {{-- Erweitert: Muster, Profil & Laufwerke (überschreibt globale Vorgaben) --}}
+    <div class="bg-white shadow-sm sm:rounded-lg" x-data="{ open: {{ $hatOverrides ? 'true' : 'false' }} }">
+        <button type="button" @click="open = !open"
+                class="w-full flex items-center justify-between p-6 text-left">
+            <div>
+                <h3 class="text-sm font-semibold text-gray-700">Erweitert – globale Vorgaben überschreiben</h3>
+                <p class="text-xs text-gray-400 mt-1">
+                    Benutzername-/UPN-Muster, Profil, Heimatverzeichnis und Anmeldeskript.
+                    Leer = die globale Vorgabe aus den <a href="{{ route('onboarding.settings') }}" class="underline" @click.stop>Onboarding-Einstellungen</a> wird verwendet.
+                </p>
+            </div>
+            <svg class="w-5 h-5 text-gray-400 shrink-0 transition-transform" :class="open ? 'rotate-180' : ''"
+                 fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+        </button>
+
+        <div x-show="open" x-cloak class="px-6 pb-6 space-y-4 border-t border-gray-100 pt-5">
+            <p class="text-xs text-gray-400">
+                Variablen: <code class="bg-gray-100 px-1 rounded">%vorname%</code>,
+                <code class="bg-gray-100 px-1 rounded">%nachname%</code>,
+                <code class="bg-gray-100 px-1 rounded">%F%</code>/<code class="bg-gray-100 px-1 rounded">%N%</code> (1. Buchstabe Vor-/Nachname, Groß),
+                <code class="bg-gray-100 px-1 rounded">%f%</code>/<code class="bg-gray-100 px-1 rounded">%n%</code> (klein),
+                <code class="bg-gray-100 px-1 rounded">%benutzername%</code> (sAMAccountName).
+            </p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <x-input-label for="samaccountname_pattern" value="sAMAccountName-Muster" />
+                    <x-text-input id="samaccountname_pattern" name="samaccountname_pattern" type="text" class="mt-1 block w-full font-mono"
+                                  value="{{ old('samaccountname_pattern', $vorlage->samaccountname_pattern ?? '') }}"
+                                  placeholder="{{ $defaults->default_samaccountname_pattern ?: 'global: –' }}" />
+                    <p class="mt-1 text-xs text-gray-400">Leer = global (<code>{{ $defaults->default_samaccountname_pattern ?: '–' }}</code>)</p>
+                    <x-input-error :messages="$errors->get('samaccountname_pattern')" class="mt-1" />
+                </div>
+                <div>
+                    <x-input-label for="upn_pattern" value="UPN-Muster (E-Mail / Login)" />
+                    <x-text-input id="upn_pattern" name="upn_pattern" type="text" class="mt-1 block w-full font-mono"
+                                  value="{{ old('upn_pattern', $vorlage->upn_pattern ?? '') }}"
+                                  placeholder="{{ $defaults->default_upn_pattern ?: 'global: –' }}" />
+                    <p class="mt-1 text-xs text-gray-400">Leer = global (<code>{{ $defaults->default_upn_pattern ?: '–' }}</code>)</p>
+                    <x-input-error :messages="$errors->get('upn_pattern')" class="mt-1" />
+                </div>
+            </div>
+
             <div>
                 <x-input-label for="profilpfad_pattern" value="Profilpfad-Muster" />
                 <x-text-input id="profilpfad_pattern" name="profilpfad_pattern" type="text" class="mt-1 block w-full font-mono text-xs"
                               value="{{ old('profilpfad_pattern', $vorlage->profilpfad_pattern ?? '') }}"
-                              placeholder="\\srv01\profiles\%benutzername%" />
+                              placeholder="{{ $defaults->default_profilpfad_pattern ?: '\\\\srv01\\profiles\\%benutzername%' }}" />
+                <p class="mt-1 text-xs text-gray-400">Leer = global (<code>{{ $defaults->default_profilpfad_pattern ?: '–' }}</code>)</p>
                 <x-input-error :messages="$errors->get('profilpfad_pattern')" class="mt-1" />
             </div>
+
             <div>
                 <x-input-label for="heimatverzeichnis_pattern" value="Heimatverzeichnis-Muster" />
                 <div class="mt-1 flex gap-2">
                     <x-text-input id="heimatverzeichnis_pattern" name="heimatverzeichnis_pattern" type="text" class="block flex-1 font-mono text-xs"
                                   value="{{ old('heimatverzeichnis_pattern', $vorlage->heimatverzeichnis_pattern ?? '') }}"
-                                  placeholder="\\lra.lan\dfs\User\%benutzername%" />
+                                  placeholder="{{ $defaults->default_heimatverzeichnis_pattern ?: '\\\\lra.lan\\dfs\\User\\%benutzername%' }}" />
                     <div class="shrink-0">
                         <select name="heimatverzeichnis_laufwerk"
                                 class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm h-full">
-                            <option value="">– kein –</option>
+                            <option value="">– global ({{ $defaults->default_heimatverzeichnis_laufwerk ?: '–' }}) –</option>
                             @foreach(range('A', 'Z') as $letter)
                                 <option value="{{ $letter }}:"
-                                    @selected(old('heimatverzeichnis_laufwerk', $vorlage->heimatverzeichnis_laufwerk ?? 'E:') === $letter . ':')>
+                                    @selected(old('heimatverzeichnis_laufwerk', $vorlage->heimatverzeichnis_laufwerk ?? '') === $letter . ':')>
                                     {{ $letter }}:
                                 </option>
                             @endforeach
                         </select>
                     </div>
                 </div>
-                <p class="mt-1 text-xs text-gray-400">Der Pfad bestimmt, wo der Heimatordner beim Anlegen physisch auf dem Fileserver erstellt wird (inkl. Vollzugriff für den Benutzer). Er wird <strong>nicht</strong> ins AD-Profil geschrieben – die Laufwerkszuweisung übernimmt eine GPO.</p>
+                <p class="mt-1 text-xs text-gray-400">Der Pfad bestimmt, wo der Heimatordner physisch angelegt wird (inkl. Vollzugriff für den Benutzer). Er wird <strong>nicht</strong> ins AD-Profil geschrieben – die Laufwerkszuweisung übernimmt eine GPO. Leer = global (<code>{{ $defaults->default_heimatverzeichnis_pattern ?: '–' }}</code>).</p>
                 <x-input-error :messages="$errors->get('heimatverzeichnis_pattern')" class="mt-1" />
             </div>
+
             <div>
                 <x-input-label for="anmeldeskript" value="Anmeldeskript (scriptPath)" />
                 <x-text-input id="anmeldeskript" name="anmeldeskript" type="text" class="mt-1 block w-full font-mono"
                               value="{{ old('anmeldeskript', $vorlage->anmeldeskript ?? '') }}"
-                              placeholder="logon.bat" />
+                              placeholder="{{ $defaults->default_anmeldeskript ?: 'logon.bat' }}" />
+                <p class="mt-1 text-xs text-gray-400">Leer = global (<code>{{ $defaults->default_anmeldeskript ?: '–' }}</code>)</p>
                 <x-input-error :messages="$errors->get('anmeldeskript')" class="mt-1" />
             </div>
         </div>
