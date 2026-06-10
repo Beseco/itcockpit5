@@ -162,7 +162,7 @@ Route::middleware('auth')->group(function () {
         ->name('abteilungen.revision-settings.update');
     Route::resource('abteilungen', AbteilungController::class, [
         'parameters' => ['abteilungen' => 'abteilung'],
-    ])->except(['show']);
+    ]);
 
     // Applikationen
     Route::get('/applikationen/help', fn() => view('applikationen.help'))->name('applikationen.help');

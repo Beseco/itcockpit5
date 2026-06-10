@@ -6,6 +6,7 @@ use App\Mail\AbteilungRevisionMail;
 use App\Models\Abteilung;
 use App\Modules\AdUsers\Models\AdUser;
 use App\Modules\AdUsers\Services\LdapConnectionService;
+use App\Modules\Onboarding\Models\OnboardingVorlage;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -33,6 +34,88 @@ class AbteilungController extends Controller
         ])->roots()->get();
 
         return view('abteilungen.index', compact('abteilungen'));
+    }
+
+    /** Detailansicht einer OE mit Benutzern und Soll/Ist-Abgleich gegen die Vorlage. */
+    public function show(Abteilung $abteilung)
+    {
+        $this->authorize('abteilungen.view');
+
+        $abteilung->load(['vorgesetzter', 'stellvertreter', 'parent']);
+
+        // Vorlage (1:1 zur OE)
+        $vorlage = OnboardingVorlage::with(['gruppen', 'vorgesetzter'])
+            ->where('abteilung_id', $abteilung->id)
+            ->first();
+
+        $templateGroups = $vorlage
+            ? $vorlage->gruppen->map(fn($g) => ['dn' => $g->ad_group_dn, 'name' => $g->ad_group_name])->values()
+            : collect();
+        $templateSupervisorDn   = $vorlage?->vorgesetzter?->distinguished_name;
+        $templateSupervisorName = $vorlage?->vorgesetzter?->anzeigename_or_name;
+
+        // Benutzer in dieser OU (direkte Mitglieder)
+        $users = collect();
+        if ($abteilung->ad_path) {
+            $users = AdUser::where('distinguished_name', 'like', '%,' . $abteilung->ad_path)
+                ->where('ad_vorhanden', true)
+                ->orderBy('nachname')->orderBy('vorname')
+                ->get();
+        }
+
+        $tplSupLower = $templateSupervisorDn ? strtolower(trim($templateSupervisorDn)) : null;
+
+        $userInfos = $users->map(function (AdUser $u) use ($templateGroups, $tplSupLower) {
+            $raw = $u->raw_data ?? [];
+
+            // Gruppen-DNs des Benutzers (lowercase)
+            $memberOf = $raw['memberof'] ?? [];
+            $cnt = (int) ($memberOf['count'] ?? 0);
+            $userGroupDns = [];
+            for ($i = 0; $i < $cnt; $i++) {
+                if ($g = $memberOf[$i] ?? '') {
+                    $userGroupDns[] = strtolower(trim($g));
+                }
+            }
+
+            // Fehlende Vorlagen-Gruppen
+            $missing = $templateGroups
+                ->filter(fn($g) => !in_array(strtolower(trim($g['dn'])), $userGroupDns, true))
+                ->values();
+
+            // Vorgesetzter-Abweichung (der OU-Leiter selbst zählt nicht als Abweichung)
+            $managerDn  = $raw['manager'][0] ?? null;
+            $istLeiter  = $tplSupLower && strtolower(trim($u->distinguished_name ?? '')) === $tplSupLower;
+            $supMismatch = false;
+            if ($tplSupLower && !$istLeiter) {
+                $supMismatch = strtolower(trim((string) $managerDn)) !== $tplSupLower;
+            }
+
+            return [
+                'user'                => $u,
+                'missing_groups'      => $missing,
+                'manager_name'        => $managerDn ? $this->cnAusDn($managerDn) : null,
+                'supervisor_mismatch' => $supMismatch,
+                'has_issues'          => $missing->isNotEmpty() || $supMismatch,
+            ];
+        });
+
+        $issueCount = $userInfos->where('has_issues', true)->count();
+
+        return view('abteilungen.show', compact(
+            'abteilung', 'vorlage', 'templateGroups',
+            'templateSupervisorName', 'templateSupervisorDn',
+            'userInfos', 'issueCount'
+        ));
+    }
+
+    /** Extrahiert den CN aus einem Distinguished Name. */
+    private function cnAusDn(string $dn): string
+    {
+        if (preg_match('/^CN=([^,]+)/i', $dn, $m)) {
+            return str_replace('\\,', ',', $m[1]);
+        }
+        return $dn;
     }
 
     public function create()
