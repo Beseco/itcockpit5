@@ -22,25 +22,6 @@ class VorlageController extends Controller
         return view('onboarding::vorlagen.index', compact('vorlagen'));
     }
 
-    public function create()
-    {
-        $abteilungen = Abteilung::orderBy('name')->get();
-        $adUsers     = AdUser::aktiv()->orderBy('nachname')->get();
-
-        return view('onboarding::vorlagen.create', compact('abteilungen', 'adUsers'));
-    }
-
-    public function store(Request $request): RedirectResponse
-    {
-        $validated = $this->validateVorlage($request);
-
-        $vorlage = OnboardingVorlage::create($validated);
-        $this->syncGruppen($vorlage, $request->input('gruppen', []));
-
-        return redirect()->route('onboarding.vorlagen.index')
-            ->with('success', 'Vorlage "' . $vorlage->name . '" wurde angelegt.');
-    }
-
     public function edit(OnboardingVorlage $vorlage)
     {
         $abteilungen = Abteilung::orderBy('name')->get();
@@ -58,84 +39,6 @@ class VorlageController extends Controller
 
         return redirect()->route('onboarding.vorlagen.index')
             ->with('success', 'Vorlage "' . $vorlage->name . '" wurde gespeichert.');
-    }
-
-    public function destroy(OnboardingVorlage $vorlage): RedirectResponse
-    {
-        $name = $vorlage->name;
-        $vorlage->delete();
-
-        return redirect()->route('onboarding.vorlagen.index')
-            ->with('success', 'Vorlage "' . $name . '" wurde gelöscht.');
-    }
-
-    /** Vorlage klonen */
-    public function clone(OnboardingVorlage $vorlage): RedirectResponse
-    {
-        $kopie = $vorlage->replicate();
-        $kopie->name = 'Kopie von ' . $vorlage->name;
-        $kopie->is_active = false;
-        $kopie->save();
-
-        foreach ($vorlage->gruppen as $gruppe) {
-            OnboardingVorlageGruppe::create([
-                'vorlage_id'    => $kopie->id,
-                'ad_group_dn'   => $gruppe->ad_group_dn,
-                'ad_group_name' => $gruppe->ad_group_name,
-            ]);
-        }
-
-        return redirect()->route('onboarding.vorlagen.edit', $kopie)
-            ->with('success', 'Vorlage "' . $vorlage->name . '" wurde geklont. Bitte anpassen und aktivieren.');
-    }
-
-    /** Massen-Generator: Übersicht aller Abteilungen mit AD-Pfad */
-    public function generate()
-    {
-        $belegteAbteilungen = OnboardingVorlage::whereNotNull('abteilung_id')->pluck('abteilung_id')->all();
-
-        $abteilungen = Abteilung::whereNotNull('ad_path')
-            ->where('ad_path', '!=', '')
-            ->orderBy('name')
-            ->get();
-
-        return view('onboarding::vorlagen.generate', compact('abteilungen', 'belegteAbteilungen'));
-    }
-
-    /** Massen-Generator: Vorlagen für die ausgewählten Abteilungen anlegen */
-    public function storeGenerated(Request $request): RedirectResponse
-    {
-        $validated = $request->validate([
-            'abteilung_ids'   => ['required', 'array', 'min:1'],
-            'abteilung_ids.*' => ['integer', 'exists:abteilungen,id'],
-        ]);
-
-        $abteilungen = Abteilung::whereIn('id', $validated['abteilung_ids'])->get();
-        $erstellt    = 0;
-        $uebersprungen = 0;
-
-        foreach ($abteilungen as $abteilung) {
-            // Bereits eine Vorlage für diese OU? → überspringen
-            if (OnboardingVorlage::where('abteilung_id', $abteilung->id)->exists()) {
-                $uebersprungen++;
-                continue;
-            }
-
-            // Alle Muster-Felder bleiben leer → globale Vorgaben werden geerbt.
-            OnboardingVorlage::create([
-                'name'         => $abteilung->name,
-                'abteilung_id' => $abteilung->id,
-                'is_active'    => true,
-            ]);
-            $erstellt++;
-        }
-
-        $msg = "{$erstellt} Vorlage(n) erstellt.";
-        if ($uebersprungen > 0) {
-            $msg .= " {$uebersprungen} übersprungen (bereits vorhanden).";
-        }
-
-        return redirect()->route('onboarding.vorlagen.index')->with('success', $msg);
     }
 
     /**

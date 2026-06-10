@@ -59,20 +59,14 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <x-input-label for="abteilung_id" value="Organisationseinheit (aus Abteilungen)" />
-                    <select id="abteilung_id" name="abteilung_id"
-                            @change="fetchOu($event.target.value)"
-                            x-init="if ($el.value) fetchOu($el.value)"
-                            class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
-                        <option value="">– Keine –</option>
-                        @foreach($abteilungen as $abt)
-                            <option value="{{ $abt->id }}"
-                                @selected(old('abteilung_id', $vorlage->abteilung_id ?? '') == $abt->id)>
-                                {{ $abt->name }}{{ $abt->ad_path ? ' (' . Str::limit($abt->ad_path, 60) . ')' : '' }}
-                            </option>
-                        @endforeach
-                    </select>
-                    <p class="mt-1 text-xs text-gray-400">Die OU aus der Abteilung wird als Ziel-OU beim Anlegen verwendet.</p>
+                    <x-input-label value="Organisationseinheit" />
+                    {{-- Fest mit der OE verknüpft (1:1) – daher nicht änderbar --}}
+                    <input type="hidden" name="abteilung_id" value="{{ $vorlage->abteilung_id ?? '' }}"
+                           x-init="if ($el.value) fetchOu($el.value)">
+                    <p class="mt-1 text-sm font-medium text-gray-800">{{ $vorlage->abteilung?->name ?? '– keine –' }}</p>
+                    @if($vorlage->abteilung?->ad_path)
+                        <p class="text-xs text-gray-400 font-mono break-all">{{ $vorlage->abteilung->ad_path }}</p>
+                    @endif
                     <p x-show="ouLoading" x-cloak class="mt-1 text-xs text-gray-400">Lese Benutzer der OU …</p>
                     <p x-show="!ouLoading && ouCount > 0" x-cloak class="mt-1 text-xs text-indigo-600">
                         <span x-text="ouCount"></span> Benutzer in dieser OU gefunden – Vorschläge werden bei den Adressfeldern angezeigt.

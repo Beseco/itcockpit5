@@ -6,18 +6,10 @@
                 <span class="text-gray-300">/</span>
                 <h2 class="font-semibold text-xl text-gray-800">Vorlagen</h2>
             </div>
-            @can('module.onboarding.edit')
-                <div class="flex items-center gap-2">
-                    <a href="{{ route('onboarding.vorlagen.generate') }}"
-                       class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50">
-                        Aus Abteilungen generieren
-                    </a>
-                    <a href="{{ route('onboarding.vorlagen.create') }}"
-                       class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">
-                        + Neue Vorlage
-                    </a>
-                </div>
-            @endcan
+            <a href="{{ route('abteilungen.index') }}"
+               class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50">
+                Organisationseinheiten verwalten
+            </a>
         </div>
     </x-slot>
 
@@ -33,10 +25,17 @@
                 </div>
             @endif
 
+            <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-3 text-xs text-indigo-800">
+                Zu jeder <a href="{{ route('abteilungen.index') }}" class="underline">Organisationseinheit</a> gehört automatisch genau eine Vorlage.
+                Neue OEs erzeugen automatisch eine Vorlage, gelöschte OEs entfernen sie wieder.
+                Gemeinsame Felder (Muster, Profil, Laufwerke, Anmeldeskript) kommen aus den globalen
+                <a href="{{ route('onboarding.settings') }}" class="underline">Einstellungen</a>; hier ergänzt du pro OE Gruppen, Adresse und Vorgesetzten.
+            </div>
+
             @if($vorlagen->isEmpty())
                 <div class="bg-white shadow-sm sm:rounded-lg p-8 text-center text-gray-400 text-sm">
-                    Noch keine Vorlagen angelegt.
-                    <a href="{{ route('onboarding.vorlagen.create') }}" class="text-indigo-600 hover:underline ml-1">Erste Vorlage erstellen</a>
+                    Noch keine Organisationseinheiten vorhanden.
+                    <a href="{{ route('abteilungen.index') }}" class="text-indigo-600 hover:underline ml-1">Erste OE anlegen</a>
                 </div>
             @else
                 <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
@@ -82,15 +81,6 @@
                                                class="text-xs text-indigo-600 hover:text-indigo-800">Verwenden</a>
                                             <a href="{{ route('onboarding.vorlagen.edit', $vorlage) }}"
                                                class="text-xs text-gray-500 hover:text-gray-700">Bearbeiten</a>
-                                            <form method="POST" action="{{ route('onboarding.vorlagen.clone', $vorlage) }}">
-                                                @csrf
-                                                <button type="submit" class="text-xs text-gray-500 hover:text-gray-700">Klonen</button>
-                                            </form>
-                                            <form method="POST" action="{{ route('onboarding.vorlagen.destroy', $vorlage) }}"
-                                                  onsubmit="return confirm('Vorlage „{{ $vorlage->name }}" wirklich löschen?')">
-                                                @csrf @method('DELETE')
-                                                <button type="submit" class="text-xs text-red-500 hover:text-red-700">Löschen</button>
-                                            </form>
                                         </div>
                                     </td>
                                 </tr>
