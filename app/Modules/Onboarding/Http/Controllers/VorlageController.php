@@ -229,7 +229,8 @@ class VorlageController extends Controller
             'is_active'               => ['nullable', 'boolean'],
         ]);
 
-        $data['is_active']  = $request->boolean('is_active', true);
+        // Checkbox: abgehakt = aktiv, nicht abgehakt = inaktiv (Vorlage nicht wählbar).
+        $data['is_active']  = $request->boolean('is_active');
         $data['laufwerke']  = $request->filled('laufwerke')
             ? json_decode($request->input('laufwerke'), true)
             : null;
