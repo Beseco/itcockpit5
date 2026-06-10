@@ -85,12 +85,14 @@ class HomeDirectoryService
 
         $cmd  = 'smbclient ' . escapeshellarg("//{$server}/{$share}") . ' ' . $this->authArgs() . ' -c ' . escapeshellarg('ls') . ' 2>&1';
         exec($cmd, $out, $ret);
+        $output = trim(implode("\n", $out));
 
+        $ok = $ret === 0 && !$this->outputHasError($output);
         return [
-            'success' => $ret === 0,
-            'message' => $ret === 0
+            'success' => $ok,
+            'message' => $ok
                 ? "OK: Verbindung zu //{$server}/{$share} erfolgreich."
-                : "Fehler: " . trim(implode(' ', $out)),
+                : "Fehler: " . $output,
         ];
     }
 
@@ -145,11 +147,54 @@ class HomeDirectoryService
         $output = trim(implode("\n", $out));
         \Illuminate\Support\Facades\Log::debug("HomeDirectoryService smbMkdir result (exit={$ret}): {$output}");
 
-        return [
-            'success' => $ret === 0,
-            'output'  => $ret === 0 ? "Ordner /{$folder} auf //{$server}/{$share} erstellt." : '',
-            'error'   => $ret !== 0 ? $output : '',
-        ];
+        // smbclient gibt häufig Exit-Code 0 zurück auch wenn der interne Befehl
+        // fehlschlug. Daher die Ausgabe zusätzlich auf NT_STATUS-Fehler prüfen.
+        if ($this->outputHasError($output)) {
+            return ['success' => false, 'output' => '', 'error' => $output];
+        }
+
+        if ($ret !== 0) {
+            return ['success' => false, 'output' => '', 'error' => $output ?: "smbclient Exit-Code {$ret}"];
+        }
+
+        // Doppelt absichern: prüfen ob der Ordner danach wirklich existiert.
+        $exists = $this->smbExists($server, $share, $folder);
+        if (!$exists) {
+            return ['success' => false, 'output' => '', 'error' => "smbclient meldete Erfolg, aber /{$folder} ist auf //{$server}/{$share} nicht auffindbar. Ausgabe: {$output}"];
+        }
+
+        return ['success' => true, 'output' => "Ordner /{$folder} auf //{$server}/{$share} erstellt.", 'error' => ''];
+    }
+
+    /**
+     * Prüft ob ein Pfad auf dem Share existiert (ls-Test).
+     * Gibt true zurück wenn der Ordner vorhanden ist.
+     */
+    private function smbExists(string $server, string $share, string $folder): bool
+    {
+        $cmd = 'smbclient ' . escapeshellarg("//{$server}/{$share}") . ' ' . $this->authArgs()
+             . ' -c ' . escapeshellarg("ls {$folder}") . ' 2>&1';
+
+        exec($cmd, $out, $ret);
+        $output = trim(implode("\n", $out));
+        \Illuminate\Support\Facades\Log::debug("HomeDirectoryService smbExists (exit={$ret}): {$output}");
+
+        // Wenn ls kein NT_STATUS-Fehler liefert und exit 0 ist → Ordner existiert
+        return $ret === 0 && !$this->outputHasError($output);
+    }
+
+    /**
+     * Gibt true zurück wenn die smbclient-Ausgabe einen echten Fehler enthält
+     * (NT_STATUS_* außer OBJECT_NAME_COLLISION = Ordner bereits vorhanden).
+     */
+    private function outputHasError(string $output): bool
+    {
+        $lower = strtolower($output);
+        if (!str_contains($lower, 'nt_status_')) {
+            return false;
+        }
+        // COLLISION bedeutet "Ordner existiert bereits" – kein Fehler
+        return !str_contains($lower, 'nt_status_object_name_collision');
     }
 
     /** Setzt Full-Control-ACL auf das Verzeichnis via smbcacls. */
@@ -179,10 +224,11 @@ class HomeDirectoryService
         $output = trim(implode("\n", $out));
         \Illuminate\Support\Facades\Log::debug("HomeDirectoryService smbSetAcl result (exit={$ret}): {$output}");
 
+        $failed = $ret !== 0 || $this->outputHasError($output);
         return [
-            'success' => $ret === 0,
-            'output'  => $ret === 0 ? "ACL {$ace} gesetzt." : '',
-            'error'   => $ret !== 0 ? $output : '',
+            'success' => !$failed,
+            'output'  => !$failed ? "ACL {$ace} gesetzt." : '',
+            'error'   => $failed ? $output : '',
         ];
     }
 
