@@ -92,7 +92,9 @@ class OnboardingController extends Controller
         ]);
 
         $vorlage  = OnboardingVorlage::with(['abteilung', 'gruppen'])->findOrFail($request->integer('vorlage_id'));
-        $password = (new PasswordGeneratorService())->generate();
+
+        $obSettings = \App\Modules\Onboarding\Models\OnboardingSettings::getSingleton();
+        $password   = $obSettings->temp_password ?: (new PasswordGeneratorService())->generate();
 
         $data = array_merge($request->only(['vorname', 'nachname', 'samaccountname', 'upn', 'rufnummer', 'mobile', 'fax', 'buero', 'vorgesetzter_dn']), [
             'password'                   => $password,

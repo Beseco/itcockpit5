@@ -32,6 +32,7 @@ class OnboardingSettingsController extends Controller
             'exchange_mailbox_db'      => ['nullable', 'string', 'max:255'],
             'smb_user'                 => ['nullable', 'string', 'max:255'],
             'smb_password'             => ['nullable', 'string', 'max:500'],
+            'temp_password'            => ['nullable', 'string', 'max:255'],
             'welcome_mail_subject'     => ['required', 'string', 'max:255'],
             'welcome_mail_body'        => ['nullable', 'string'],
             'supervisor_mail_subject'  => ['required', 'string', 'max:255'],
@@ -62,6 +63,9 @@ class OnboardingSettingsController extends Controller
         }
         if ($request->filled('smb_password')) {
             $data['smb_password'] = $request->input('smb_password');
+        }
+        if ($request->filled('temp_password')) {
+            $data['temp_password'] = $request->input('temp_password');
         }
 
         $settings->fill($data)->save();

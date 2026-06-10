@@ -84,6 +84,37 @@
                     </div>
                 </div>
 
+                {{-- Temporäres Admin-Passwort --}}
+                <div class="bg-white shadow-sm sm:rounded-lg p-6">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-2">Temporäres Passwort (für den Admin)</h3>
+                    <p class="text-xs text-gray-400 mb-4">
+                        Dieses Passwort wird beim Anlegen neuer Benutzer als temporäres Passwort (Phase 1) gesetzt.
+                        Der Admin kann sich damit als neuer Benutzer anmelden um die Einrichtung durchzuführen.
+                        Das endgültige Passwort (mit Änderungspflicht) wird erst beim Abschließen der Todo-Liste vergeben.
+                        <br>Leer lassen = zufälliges Passwort wird generiert.
+                    </p>
+                    <div x-data="{ visible: false }">
+                        <x-input-label for="temp_password" value="Festes temporäres Passwort" />
+                        <div class="mt-1 flex gap-2 items-center">
+                            <x-text-input id="temp_password" name="temp_password"
+                                          :type="'password'"
+                                          x-bind:type="visible ? 'text' : 'password'"
+                                          class="block flex-1 font-mono"
+                                          placeholder="{{ $settings->temp_password ? '(gespeichert – leer lassen zum Beibehalten)' : 'z.B. Willkommen1!' }}"
+                                          autocomplete="new-password" />
+                            <button type="button" @click="visible = !visible"
+                                    class="shrink-0 px-3 py-2 text-xs border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50"
+                                    x-text="visible ? 'Ausblenden' : 'Anzeigen'">Anzeigen</button>
+                        </div>
+                        @if($settings->temp_password)
+                            <p class="mt-1 text-xs text-green-700">✓ Festes Passwort konfiguriert – wird für alle neuen Benutzer verwendet.</p>
+                        @else
+                            <p class="mt-1 text-xs text-gray-400">Noch kein festes Passwort gesetzt – es wird ein zufälliges generiert.</p>
+                        @endif
+                        <x-input-error :messages="$errors->get('temp_password')" class="mt-1" />
+                    </div>
+                </div>
+
                 {{-- Gruppen-Suchbasis --}}
                 <div class="bg-white shadow-sm sm:rounded-lg p-6">
                     <h3 class="text-sm font-semibold text-gray-700 mb-2">Gruppen-Suchbasis</h3>
