@@ -124,7 +124,17 @@ class AdProvisioningService
 
                 $mkResult = $homeService->createDirectory($heimatverzeichnis, $samaccountname, $domain);
                 if ($mkResult['success']) {
-                    $homedirStep = ['attempted' => true, 'success' => true, 'message' => $heimatverzeichnis];
+                    $aclError    = $mkResult['acl_error'] ?? '';
+                    $homedirStep = [
+                        'attempted' => true,
+                        'success'   => empty($aclError),
+                        'message'   => $heimatverzeichnis,
+                        'acl_error' => $aclError,
+                    ];
+                    if ($aclError) {
+                        $homeDirWarning = 'Heimatverzeichnis angelegt, aber Berechtigungen nicht gesetzt: ' . $aclError;
+                        \Illuminate\Support\Facades\Log::warning("Onboarding: smbcacls fehlgeschlagen für {$samaccountname}: {$aclError}");
+                    }
                 } else {
                     $homeDirWarning = 'Heimatverzeichnis konnte nicht angelegt werden: ' . $mkResult['error'];
                     $homedirStep   = ['attempted' => true, 'success' => false, 'message' => $mkResult['error']];

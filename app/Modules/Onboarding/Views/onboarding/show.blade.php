@@ -76,22 +76,26 @@
                         <ol class="space-y-3">
                             @foreach($record->creation_log as $step)
                                 @php
-                                    $skipped = $step['skipped'] ?? false;
-                                    $ok      = !$skipped && $step['success'];
-                                    $fail    = !$skipped && !$step['success'];
+                                    $skipped  = $step['skipped'] ?? false;
+                                    $aclError = $step['acl_error'] ?? '';
+                                    $ok       = !$skipped && $step['success'] && empty($aclError);
+                                    $warn     = !$skipped && $step['success'] && !empty($aclError);
+                                    $fail     = !$skipped && !$step['success'];
                                 @endphp
                                 <li class="flex items-start gap-3">
                                     {{-- Icon --}}
                                     <span class="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold
                                         @if($ok) bg-green-100 text-green-700
+                                        @elseif($warn) bg-amber-100 text-amber-700
                                         @elseif($fail) bg-red-100 text-red-700
                                         @else bg-gray-100 text-gray-400
                                         @endif">
-                                        @if($ok) ✓ @elseif($fail) ✕ @else — @endif
+                                        @if($ok) ✓ @elseif($warn) ! @elseif($fail) ✕ @else — @endif
                                     </span>
                                     <div class="min-w-0 flex-1">
                                         <p class="text-sm font-medium
                                             @if($ok) text-gray-800
+                                            @elseif($warn) text-amber-800
                                             @elseif($fail) text-red-700
                                             @else text-gray-400
                                             @endif">
@@ -110,6 +114,16 @@
                                                     → SMB-Zugangsdaten in den <a href="{{ route('onboarding.settings') }}" class="underline">Onboarding-Einstellungen</a> prüfen oder Ordner manuell anlegen.
                                                 </p>
                                             @endif
+                                        @endif
+                                        {{-- ACL-Warnung: Ordner existiert, aber Berechtigungen fehlen --}}
+                                        @if(!empty($step['acl_error']))
+                                            <p class="text-xs mt-1 text-amber-700 font-medium">
+                                                ⚠ Ordner erstellt, aber Benutzerberechtigungen konnten nicht gesetzt werden:
+                                            </p>
+                                            <p class="text-xs text-amber-600 font-mono break-all">{{ $step['acl_error'] }}</p>
+                                            <p class="text-xs text-amber-600 mt-1">
+                                                → Bitte Ordner in Windows manuell über Sicherheitseinstellungen für <strong>{{ $record->samaccountname }}</strong> freigeben (Vollzugriff).
+                                            </p>
                                         @endif
                                     </div>
                                 </li>

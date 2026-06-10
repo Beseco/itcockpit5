@@ -59,9 +59,10 @@ class HomeDirectoryService
         $aclResult = $this->smbSetAcl($server, $share, $folder, $domain, $samaccountname);
 
         return [
-            'success' => true, // Ordner existiert; ACL-Fehler werden geloggt aber nicht als fatal gewertet
-            'output'  => trim(($mkResult['output'] ?? '') . "\n" . ($aclResult['output'] ?? '')),
-            'error'   => $aclResult['success'] ? '' : 'ACL-Fehler (Ordner vorhanden): ' . $aclResult['error'],
+            'success'   => true, // Ordner existiert; ACL-Fehler blockieren nicht, werden aber weitergegeben
+            'output'    => trim(($mkResult['output'] ?? '') . "\n" . ($aclResult['output'] ?? '')),
+            'error'     => '',
+            'acl_error' => $aclResult['success'] ? '' : $aclResult['error'],
         ];
     }
 
@@ -213,9 +214,15 @@ class HomeDirectoryService
             return ['success' => false, 'output' => '', 'error' => 'smbcacls nicht gefunden (apt install smbclient).'];
         }
 
-        // ACE: DOMAIN\user bekommt ALLOWED/OI|CI/FULL (Object Inherit + Container Inherit)
-        $ace = "{$domain}\\{$user}:ALLOWED/OI|CI/FULL";
-        $cmd = 'smbcacls ' . escapeshellarg("//{$server}/{$share}") . ' ' . escapeshellarg($folder)
+        // ACE-Format: "ACL:DOMAIN\user:ALLOWED/flags/mask"
+        // Das ACL:-Präfix ist Pflicht – ohne es ignoriert smbcacls den Eintrag.
+        // OI = Object Inherit (Dateien erben), CI = Container Inherit (Unterordner erben)
+        $ace = 'ACL:' . $domain . '\\' . $user . ':ALLOWED/OI|CI/FULL';
+
+        // smbcacls erwartet den Pfad mit Backslashes (nicht Forward Slashes)
+        $folderBs = str_replace('/', '\\', $folder);
+
+        $cmd = 'smbcacls ' . escapeshellarg("//{$server}/{$share}") . ' ' . escapeshellarg($folderBs)
              . ' ' . $this->authArgs()
              . ' --add ' . escapeshellarg($ace) . ' 2>&1';
 
