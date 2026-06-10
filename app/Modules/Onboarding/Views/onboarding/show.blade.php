@@ -14,7 +14,13 @@
 
             {{-- Status --}}
             @if($record->status === 'erfolgreich')
-                @if($record->error_message)
+                @php
+                    $warnings = $record->error_message ? explode(' | ', $record->error_message) : [];
+                    $pwdWarning     = collect($warnings)->first(fn($w) => str_contains($w, 'Passwort'));
+                    $homedirWarning = collect($warnings)->first(fn($w) => str_contains($w, 'Heimatverzeichnis'));
+                @endphp
+
+                @if($pwdWarning)
                     <div class="bg-amber-50 border border-amber-300 rounded-lg p-5">
                         <div class="flex items-start gap-3">
                             <span class="text-amber-500 text-xl">⚠</span>
@@ -23,7 +29,7 @@
                                     Benutzer {{ $record->vorname }} {{ $record->nachname }} wurde im AD angelegt – Konto ist noch deaktiviert.
                                 </p>
                                 <p class="text-sm text-amber-700 mt-2">
-                                    <strong>Passwort konnte nicht gesetzt werden:</strong> {{ $record->error_message }}
+                                    <strong>Passwort konnte nicht gesetzt werden:</strong> {{ $pwdWarning }}
                                 </p>
                                 <div class="mt-3 p-3 bg-amber-100 rounded text-sm text-amber-800">
                                     <strong>Nächste Schritte:</strong>
@@ -44,6 +50,19 @@
                                     Benutzer {{ $record->vorname }} {{ $record->nachname }} wurde erfolgreich im AD angelegt.
                                 </p>
                                 <p class="text-sm text-green-700 mt-1">Benutzername: <strong>{{ $record->samaccountname }}</strong></p>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                @if($homedirWarning)
+                    <div class="bg-orange-50 border border-orange-300 rounded-lg p-4">
+                        <div class="flex items-start gap-3">
+                            <span class="text-orange-500 text-lg">⚠</span>
+                            <div>
+                                <p class="font-semibold text-orange-800 text-sm">Heimatverzeichnis nicht angelegt</p>
+                                <p class="text-sm text-orange-700 mt-1">{{ $homedirWarning }}</p>
+                                <p class="text-xs text-orange-600 mt-2">Bitte den Ordner manuell auf dem Fileserver anlegen oder die SMB-Zugangsdaten in den <a href="{{ route('onboarding.settings') }}" class="underline">Onboarding-Einstellungen</a> prüfen.</p>
                             </div>
                         </div>
                     </div>

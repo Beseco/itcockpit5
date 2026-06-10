@@ -128,13 +128,22 @@ class HomeDirectoryService
             return ['success' => $ok, 'output' => $ok ? "Ordner {$path} erstellt." : '', 'error' => $ok ? '' : error_get_last()['message'] ?? 'mkdir fehlgeschlagen'];
         }
 
-        // smbclient: Wenn Pfad mehrere Ebenen hat (z.B. User/mustermannm), müssen
-        // übergeordnete Ordner bereits existieren – mkdir legt nur die letzte Ebene an.
-        $cmd = 'smbclient ' . escapeshellarg("//{$server}/{$share}") . ' ' . $this->authArgs()
-             . ' -c ' . escapeshellarg("mkdir {$folder}") . ' 2>&1';
+        // smbclient mkdir unterstützt keine Pfade mit Unterordnern direkt.
+        // Lösung: zuerst in das übergeordnete Verzeichnis wechseln, dann nur den letzten
+        // Ordner anlegen. Bei einfachen Pfaden (kein Unterordner) entfällt das cd.
+        $parts  = explode('/', $folder);
+        $leaf   = array_pop($parts);
+        $smbCmd = count($parts) > 0
+            ? 'cd ' . implode('/', $parts) . '; mkdir ' . $leaf
+            : 'mkdir ' . $leaf;
 
+        $cmd = 'smbclient ' . escapeshellarg("//{$server}/{$share}") . ' ' . $this->authArgs()
+             . ' -c ' . escapeshellarg($smbCmd) . ' 2>&1';
+
+        \Illuminate\Support\Facades\Log::debug("HomeDirectoryService smbMkdir: {$cmd}");
         exec($cmd, $out, $ret);
         $output = trim(implode("\n", $out));
+        \Illuminate\Support\Facades\Log::debug("HomeDirectoryService smbMkdir result (exit={$ret}): {$output}");
 
         return [
             'success' => $ret === 0,
@@ -165,8 +174,10 @@ class HomeDirectoryService
              . ' ' . $this->authArgs()
              . ' --add ' . escapeshellarg($ace) . ' 2>&1';
 
+        \Illuminate\Support\Facades\Log::debug("HomeDirectoryService smbSetAcl: {$cmd}");
         exec($cmd, $out, $ret);
         $output = trim(implode("\n", $out));
+        \Illuminate\Support\Facades\Log::debug("HomeDirectoryService smbSetAcl result (exit={$ret}): {$output}");
 
         return [
             'success' => $ret === 0,
@@ -180,7 +191,7 @@ class HomeDirectoryService
     {
         $user = $this->settings->smb_user;
         $pass = $this->settings->smb_password ?? '';
-        return '-U ' . escapeshellarg("{$user}%{$pass}") . ' --no-pass=0';
+        return '-U ' . escapeshellarg("{$user}%{$pass}");
     }
 
     private function commandExists(string $cmd): bool
