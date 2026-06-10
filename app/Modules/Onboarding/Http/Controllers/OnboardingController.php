@@ -41,7 +41,7 @@ class OnboardingController extends Controller
     public function create(Request $request)
     {
         $vorlageId = $request->input('vorlage_id');
-        $vorlagen  = OnboardingVorlage::where('is_active', true)->with(['abteilung', 'gruppen'])->orderBy('name')->get();
+        $vorlagen  = OnboardingVorlage::where('is_active', true)->with(['abteilung', 'gruppen', 'vorgesetzter'])->orderBy('name')->get();
         $vorlage   = $vorlageId ? OnboardingVorlage::with(['abteilung', 'gruppen', 'vorgesetzter'])->find($vorlageId) : null;
 
         return view('onboarding::onboarding.create', compact('vorlagen', 'vorlage'));

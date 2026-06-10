@@ -12,9 +12,11 @@
     @php
         $vorlagenData = $vorlagen->mapWithKeys(fn($v) => [
             $v->id => [
-                'abteilungId' => $v->abteilung_id,
-                'name'        => $v->name,
-                'gruppen'     => $v->gruppen->map(fn($g) => ['dn' => $g->ad_group_dn, 'name' => $g->ad_group_name])->values(),
+                'abteilungId'      => $v->abteilung_id,
+                'name'             => $v->name,
+                'gruppen'          => $v->gruppen->map(fn($g) => ['dn' => $g->ad_group_dn, 'name' => $g->ad_group_name])->values(),
+                'vorgesetzterDn'   => $v->vorgesetzter?->distinguished_name ?? '',
+                'vorgesetzterName' => $v->vorgesetzter?->anzeigename_or_name ?? '',
             ],
         ]);
     @endphp
@@ -153,10 +155,16 @@
                         </div>
 
                         <div>
-                            <x-input-label for="vorgesetzter_dn" value="Vorgesetzter (AD-DN, optional – überschreibt Vorlage)" />
-                            <x-text-input id="vorgesetzter_dn" name="vorgesetzter_dn" type="text" class="mt-1 block w-full font-mono text-xs"
-                                          x-model="vorgesetzterDn"
-                                          placeholder="CN=Max Muster,OU=A1,OU=Benutzer,OU=LRA-FS,DC=lra,DC=lan" />
+                            <x-input-label value="Vorgesetzter" />
+                            <p class="mt-1 text-sm" :class="vorgesetzterName ? 'text-gray-800' : 'text-gray-400'">
+                                <span x-show="vorgesetzterName" x-text="vorgesetzterName"></span>
+                                <span x-show="vorgesetzterName" class="text-xs text-gray-400">(aus Vorlage)</span>
+                                <span x-show="!vorgesetzterName">– kein Vorgesetzter hinterlegt –</span>
+                            </p>
+                            <input type="text" name="vorgesetzter_dn" x-model="vorgesetzterDn"
+                                   class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm font-mono text-xs"
+                                   placeholder="CN=Max Muster,OU=A1,OU=Benutzer,OU=LRA-FS,DC=lra,DC=lan" />
+                            <p class="mt-1 text-xs text-gray-400">AD-DN – aus der Vorlage vorbelegt, kann überschrieben werden (leer = kein Vorgesetzter).</p>
                             <x-input-error :messages="$errors->get('vorgesetzter_dn')" class="mt-1" />
                         </div>
                     </div>
@@ -274,6 +282,7 @@
                 fax: @js(old('fax', '')),
                 buero: @js(old('buero', '')),
                 vorgesetzterDn: @js(old('vorgesetzter_dn', '')),
+                vorgesetzterName: '',
                 alternatives: [],
                 previewing: false,
                 previewLoaded: false,
@@ -293,8 +302,13 @@
                 selectVorlage(keepGruppen = false) {
                     const d = this.vorlagenData[this.vorlageId];
                     this.abteilungId = d ? (d.abteilungId || '') : '';
+                    this.vorgesetzterName = d ? (d.vorgesetzterName || '') : '';
                     if (!keepGruppen) {
                         this.gruppen = d ? JSON.parse(JSON.stringify(d.gruppen)) : [];
+                        this.vorgesetzterDn = d ? (d.vorgesetzterDn || '') : '';
+                    } else if (!this.vorgesetzterDn && d) {
+                        // bei erneutem Laden (z.B. Validierungsfehler) Vorlagenwert nur ergänzen
+                        this.vorgesetzterDn = d.vorgesetzterDn || '';
                     }
                     this.ouGroupSuggestions = [];
                     this.ouCount = 0;
