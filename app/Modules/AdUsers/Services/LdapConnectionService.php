@@ -147,17 +147,20 @@ class LdapConnectionService
     /**
      * Suche mit benutzerdefinierter Base DN – wiederverwendbar für andere Module (z.B. Server-Sync).
      *
-     * @param  string   $baseDn  Die Base DN für diese Suche (überschreibt die gespeicherte Einstellung)
-     * @param  string   $filter  LDAP-Suchfilter
-     * @param  string[] $attrs   Zu ladende Attribute
+     * @param  string   $baseDn   Die Base DN für diese Suche (überschreibt die gespeicherte Einstellung)
+     * @param  string   $filter   LDAP-Suchfilter
+     * @param  string[] $attrs    Zu ladende Attribute
+     * @param  bool     $oneLevel true = nur direkte Kinder der Base DN (keine Unter-OUs)
      * @return \Illuminate\Support\Collection
      */
-    public function searchWithBaseDn(string $baseDn, string $filter, array $attrs): \Illuminate\Support\Collection
+    public function searchWithBaseDn(string $baseDn, string $filter, array $attrs, bool $oneLevel = false): \Illuminate\Support\Collection
     {
         $conn = $this->connect();
         $this->bind($conn);
 
-        $result = @ldap_search($conn, $baseDn, $filter, $attrs, 0, 0);
+        $result = $oneLevel
+            ? @ldap_list($conn, $baseDn, $filter, $attrs, 0, 0)   // Scope: eine Ebene
+            : @ldap_search($conn, $baseDn, $filter, $attrs, 0, 0); // Scope: Subtree
 
         if (!$result) {
             throw new \RuntimeException('Suchanfrage fehlgeschlagen: ' . ldap_error($conn));

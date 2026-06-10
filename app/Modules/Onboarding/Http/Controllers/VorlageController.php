@@ -153,7 +153,7 @@ class VorlageController extends Controller
         $attrs = [
             'streetaddress', 'postalcode', 'l', 'company', 'department',
             'physicaldeliveryofficename', 'telephonenumber', 'facsimiletelephonenumber',
-            'memberof',
+            'memberof', 'manager',
         ];
 
         try {
@@ -161,6 +161,7 @@ class VorlageController extends Controller
                 $abteilung->ad_path,
                 '(&(objectClass=user)(objectCategory=person))',
                 $attrs,
+                true, // nur direkte Benutzer dieser OU, keine Unter-OUs
             );
         } catch (\Throwable $e) {
             return response()->json(['count' => 0, 'suggestions' => (object) [], 'error' => $e->getMessage()]);
@@ -220,6 +221,20 @@ class VorlageController extends Controller
             $groups[] = ['dn' => $dn, 'name' => $this->cnAusDn($dn), 'count' => $cnt];
         }
         $suggestions['groups'] = $groups;
+
+        // Vorgesetzter: häufigster manager-DN → passenden AdUser suchen
+        $managerWerte = $users->map(fn($u) => $u['manager'][0] ?? null)
+            ->filter(fn($v) => $v !== null && trim((string) $v) !== '');
+        if ($topManager = $this->haeufigsterWert($managerWerte)) {
+            $adUser = AdUser::whereRaw('LOWER(distinguished_name) = ?', [strtolower($topManager['value'])])->first();
+            if ($adUser) {
+                $suggestions['vorgesetzter'] = [
+                    'value' => $adUser->id,
+                    'label' => $adUser->anzeigename_or_name . ' (' . $adUser->samaccountname . ')',
+                    'count' => $topManager['count'],
+                ];
+            }
+        }
 
         return response()->json([
             'count'       => $users->count(),

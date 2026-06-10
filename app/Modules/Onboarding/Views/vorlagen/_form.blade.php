@@ -93,6 +93,13 @@
                             </option>
                         @endforeach
                     </select>
+                    <template x-if="sug.vorgesetzter">
+                        <p class="mt-1 text-xs text-indigo-600">
+                            Vorschlag: <span class="font-medium" x-text="sug.vorgesetzter.label"></span>
+                            <span class="text-gray-400">(<span x-text="sug.vorgesetzter.count"></span>×)</span>
+                            <button type="button" class="underline ml-1" @click="apply('vorgesetzter_ad_user_id', sug.vorgesetzter.value)">übernehmen</button>
+                        </p>
+                    </template>
                     <x-input-error :messages="$errors->get('vorgesetzter_ad_user_id')" class="mt-1" />
                 </div>
             </div>
