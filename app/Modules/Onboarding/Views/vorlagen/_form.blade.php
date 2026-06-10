@@ -407,26 +407,24 @@
         </div>
 
         {{-- Vorschläge aus der gewählten OU (memberOf der vorhandenen Benutzer) --}}
-        <template x-if="(sug.groups || []).length > 0">
-            <div class="mt-5 pt-4 border-t border-gray-100">
-                <p class="text-xs font-medium text-gray-600 mb-2">
-                    Häufige Gruppen der Benutzer in dieser OU (<span x-text="ouCount"></span> Benutzer) – zum Übernehmen anklicken:
-                </p>
-                <div class="flex flex-wrap gap-2">
-                    <template x-for="g in sug.groups" :key="g.dn">
-                        <button type="button"
-                                @click="add({ dn: g.dn, name: g.name, type: 'security' })"
-                                :disabled="gruppen.find(x => x.dn === g.dn)"
-                                :title="g.dn"
-                                class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs border border-indigo-200 text-indigo-700 hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-default">
-                            <span x-text="gruppen.find(x => x.dn === g.dn) ? '✓' : '+'"></span>
-                            <span x-text="g.name"></span>
-                            <span class="text-gray-400">(<span x-text="g.count"></span>)</span>
-                        </button>
-                    </template>
-                </div>
+        <div class="mt-5 pt-4 border-t border-gray-100" x-show="(sug.groups || []).length > 0" x-cloak>
+            <p class="text-xs font-medium text-gray-600 mb-2">
+                Häufige Gruppen der Benutzer in dieser OU (<span x-text="ouCount"></span> Benutzer) – zum Übernehmen anklicken:
+            </p>
+            <div class="flex flex-wrap gap-2">
+                <template x-for="g in (sug.groups || [])" :key="g.dn">
+                    <button type="button"
+                            @click="add({ dn: g.dn, name: g.name, type: 'security' })"
+                            :disabled="!!gruppen.find(x => x.dn === g.dn)"
+                            :title="g.dn"
+                            class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs border border-indigo-200 text-indigo-700 hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-default">
+                        <span x-text="gruppen.find(x => x.dn === g.dn) ? '✓' : '+'"></span>
+                        <span x-text="g.name"></span>
+                        <span class="text-gray-400">(<span x-text="g.count"></span>)</span>
+                    </button>
+                </template>
             </div>
-        </template>
+        </div>
     </div>
 
 
