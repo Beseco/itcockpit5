@@ -16,7 +16,8 @@ class OnboardingRecord extends Model
         'e_laufwerk'    => ['label' => 'E-Laufwerk verfügbar (Heimatverzeichnis)', 'mail_test' => false],
         'p_laufwerk'    => ['label' => 'P-Laufwerk verfügbar',                     'mail_test' => false],
         'outlook'       => ['label' => 'Outlook einrichten',                       'mail_test' => false],
-        'fachverfahren' => ['label' => 'Fachverfahren einrichten',                 'mail_test' => false],
+        'signatur'      => ['label' => 'Signatur mit Signatur-Tool eingerichtet',  'mail_test' => false],
+        'fachverfahren' => ['label' => 'Fachverfahren getestet',                   'mail_test' => false],
     ];
 
     protected $fillable = [
