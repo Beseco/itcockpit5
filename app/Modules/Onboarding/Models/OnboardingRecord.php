@@ -22,7 +22,7 @@ class OnboardingRecord extends Model
     protected $fillable = [
         'vorlage_id', 'created_by_user_id',
         'vorname', 'nachname', 'samaccountname', 'upn', 'distinguished_name',
-        'rufnummer', 'ad_attributes_snapshot',
+        'rufnummer', 'ad_attributes_snapshot', 'creation_log',
         'status', 'error_message',
         'welcome_mail_sent_at', 'supervisor_mail_sent_at',
         'mailbox_status', 'mailbox_enabled_at', 'mailbox_error',
@@ -31,6 +31,7 @@ class OnboardingRecord extends Model
 
     protected $casts = [
         'ad_attributes_snapshot'  => 'array',
+        'creation_log'            => 'array',
         'welcome_mail_sent_at'    => 'datetime',
         'supervisor_mail_sent_at' => 'datetime',
         'mailbox_enabled_at'      => 'datetime',

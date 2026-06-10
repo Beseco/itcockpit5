@@ -55,7 +55,8 @@
                     </div>
                 @endif
 
-                @if($homedirWarning)
+                {{-- Heimatverzeichnis-Warnung für ältere Records ohne creation_log --}}
+                @if($homedirWarning && !$record->creation_log)
                     <div class="bg-orange-50 border border-orange-300 rounded-lg p-4">
                         <div class="flex items-start gap-3">
                             <span class="text-orange-500 text-lg">⚠</span>
@@ -65,6 +66,55 @@
                                 <p class="text-xs text-orange-600 mt-2">Bitte den Ordner manuell auf dem Fileserver anlegen oder die SMB-Zugangsdaten in den <a href="{{ route('onboarding.settings') }}" class="underline">Onboarding-Einstellungen</a> prüfen.</p>
                             </div>
                         </div>
+                    </div>
+                @endif
+
+                {{-- Anlage-Log --}}
+                @if($record->creation_log)
+                    <div class="bg-white shadow-sm sm:rounded-lg p-5">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-4">Protokoll – Anlage</h3>
+                        <ol class="space-y-3">
+                            @foreach($record->creation_log as $step)
+                                @php
+                                    $skipped = $step['skipped'] ?? false;
+                                    $ok      = !$skipped && $step['success'];
+                                    $fail    = !$skipped && !$step['success'];
+                                @endphp
+                                <li class="flex items-start gap-3">
+                                    {{-- Icon --}}
+                                    <span class="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold
+                                        @if($ok) bg-green-100 text-green-700
+                                        @elseif($fail) bg-red-100 text-red-700
+                                        @else bg-gray-100 text-gray-400
+                                        @endif">
+                                        @if($ok) ✓ @elseif($fail) ✕ @else — @endif
+                                    </span>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-sm font-medium
+                                            @if($ok) text-gray-800
+                                            @elseif($fail) text-red-700
+                                            @else text-gray-400
+                                            @endif">
+                                            {{ $step['label'] }}
+                                            @if($skipped)
+                                                <span class="ml-1 text-xs font-normal text-gray-400">(übersprungen – nicht konfiguriert)</span>
+                                            @endif
+                                        </p>
+                                        @if(!empty($step['detail']))
+                                            <p class="text-xs mt-0.5
+                                                @if($fail) text-red-600 @else text-gray-500 @endif">
+                                                {{ $step['detail'] }}
+                                            </p>
+                                            @if($fail && $step['step'] === 'home_dir')
+                                                <p class="text-xs text-orange-600 mt-1">
+                                                    → SMB-Zugangsdaten in den <a href="{{ route('onboarding.settings') }}" class="underline">Onboarding-Einstellungen</a> prüfen oder Ordner manuell anlegen.
+                                                </p>
+                                            @endif
+                                        @endif
+                                    </div>
+                                </li>
+                            @endforeach
+                        </ol>
                     </div>
                 @endif
             @else

@@ -122,6 +122,61 @@ class OnboardingController extends Controller
         try {
             $result = $this->provisioner->createUser($vorlage, $data);
 
+            // Anlage-Log aufbauen
+            $creationLog = [];
+
+            // Schritt 1: AD-Benutzer
+            $creationLog[] = [
+                'step'    => 'ad_user',
+                'label'   => 'Benutzer im AD angelegt',
+                'success' => true,
+                'detail'  => $result['samaccountname'],
+            ];
+            if ($result['password_warning'] ?? null) {
+                $creationLog[] = [
+                    'step'    => 'ad_password',
+                    'label'   => 'Passwort gesetzt',
+                    'success' => false,
+                    'detail'  => $result['password_warning'],
+                ];
+            } else {
+                $creationLog[] = [
+                    'step'    => 'ad_password',
+                    'label'   => 'Passwort gesetzt',
+                    'success' => true,
+                    'detail'  => '',
+                ];
+            }
+
+            // Schritt 2: Heimatverzeichnis
+            if ($result['homedir_step'] ?? null) {
+                $hs = $result['homedir_step'];
+                $creationLog[] = [
+                    'step'    => 'home_dir',
+                    'label'   => 'Heimatverzeichnis angelegt',
+                    'success' => $hs['success'],
+                    'detail'  => $hs['message'],
+                    'skipped' => !$hs['attempted'],
+                ];
+            }
+
+            // Schritt 3: Admin-Mail
+            $todoUrl    = route('onboarding.todo.show', $todoToken);
+            $adminEmail = auth()->user()->email;
+            $mailSent   = false;
+            try {
+                Mail::to($adminEmail)->send(new OnboardingAdminSetupMail($record, $password, $todoUrl));
+                $mailSent = true;
+            } catch (\Throwable) {
+                // Mail-Fehler soll Onboarding nicht abbrechen
+            }
+            $creationLog[] = [
+                'step'    => 'admin_mail',
+                'label'   => 'E-Mail an Admin versendet',
+                'success' => $mailSent,
+                'detail'  => $adminEmail,
+            ];
+
             $warnings = array_filter([
                 $result['password_warning'] ?? null,
                 $result['homedir_warning']  ?? null,
@@ -129,6 +184,7 @@ class OnboardingController extends Controller
             $record->update([
                 'distinguished_name'     => $result['distinguished_name'],
                 'ad_attributes_snapshot' => \Illuminate\Support\Arr::except($data, ['password']),
+                'creation_log'           => $creationLog,
                 'status'                 => 'erfolgreich',
                 'error_message'          => $warnings ? implode(' | ', $warnings) : null,
             ]);
@@ -139,15 +195,6 @@ class OnboardingController extends Controller
                 'action'  => 'user_created',
                 'payload' => ['samaccountname' => $record->samaccountname, 'upn' => $record->upn],
             ]);
-
-            // Admin-Mail mit temporärem Passwort + Todo-Link
-            $todoUrl = route('onboarding.todo.show', $todoToken);
-            $adminEmail = auth()->user()->email;
-            try {
-                Mail::to($adminEmail)->send(new OnboardingAdminSetupMail($record, $password, $todoUrl));
-            } catch (\Throwable) {
-                // Mail-Fehler soll Onboarding nicht abbrechen
-            }
 
         } catch (\Throwable $e) {
             $record->update(['status' => 'fehler', 'error_message' => $e->getMessage()]);

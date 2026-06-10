@@ -108,9 +108,13 @@ class AdProvisioningService
 
         // Schritt 6: Heimatverzeichnis auf dem Fileserver physisch anlegen
         $heimatverzeichnis = $data['heimatverzeichnis'] ?? null;
+        $homedirStep = null;
+
         if ($heimatverzeichnis) {
             $homeService = new HomeDirectoryService();
-            if ($homeService->isConfigured()) {
+            if (!$homeService->isConfigured()) {
+                $homedirStep = ['attempted' => false, 'success' => false, 'message' => 'SMB-Zugangsdaten nicht konfiguriert (Onboarding-Einstellungen).'];
+            } else {
                 $obSettings = OnboardingSettings::getSingleton();
                 // Domain aus smb_user ableiten (Format: DOMAIN\user oder user@domain)
                 $smbUser = $obSettings->smb_user ?? '';
@@ -118,10 +122,13 @@ class AdProvisioningService
                     ? strtoupper(explode('\\', $smbUser)[0])
                     : strtoupper(explode('@', $smbUser)[1] ?? 'DOMAIN');
 
-                $result = $homeService->createDirectory($heimatverzeichnis, $samaccountname, $domain);
-                if (!$result['success']) {
-                    $homeDirWarning = 'Heimatverzeichnis konnte nicht angelegt werden: ' . $result['error'];
-                    \Illuminate\Support\Facades\Log::warning("Onboarding: Heimatverzeichnis-Anlage fehlgeschlagen für {$samaccountname}: " . $result['error']);
+                $mkResult = $homeService->createDirectory($heimatverzeichnis, $samaccountname, $domain);
+                if ($mkResult['success']) {
+                    $homedirStep = ['attempted' => true, 'success' => true, 'message' => $heimatverzeichnis];
+                } else {
+                    $homeDirWarning = 'Heimatverzeichnis konnte nicht angelegt werden: ' . $mkResult['error'];
+                    $homedirStep   = ['attempted' => true, 'success' => false, 'message' => $mkResult['error']];
+                    \Illuminate\Support\Facades\Log::warning("Onboarding: Heimatverzeichnis-Anlage fehlgeschlagen für {$samaccountname}: " . $mkResult['error']);
                 }
             }
         }
@@ -132,6 +139,7 @@ class AdProvisioningService
             'upn'                => $upn,
             'password_warning'   => $passwordWarning,
             'homedir_warning'    => $homeDirWarning,
+            'homedir_step'       => $homedirStep,
         ];
     }
 
