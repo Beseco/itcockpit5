@@ -45,12 +45,18 @@ class AdUserController extends Controller
             ->pluck('status', 'samaccountname');  // [sam => status]
 
         // Filter
-        if ($request->get('status') === 'aktiv') {
+        $statusFilter = $request->get('status');
+        if ($statusFilter === 'aktiv') {
             $query->where('ad_aktiv', true)->where('ad_vorhanden', true);
-        } elseif ($request->get('status') === 'deaktiviert') {
+        } elseif ($statusFilter === 'deaktiviert') {
             $query->where('ad_aktiv', false);
-        } elseif ($request->get('status') === 'offboarding') {
+        } elseif ($statusFilter === 'offboarding') {
             $query->whereIn('samaccountname', $offboardingSams->keys());
+        } elseif ($statusFilter === 'alle') {
+            // kein Status-Filter – auch deaktivierte anzeigen
+        } else {
+            // Standardansicht: deaktivierte Konten ausblenden
+            $query->where('ad_aktiv', true);
         }
 
         // Standard: nur vorhandene Benutzer – explizit "alle" oder "nein" wählen um abzuweichen
@@ -73,8 +79,13 @@ class AdUserController extends Controller
             foreach ($specialOus as $ou) {
                 $query->whereRaw('LOWER(distinguished_name) NOT LIKE ?', ['%,' . strtolower($ou['dn'])]);
             }
+        } elseif ($specialOuFilter === 'alle') {
+            // kein OU-Filter – auch die OU "Deaktiviert" anzeigen
         } elseif ($specialOuFilter && isset($specialOus[$specialOuFilter])) {
             $query->whereRaw('LOWER(distinguished_name) LIKE ?', ['%,' . strtolower($specialOus[$specialOuFilter]['dn'])]);
+        } elseif (!$specialOuFilter && isset($specialOus['deaktiviert'])) {
+            // Standardansicht: OU "Deaktiviert" ausblenden
+            $query->whereRaw('LOWER(distinguished_name) NOT LIKE ?', ['%,' . strtolower($specialOus['deaktiviert']['dn'])]);
         }
 
         $perPage = in_array((int) $request->get('per_page', 25), [25, 50, 100, 250]) ? (int) $request->get('per_page', 25) : 25;

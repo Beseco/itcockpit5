@@ -63,18 +63,20 @@
                        class="flex-1 min-w-[200px] border-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
 
                 <select name="status" class="border-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                    <option value="">Alle Status</option>
-                    <option value="aktiv"        @selected(request('status')==='aktiv')>Aktiv</option>
-                    <option value="deaktiviert"  @selected(request('status')==='deaktiviert')>Deaktiviert</option>
+                    <option value="" @selected(!request('status'))>Standard (ohne deaktivierte)</option>
+                    <option value="aktiv"        @selected(request('status')==='aktiv')>Aktiv (im AD)</option>
+                    <option value="deaktiviert"  @selected(request('status')==='deaktiviert')>Nur deaktivierte</option>
                     <option value="offboarding"  @selected(request('status')==='offboarding')>Im Offboarding</option>
+                    <option value="alle"         @selected(request('status')==='alle')>Alle Status</option>
                 </select>
 
                 @if(!empty($specialOus))
                 <select name="special_ou" class="border-gray-300 rounded-md shadow-sm text-sm focus:border-indigo-500 focus:ring-indigo-500">
-                    <option value="">Spezielle OU (alle)</option>
+                    <option value="" @selected(!request('special_ou'))>Standard (ohne OU: Deaktiviert)</option>
+                    <option value="alle" @selected(request('special_ou')==='alle')>Alle OUs</option>
                     <option value="keine" @selected(request('special_ou')==='keine')>Keine spezielle OU</option>
                     @foreach($specialOus as $key => $sou)
-                        <option value="{{ $key }}" @selected(request('special_ou')===$key)>{{ $sou['label'] }}</option>
+                        <option value="{{ $key }}" @selected(request('special_ou')===$key)>Nur {{ $sou['label'] }}</option>
                     @endforeach
                 </select>
                 @endif
