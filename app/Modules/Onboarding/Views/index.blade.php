@@ -36,18 +36,45 @@
 
             {{-- Schnellstart --}}
             @if($vorlagen->isNotEmpty())
-                <div class="bg-white shadow-sm sm:rounded-lg p-6">
-                    <h3 class="text-sm font-semibold text-gray-700 mb-4">Schnellstart – Vorlage wählen</h3>
-                    <div class="flex flex-wrap gap-3">
-                        @foreach($vorlagen as $vorlage)
-                            <a href="{{ route('onboarding.create', ['vorlage_id' => $vorlage->id]) }}"
-                               class="inline-flex items-center px-4 py-2 bg-indigo-50 border border-indigo-200 rounded-md text-sm font-medium text-indigo-700 hover:bg-indigo-100">
-                                {{ $vorlage->name }}
-                                @if($vorlage->abteilung)
-                                    <span class="ml-2 text-xs text-indigo-400">{{ $vorlage->abteilung->name }}</span>
-                                @endif
-                            </a>
-                        @endforeach
+                @php
+                    $schnellstart = $vorlagen->map(fn($v) => [
+                        'id'   => $v->id,
+                        'name' => $v->name,
+                        'abt'  => $v->abteilung?->name ?? '',
+                    ])->values();
+                @endphp
+                <div class="bg-white shadow-sm sm:rounded-lg p-4"
+                     x-data="{
+                        q: '',
+                        open: false,
+                        baseUrl: '{{ route('onboarding.create') }}',
+                        vorlagen: {{ \Illuminate\Support\Js::from($schnellstart) }},
+                        get filtered() {
+                            const q = this.q.toLowerCase().trim();
+                            const list = !q ? this.vorlagen
+                                : this.vorlagen.filter(v => (v.name + ' ' + v.abt).toLowerCase().includes(q));
+                            return list.slice(0, 50);
+                        },
+                        go(id) { window.location = this.baseUrl + '?vorlage_id=' + id; }
+                     }">
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <h3 class="text-sm font-semibold text-gray-700 shrink-0">Schnellstart – Vorlage wählen</h3>
+                        <div class="relative flex-1 min-w-[16rem] max-w-md">
+                            <input type="text" x-model="q" @focus="open = true" @click="open = true"
+                                   placeholder="Vorlage / OE suchen …"
+                                   class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                            <div x-show="open" x-cloak @click.away="open = false"
+                                 class="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-72 overflow-y-auto">
+                                <template x-for="v in filtered" :key="v.id">
+                                    <button type="button" @click="go(v.id)"
+                                            class="w-full text-left px-4 py-2 text-sm hover:bg-indigo-50 flex items-center gap-2">
+                                        <span class="font-medium text-gray-800" x-text="v.name"></span>
+                                        <span class="text-xs text-gray-400" x-text="v.abt"></span>
+                                    </button>
+                                </template>
+                                <p x-show="filtered.length === 0" class="px-4 py-2 text-sm text-gray-400">Keine Treffer.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             @endif
