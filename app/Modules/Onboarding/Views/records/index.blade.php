@@ -9,6 +9,13 @@
     <div class="py-8">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
 
+            @if(session('success'))
+                <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)"
+                     class="p-4 bg-green-100 border border-green-300 text-green-800 rounded-md text-sm">
+                    {{ session('success') }}
+                </div>
+            @endif
+
             <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
                 @if($records->isEmpty())
                     <p class="p-8 text-center text-sm text-gray-400">Noch keine Onboarding-Vorgänge vorhanden.</p>
@@ -74,6 +81,15 @@
                                             @endif
                                             <a href="{{ route('onboarding.records.show', $record) }}"
                                                class="text-xs text-indigo-600 hover:text-indigo-800">Details</a>
+                                            @can('module.onboarding.edit')
+                                                <form method="POST" action="{{ route('onboarding.records.destroy', $record) }}"
+                                                      class="inline"
+                                                      onsubmit="return confirm('Onboarding-Vorgang für {{ $record->samaccountname }} wirklich löschen? (AD-Benutzer bleibt bestehen)')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="text-xs text-red-600 hover:text-red-800">Löschen</button>
+                                                </form>
+                                            @endcan
                                         </td>
                                     </tr>
                                 @endforeach

@@ -34,6 +34,7 @@ Route::middleware(['auth', 'module.permission:onboarding,edit'])->group(function
     Route::get('/neu',                   [OnboardingController::class, 'create'])->name('create');
     Route::post('/neu',                  [OnboardingController::class, 'store'])->name('store');
     Route::post('/preview',              [OnboardingController::class, 'preview'])->name('preview');
+    Route::delete('/records/{record}',   [OnboardingRecordController::class, 'destroy'])->name('records.destroy');
 });
 
 // History

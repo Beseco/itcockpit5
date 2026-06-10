@@ -99,9 +99,18 @@
                                         <td class="px-4 py-3 text-gray-500 text-xs">
                                             {{ $record->createdBy?->name ?? '–' }}
                                         </td>
-                                        <td class="px-4 py-3 text-right">
+                                        <td class="px-4 py-3 text-right space-x-3">
                                             <a href="{{ route('onboarding.records.show', $record) }}"
                                                class="text-xs text-indigo-600 hover:text-indigo-800">Details</a>
+                                            @can('module.onboarding.edit')
+                                                <form method="POST" action="{{ route('onboarding.records.destroy', $record) }}"
+                                                      class="inline"
+                                                      onsubmit="return confirm('Onboarding-Vorgang für {{ $record->samaccountname }} wirklich löschen? (AD-Benutzer bleibt bestehen)')">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="text-xs text-red-600 hover:text-red-800">Löschen</button>
+                                                </form>
+                                            @endcan
                                         </td>
                                     </tr>
                                 @endforeach
