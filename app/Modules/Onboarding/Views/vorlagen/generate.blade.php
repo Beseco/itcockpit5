@@ -69,7 +69,7 @@
 
                     <div class="mt-6 flex items-center justify-end gap-4">
                         <a href="{{ route('onboarding.vorlagen.index') }}" class="text-sm text-gray-600 hover:text-gray-800">Abbrechen</a>
-                        <x-primary-button type="submit" @if($verfuegbar->isEmpty()) disabled @endif>
+                        <x-primary-button type="submit" :disabled="$verfuegbar->isEmpty()">
                             Vorlagen erstellen
                         </x-primary-button>
                     </div>
