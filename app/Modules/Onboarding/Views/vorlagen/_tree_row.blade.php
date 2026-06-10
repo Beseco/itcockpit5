@@ -23,8 +23,10 @@
     </div>
     <div class="inline-flex items-center gap-3 shrink-0">
         @if($v)
-            <a href="{{ route('onboarding.create', ['vorlage_id' => $v->id]) }}"
-               class="text-xs text-indigo-600 hover:text-indigo-800">Verwenden</a>
+            @if($v->is_active)
+                <a href="{{ route('onboarding.create', ['vorlage_id' => $v->id]) }}"
+                   class="text-xs text-indigo-600 hover:text-indigo-800">Verwenden</a>
+            @endif
             @can('module.onboarding.edit')
                 <a href="{{ route('onboarding.vorlagen.edit', $v) }}"
                    class="text-xs text-gray-500 hover:text-gray-700">Bearbeiten</a>

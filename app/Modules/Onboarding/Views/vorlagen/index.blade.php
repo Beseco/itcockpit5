@@ -55,8 +55,10 @@
                             <div class="px-4 py-3 flex items-center justify-between hover:bg-gray-50">
                                 <span class="text-sm font-medium text-gray-900">{{ $vorlage->name }}</span>
                                 <div class="flex items-center gap-3">
-                                    <a href="{{ route('onboarding.create', ['vorlage_id' => $vorlage->id]) }}"
-                                       class="text-xs text-indigo-600 hover:text-indigo-800">Verwenden</a>
+                                    @if($vorlage->is_active)
+                                        <a href="{{ route('onboarding.create', ['vorlage_id' => $vorlage->id]) }}"
+                                           class="text-xs text-indigo-600 hover:text-indigo-800">Verwenden</a>
+                                    @endif
                                     @can('module.onboarding.edit')
                                         <a href="{{ route('onboarding.vorlagen.edit', $vorlage) }}"
                                            class="text-xs text-gray-500 hover:text-gray-700">Bearbeiten</a>
