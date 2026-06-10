@@ -152,11 +152,12 @@ class OnboardingController extends Controller
             if ($result['homedir_step'] ?? null) {
                 $hs = $result['homedir_step'];
                 $creationLog[] = [
-                    'step'    => 'home_dir',
-                    'label'   => 'Heimatverzeichnis angelegt',
-                    'success' => $hs['success'],
-                    'detail'  => $hs['message'],
-                    'skipped' => !$hs['attempted'],
+                    'step'      => 'home_dir',
+                    'label'     => 'Heimatverzeichnis angelegt',
+                    'success'   => $hs['success'],
+                    'detail'    => $hs['message'],
+                    'skipped'   => !$hs['attempted'],
+                    'acl_error' => $hs['acl_error'] ?? '',
                 ];
             }
 

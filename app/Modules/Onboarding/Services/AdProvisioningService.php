@@ -127,7 +127,7 @@ class AdProvisioningService
                     $aclError    = $mkResult['acl_error'] ?? '';
                     $homedirStep = [
                         'attempted' => true,
-                        'success'   => empty($aclError),
+                        'success'   => true,  // Ordner existiert – ACL-Fehler ist eine Warnung, kein Anlage-Fehler
                         'message'   => $heimatverzeichnis,
                         'acl_error' => $aclError,
                     ];
