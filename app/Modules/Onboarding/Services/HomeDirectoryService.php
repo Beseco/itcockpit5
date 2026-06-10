@@ -27,12 +27,13 @@ class HomeDirectoryService
     /**
      * Erstellt den Heimatordner und setzt den Benutzer als vollberechtigten Eigentümer.
      *
-     * @param  string $uncPath        Vollständiger UNC-Pfad, z.B. \\lra.lan\dfs\User\mustermannm
-     * @param  string $samaccountname sAMAccountName des neuen Benutzers
-     * @param  string $domain         NetBIOS-Domain, z.B. LRA
+     * @param  string      $uncPath        Vollständiger UNC-Pfad, z.B. \\lra.lan\dfs\User\mustermannm
+     * @param  string      $samaccountname sAMAccountName des neuen Benutzers
+     * @param  string      $domain         NetBIOS-Domain, z.B. LRA
+     * @param  string|null $sid            objectSid des Benutzers (bevorzugt für ACL, kein Name-Lookup nötig)
      * @return array{success: bool, output: string, error: string}
      */
-    public function createDirectory(string $uncPath, string $samaccountname, string $domain): array
+    public function createDirectory(string $uncPath, string $samaccountname, string $domain, ?string $sid = null): array
     {
         if (!$this->isConfigured()) {
             return ['success' => false, 'output' => '', 'error' => 'SMB-Zugangsdaten nicht konfiguriert (Onboarding-Einstellungen).'];
@@ -56,7 +57,7 @@ class HomeDirectoryService
         }
 
         // Schritt 2: ACL setzen – Benutzer erhält Full Control (OI|CI = vererbt auf Inhalte)
-        $aclResult = $this->smbSetAcl($server, $share, $folder, $domain, $samaccountname);
+        $aclResult = $this->smbSetAcl($server, $share, $folder, $domain, $samaccountname, $sid);
 
         return [
             'success'   => true, // Ordner existiert; ACL-Fehler blockieren nicht, werden aber weitergegeben
@@ -199,12 +200,13 @@ class HomeDirectoryService
     }
 
     /** Setzt Full-Control-ACL auf das Verzeichnis via smbcacls. */
-    private function smbSetAcl(string $server, string $share, string $folder, string $domain, string $user): array
+    private function smbSetAcl(string $server, string $share, string $folder, string $domain, string $user, ?string $sid = null): array
     {
         if (PHP_OS_FAMILY === 'Windows') {
-            // Windows: icacls
-            $path = "\\\\{$server}\\{$share}\\" . str_replace('/', '\\', $folder);
-            $cmd  = 'icacls ' . escapeshellarg($path) . ' /grant ' . escapeshellarg("{$domain}\\{$user}:(OI)(CI)F") . ' /T 2>&1';
+            // Windows: icacls – SID bevorzugen (kein Name-Lookup nötig), sonst DOMAIN\user
+            $trustee = $sid ? '*' . $sid : "{$domain}\\{$user}";
+            $path    = "\\\\{$server}\\{$share}\\" . str_replace('/', '\\', $folder);
+            $cmd     = 'icacls ' . escapeshellarg($path) . ' /grant ' . escapeshellarg("{$trustee}:(OI)(CI)F") . ' /T 2>&1';
             exec($cmd, $out, $ret);
             return ['success' => $ret === 0, 'output' => implode("\n", $out), 'error' => $ret !== 0 ? implode("\n", $out) : ''];
         }
@@ -214,22 +216,54 @@ class HomeDirectoryService
             return ['success' => false, 'output' => '', 'error' => 'smbcacls nicht gefunden (apt install smbclient).'];
         }
 
-        // ACE-Format: "ACL:DOMAIN\user:ALLOWED/flags/mask"
+        // ACE-Format: "ACL:<Trustee>:ALLOWED/flags/mask"
         // Das ACL:-Präfix ist Pflicht – ohne es ignoriert smbcacls den Eintrag.
+        // Trustee: bevorzugt die rohe SID, da smbcacls frisch angelegte Namen
+        // häufig nicht zu einer SID auflösen kann ("failed to convert ... to SID").
         // OI = Object Inherit (Dateien erben), CI = Container Inherit (Unterordner erben)
-        $ace = 'ACL:' . $domain . '\\' . $user . ':ALLOWED/OI|CI/FULL';
-
-        // smbcacls erwartet den Pfad mit Backslashes (nicht Forward Slashes)
+        $trustee  = $sid ?: $domain . '\\' . $user;
+        $ace      = 'ACL:' . $trustee . ':ALLOWED/OI|CI/FULL';
         $folderBs = str_replace('/', '\\', $folder);
 
+        $result = $this->runSmbcacls($server, $share, $folderBs, $ace);
+
+        // Fallback: Falls die SID-Variante scheitert (z.B. alter smbcacls), mit Namen versuchen.
+        if (!$result['success'] && $sid) {
+            $aceName = 'ACL:' . $domain . '\\' . $user . ':ALLOWED/OI|CI/FULL';
+            $byName  = $this->runSmbcacls($server, $share, $folderBs, $aceName);
+            if ($byName['success']) {
+                return $byName;
+            }
+        }
+
+        return $result;
+    }
+
+    /** Führt smbcacls --add aus und wertet das Ergebnis aus (mit Retry bei DFS-Verbindungsfehlern). */
+    private function runSmbcacls(string $server, string $share, string $folderBs, string $ace): array
+    {
         $cmd = 'smbcacls ' . escapeshellarg("//{$server}/{$share}") . ' ' . escapeshellarg($folderBs)
              . ' ' . $this->authArgs()
              . ' --add ' . escapeshellarg($ace) . ' 2>&1';
 
-        \Illuminate\Support\Facades\Log::debug("HomeDirectoryService smbSetAcl: {$cmd}");
-        exec($cmd, $out, $ret);
-        $output = trim(implode("\n", $out));
-        \Illuminate\Support\Facades\Log::debug("HomeDirectoryService smbSetAcl result (exit={$ret}): {$output}");
+        // Bei DFS-Namespaces liefert smbcacls gelegentlich NT_STATUS_BAD_NETWORK_NAME,
+        // wenn das Referral noch nicht aufgelöst ist – daher bis zu 2 Versuche.
+        $output = '';
+        $ret    = 1;
+        for ($attempt = 1; $attempt <= 2; $attempt++) {
+            \Illuminate\Support\Facades\Log::debug("HomeDirectoryService smbSetAcl (Versuch {$attempt}): {$cmd}");
+            $out = [];
+            exec($cmd, $out, $ret);
+            $output = trim(implode("\n", $out));
+            \Illuminate\Support\Facades\Log::debug("HomeDirectoryService smbSetAcl result (exit={$ret}): {$output}");
+
+            if ($ret === 0 && !$this->outputHasError($output)) {
+                break;
+            }
+            if (!str_contains(strtolower($output), 'bad_network_name')) {
+                break; // anderer Fehler → kein Retry sinnvoll
+            }
+        }
 
         $failed = $ret !== 0 || $this->outputHasError($output);
         return [

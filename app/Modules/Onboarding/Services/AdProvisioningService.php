@@ -104,6 +104,11 @@ class AdProvisioningService
             $this->addToGroup($conn, $userDn, $gruppe->ad_group_dn);
         }
 
+        // objectSid des neuen Benutzers auslesen – wird für die ACL-Vergabe genutzt
+        // (smbcacls kann frisch angelegte Namen oft nicht zu einer SID auflösen,
+        //  mit der SID direkt entfällt dieser Lookup).
+        $userSid = $this->readObjectSid($conn, $userDn);
+
         ldap_unbind($conn);
 
         // Schritt 6: Heimatverzeichnis auf dem Fileserver physisch anlegen
@@ -122,7 +127,7 @@ class AdProvisioningService
                     ? strtoupper(explode('\\', $smbUser)[0])
                     : strtoupper(explode('@', $smbUser)[1] ?? 'DOMAIN');
 
-                $mkResult = $homeService->createDirectory($heimatverzeichnis, $samaccountname, $domain);
+                $mkResult = $homeService->createDirectory($heimatverzeichnis, $samaccountname, $domain, $userSid);
                 if ($mkResult['success']) {
                     $aclError    = $mkResult['acl_error'] ?? '';
                     $homedirStep = [
@@ -414,6 +419,51 @@ class AdProvisioningService
         } finally {
             ldap_unbind($conn);
         }
+    }
+
+    /**
+     * Liest die objectSid des Benutzers und gibt sie als String-SID zurück
+     * (z.B. "S-1-5-21-1234567890-...-1105"). Gibt null zurück bei Fehler.
+     */
+    private function readObjectSid(mixed $conn, string $userDn): ?string
+    {
+        $search = @ldap_read($conn, $userDn, '(objectClass=*)', ['objectSid']);
+        if ($search === false) {
+            return null;
+        }
+        $entries = @ldap_get_entries($conn, $search);
+        if (empty($entries[0]['objectsid'][0])) {
+            return null;
+        }
+
+        return $this->binarySidToString($entries[0]['objectsid'][0]);
+    }
+
+    /** Wandelt eine binäre AD-SID in die String-Darstellung um. */
+    private function binarySidToString(string $binary): ?string
+    {
+        if (strlen($binary) < 8) {
+            return null;
+        }
+        $revision      = ord($binary[0]);
+        $subAuthCount  = ord($binary[1]);
+        // Identifier Authority: 6 Bytes, Big-Endian
+        $authority = 0;
+        for ($i = 2; $i <= 7; $i++) {
+            $authority = $authority * 256 + ord($binary[$i]);
+        }
+        $sid = "S-{$revision}-{$authority}";
+        // Sub-Authorities: je 4 Bytes, Little-Endian
+        for ($i = 0; $i < $subAuthCount; $i++) {
+            $offset = 8 + ($i * 4);
+            if ($offset + 4 > strlen($binary)) {
+                break;
+            }
+            $sub  = unpack('V', substr($binary, $offset, 4));
+            $sid .= '-' . sprintf('%u', $sub[1]);
+        }
+
+        return $sid;
     }
 
     /** Entfernt homeDirectory und homeDrive aus dem AD-Profil (nach erstem Login des Benutzers). */
