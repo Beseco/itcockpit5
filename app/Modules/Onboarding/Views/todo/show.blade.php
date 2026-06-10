@@ -74,15 +74,6 @@
                                 <span :class="todos.includes('{{ $key }}') ? 'line-through text-gray-400' : 'text-gray-700'"
                                       class="text-sm">{{ $def['label'] }}</span>
 
-                                @if(($def['auto_clear_home'] ?? false) && ($record->ad_attributes_snapshot['heimatverzeichnis'] ?? null))
-                                    <p class="text-xs text-gray-400 mt-0.5">
-                                        Pfad: <span class="font-mono">{{ $record->ad_attributes_snapshot['heimatverzeichnis'] ?? '' }}</span>
-                                    </p>
-                                    <div x-show="todos.includes('{{ $key }}')" x-cloak
-                                         class="mt-1 text-xs text-green-700">
-                                        ✓ homeDirectory/homeDrive werden automatisch aus dem AD-Profil entfernt – GPO übernimmt.
-                                    </div>
-                                @endif
                                 @if($def['mail_test'] ?? false)
                                     <div x-show="todos.includes('{{ $key }}')" x-cloak class="mt-2 flex items-center gap-3 flex-wrap">
                                         <button type="button"

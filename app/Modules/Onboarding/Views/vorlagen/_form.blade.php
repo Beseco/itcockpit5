@@ -192,7 +192,7 @@
                         </select>
                     </div>
                 </div>
-                <p class="mt-1 text-xs text-gray-400">Pfad + Laufwerksbuchstabe werden beim Anlegen als homeDirectory/homeDrive ins AD gesetzt. Nach erstem Login (Ordner erstellt) wird der Pfad automatisch beim Abhaken des Laufwerk-Todos wieder entfernt.</p>
+                <p class="mt-1 text-xs text-gray-400">Der Pfad bestimmt, wo der Heimatordner beim Anlegen physisch auf dem Fileserver erstellt wird (inkl. Vollzugriff für den Benutzer). Er wird <strong>nicht</strong> ins AD-Profil geschrieben – die Laufwerkszuweisung übernimmt eine GPO.</p>
                 <x-input-error :messages="$errors->get('heimatverzeichnis_pattern')" class="mt-1" />
             </div>
             <div>

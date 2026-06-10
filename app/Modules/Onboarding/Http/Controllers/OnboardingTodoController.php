@@ -8,7 +8,6 @@ use App\Modules\Onboarding\Mail\OnboardingWelcomeMail;
 use App\Modules\Onboarding\Models\OnboardingRecord;
 use App\Modules\Onboarding\Models\OnboardingSettings;
 use App\Modules\Onboarding\Services\AdProvisioningService;
-use Illuminate\Support\Facades\Log;
 use App\Services\PasswordGeneratorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -47,18 +46,8 @@ class OnboardingTodoController extends Controller
             $todos[] = $key;
         }
 
-        $wasChecked = in_array($key, $todos, true);
         $record->update(['todos' => $todos]);
         $record->refresh();
-
-        // E-Laufwerk abgehakt → homeDirectory/homeDrive automatisch aus AD-Profil entfernen
-        if ($key === 'e_laufwerk' && $wasChecked && $record->distinguished_name) {
-            try {
-                (new AdProvisioningService())->clearHomeDirectory($record->distinguished_name);
-            } catch (\Throwable $e) {
-                Log::warning("Onboarding: clearHomeDirectory fehlgeschlagen für {$record->distinguished_name}: " . $e->getMessage());
-            }
-        }
 
         return response()->json([
             'ok'       => true,

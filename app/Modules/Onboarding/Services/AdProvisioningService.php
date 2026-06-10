@@ -79,8 +79,8 @@ class AdProvisioningService
             'postalCode'               => $vorlage->plz,
             'l'                        => $vorlage->ort,
             'profilePath'              => $data['profilpfad'] ?? null,
-            'homeDirectory'            => $data['heimatverzeichnis'] ?? null,
-            'homeDrive'                => $data['heimatverzeichnis_laufwerk'] ?? null,
+            // homeDirectory/homeDrive werden bewusst NICHT gesetzt – der Ordner wird
+            // physisch angelegt, die Laufwerkszuweisung übernimmt eine GPO.
             'scriptPath'               => $vorlage->anmeldeskript,
             'department'               => $vorlage->abteilung_ad,
             'description'              => $vorlage->ad_beschreibung,
@@ -464,27 +464,6 @@ class AdProvisioningService
         }
 
         return $sid;
-    }
-
-    /** Entfernt homeDirectory und homeDrive aus dem AD-Profil (nach erstem Login des Benutzers). */
-    public function clearHomeDirectory(string $userDn): void
-    {
-        if (!extension_loaded('ldap')) {
-            throw new \RuntimeException('PHP LDAP-Extension ist nicht aktiviert.');
-        }
-
-        $adSettings = AdUserSettings::getSingleton();
-        $obSettings = OnboardingSettings::getSingleton();
-        $conn       = $this->connect($adSettings);
-        $this->bind($conn, $adSettings, $obSettings);
-
-        try {
-            // Attribute auf leeren String setzen – AD löscht sie daraufhin
-            @ldap_mod_del($conn, $userDn, ['homeDirectory' => []]);
-            @ldap_mod_del($conn, $userDn, ['homeDrive'     => []]);
-        } finally {
-            ldap_unbind($conn);
-        }
     }
 
     private function enableAccount(mixed $conn, string $userDn, bool $forceChange = false): void
