@@ -153,6 +153,7 @@ class VorlageController extends Controller
         $attrs = [
             'streetaddress', 'postalcode', 'l', 'company', 'department',
             'physicaldeliveryofficename', 'telephonenumber', 'facsimiletelephonenumber',
+            'memberof',
         ];
 
         try {
@@ -196,10 +197,44 @@ class VorlageController extends Controller
             }
         }
 
+        // Gruppen: memberOf aller OU-Benutzer aggregieren, häufigste zuerst
+        $groupCounts = [];
+        foreach ($users as $u) {
+            $mo = $u['memberof'] ?? null;
+            if (!is_array($mo)) {
+                continue;
+            }
+            $n = $mo['count'] ?? 0;
+            for ($i = 0; $i < $n; $i++) {
+                $dn = $mo[$i] ?? null;
+                if (!$dn) {
+                    continue;
+                }
+                $groupCounts[$dn] = ($groupCounts[$dn] ?? 0) + 1;
+            }
+        }
+        arsort($groupCounts);
+
+        $groups = [];
+        foreach (array_slice($groupCounts, 0, 15, true) as $dn => $cnt) {
+            $groups[] = ['dn' => $dn, 'name' => $this->cnAusDn($dn), 'count' => $cnt];
+        }
+        $suggestions['groups'] = $groups;
+
         return response()->json([
             'count'       => $users->count(),
             'suggestions' => $suggestions ?: (object) [],
         ]);
+    }
+
+    /** Extrahiert den CN (Anzeigename) aus einem Distinguished Name. */
+    private function cnAusDn(string $dn): string
+    {
+        if (preg_match('/^CN=([^,]+)/i', $dn, $m)) {
+            // Escapte Kommata in AD-DNs wiederherstellen
+            return str_replace('\\,', ',', $m[1]);
+        }
+        return $dn;
     }
 
     /** Ermittelt den häufigsten Wert einer Collection. Gibt ['value','count'] oder null zurück. */
