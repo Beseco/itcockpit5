@@ -34,6 +34,19 @@
                 </div>
             @endif
 
+            {{-- Typ-Filter --}}
+            <div class="bg-white shadow-sm sm:rounded-lg p-3">
+                <form action="{{ route('schulen.dienste.index') }}" method="GET" class="flex items-center gap-2">
+                    <label class="text-xs font-medium text-gray-500">Typ</label>
+                    <select name="typ" onchange="this.form.submit()"
+                            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                        <option value="alle"           @selected(($typ ?? 'alle') === 'alle')>Alle</option>
+                        <option value="dienstleistung" @selected(($typ ?? '') === 'dienstleistung')>Nur Dienstleistungen</option>
+                        <option value="voraussetzung"  @selected(($typ ?? '') === 'voraussetzung')>Nur Betriebsvoraussetzungen</option>
+                    </select>
+                </form>
+            </div>
+
             {{-- Kategorien-Verwaltung --}}
             @can('schulen.edit')
             <div x-data="{ showKatForm: false }" class="bg-white shadow-sm sm:rounded-lg p-4">
@@ -100,6 +113,7 @@
                                 @foreach ($kat->dienstleistungen as $dienst)
                                     <tr class="hover:bg-gray-50">
                                         <td class="px-6 py-2 font-medium text-gray-800">
+                                            @include('schulen::dienstleistungen._voraussetzung_icon', ['dienst' => $dienst])
                                             <a href="{{ route('schulen.dienste.show', $dienst) }}" class="hover:text-indigo-600">
                                                 {{ $dienst->name }}
                                             </a>
@@ -159,6 +173,7 @@
                             @foreach ($ohneKategorie as $dienst)
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-6 py-2 font-medium text-gray-800">
+                                        @include('schulen::dienstleistungen._voraussetzung_icon', ['dienst' => $dienst])
                                         <a href="{{ route('schulen.dienste.show', $dienst) }}" class="hover:text-indigo-600">
                                             {{ $dienst->name }}
                                         </a>

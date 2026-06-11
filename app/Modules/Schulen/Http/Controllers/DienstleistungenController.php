@@ -6,6 +6,7 @@ use App\Models\Dienstleister;
 use App\Modules\Schulen\Models\DienstKategorie;
 use App\Modules\Schulen\Models\Dienstleistung;
 use App\Modules\Schulen\Models\DienstleistungZustaendigkeit;
+use App\Modules\Schulen\Models\SchuleDienstleistung;
 use App\Services\AuditLogger;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -14,21 +15,32 @@ class DienstleistungenController extends Controller
 {
     public function __construct(private AuditLogger $auditLogger) {}
 
-    public function index()
+    public function index(Request $request)
     {
-        $kategorien = DienstKategorie::with(['dienstleistungen' => function ($q) {
+        // Typ-Filter: alle | dienstleistung | voraussetzung
+        $typ = in_array($request->get('typ'), ['dienstleistung', 'voraussetzung'], true)
+            ? $request->get('typ') : 'alle';
+
+        $typFilter = function ($q) use ($typ) {
+            if ($typ === 'dienstleistung') $q->where('betriebsvoraussetzung', false);
+            if ($typ === 'voraussetzung')  $q->where('betriebsvoraussetzung', true);
+        };
+
+        $kategorien = DienstKategorie::with(['dienstleistungen' => function ($q) use ($typFilter) {
+            $typFilter($q);
             $q->orderBy('sort_order')->orderBy('name');
         }])->orderBy('sort_order')->orderBy('name')->get();
 
         $ohneKategorie = Dienstleistung::whereNull('dienst_kategorie_id')
+            ->where($typFilter)
             ->orderBy('sort_order')->orderBy('name')->get();
 
-        return view('schulen::dienstleistungen.index', compact('kategorien', 'ohneKategorie'));
+        return view('schulen::dienstleistungen.index', compact('kategorien', 'ohneKategorie', 'typ'));
     }
 
     public function show(Dienstleistung $dienstleistung)
     {
-        $dienstleistung->load(['kategorie', 'dienstleister', 'zustaendigkeiten']);
+        $dienstleistung->load(['kategorie', 'dienstleister', 'zustaendigkeiten', 'voraussetzungen']);
 
         $schulenGesamt = \App\Modules\Schulen\Models\Schule::count();
         $jahresstunden = $dienstleistung->jahresstunden();
@@ -54,8 +66,22 @@ class DienstleistungenController extends Controller
             'ist_stunden'   => $istStundenGesamt,
         ];
 
+        // Erfüllungsstatus je aktiver Schule: erfüllt eine Schule eine verknüpfte
+        // Betriebsvoraussetzung? (Voraussetzung ist für die Schule auf "aktiv")
+        $voraussetzungIds = $dienstleistung->voraussetzungen->pluck('id');
+        $erfuellt = [];
+        if ($voraussetzungIds->isNotEmpty() && $aktivePivots->isNotEmpty()) {
+            SchuleDienstleistung::whereIn('schule_id', $aktivePivots->pluck('id'))
+                ->whereIn('dienstleistung_id', $voraussetzungIds)
+                ->where('status', 'aktiv')
+                ->get(['schule_id', 'dienstleistung_id'])
+                ->each(function ($p) use (&$erfuellt) {
+                    $erfuellt[$p->schule_id][$p->dienstleistung_id] = true;
+                });
+        }
+
         return view('schulen::dienstleistungen.show', compact(
-            'dienstleistung', 'schulenAktiv', 'schulenGesamt', 'vze', 'aktivePivots'
+            'dienstleistung', 'schulenAktiv', 'schulenGesamt', 'vze', 'aktivePivots', 'erfuellt'
         ));
     }
 
@@ -63,10 +89,12 @@ class DienstleistungenController extends Controller
     {
         $kategorien   = DienstKategorie::orderBy('sort_order')->orderBy('name')->get();
         $alleDienstleister = Dienstleister::where('status', 'aktiv')->orderBy('firmenname')->get();
+        $alleVoraussetzungen = Dienstleistung::nurVoraussetzungen()->orderBy('name')->get();
         return view('schulen::dienstleistungen.create', [
-            'dienstleistung'     => null,
-            'kategorien'         => $kategorien,
-            'alleDienstleister'  => $alleDienstleister,
+            'dienstleistung'      => null,
+            'kategorien'          => $kategorien,
+            'alleDienstleister'   => $alleDienstleister,
+            'alleVoraussetzungen' => $alleVoraussetzungen,
         ]);
     }
 
@@ -74,10 +102,12 @@ class DienstleistungenController extends Controller
     {
         $validated = $this->validateDienst($request);
         $validated['is_active'] = $request->boolean('is_active');
+        $validated['betriebsvoraussetzung'] = $request->boolean('betriebsvoraussetzung');
         $dienst = Dienstleistung::create($validated);
 
         $this->syncDienstleister($dienst, $request);
         $this->syncZustaendigkeiten($dienst, $request);
+        $this->syncVoraussetzungen($dienst, $request);
 
         $this->auditLogger->logModuleAction('Schulen', 'Dienstleistung erstellt', [
             'id'   => $dienst->id,
@@ -90,11 +120,13 @@ class DienstleistungenController extends Controller
 
     public function edit(Dienstleistung $dienstleistung)
     {
-        $dienstleistung->load(['dienstleister', 'zustaendigkeiten']);
+        $dienstleistung->load(['dienstleister', 'zustaendigkeiten', 'voraussetzungen']);
         $kategorien        = DienstKategorie::orderBy('sort_order')->orderBy('name')->get();
         $alleDienstleister = Dienstleister::where('status', 'aktiv')->orderBy('firmenname')->get();
+        $alleVoraussetzungen = Dienstleistung::nurVoraussetzungen()
+            ->where('id', '!=', $dienstleistung->id)->orderBy('name')->get();
         return view('schulen::dienstleistungen.edit', compact(
-            'dienstleistung', 'kategorien', 'alleDienstleister'
+            'dienstleistung', 'kategorien', 'alleDienstleister', 'alleVoraussetzungen'
         ));
     }
 
@@ -102,10 +134,12 @@ class DienstleistungenController extends Controller
     {
         $validated = $this->validateDienst($request);
         $validated['is_active'] = $request->boolean('is_active');
+        $validated['betriebsvoraussetzung'] = $request->boolean('betriebsvoraussetzung');
         $dienstleistung->update($validated);
 
         $this->syncDienstleister($dienstleistung, $request);
         $this->syncZustaendigkeiten($dienstleistung, $request);
+        $this->syncVoraussetzungen($dienstleistung, $request);
 
         $this->auditLogger->logModuleAction('Schulen', 'Dienstleistung aktualisiert', [
             'id'   => $dienstleistung->id,
@@ -171,6 +205,9 @@ class DienstleistungenController extends Controller
             'stunden_wert'                    => ['nullable', 'numeric', 'min:0'],
             'sort_order'                      => ['nullable', 'integer'],
             'is_active'                       => ['nullable', 'boolean'],
+            'betriebsvoraussetzung'           => ['nullable', 'boolean'],
+            'voraussetzung_ids'               => ['nullable', 'array'],
+            'voraussetzung_ids.*'             => ['integer', 'exists:dienstleistungen,id'],
             'dienstleister_ids'               => ['nullable', 'array'],
             'dienstleister_ids.*'             => ['integer', 'exists:dienstleister,id'],
             'zustaendigkeiten'                => ['nullable', 'array'],
@@ -185,6 +222,16 @@ class DienstleistungenController extends Controller
     {
         $ids = array_filter((array) $request->input('dienstleister_ids', []));
         $dienst->dienstleister()->sync($ids);
+    }
+
+    private function syncVoraussetzungen(Dienstleistung $dienst, Request $request): void
+    {
+        // Verknüpfte Betriebsvoraussetzungen (Self-Verknüpfung ausschließen).
+        $ids = array_filter(
+            array_map('intval', (array) $request->input('voraussetzung_ids', [])),
+            fn ($id) => $id !== $dienst->id
+        );
+        $dienst->voraussetzungen()->sync($ids);
     }
 
     private function syncZustaendigkeiten(Dienstleistung $dienst, Request $request): void

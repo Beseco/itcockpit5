@@ -72,8 +72,17 @@
                             @endforeach
                         </select>
                     </div>
-                    @if ($filterTyp || $filterKategorie)
-                        <a href="{{ route('schulen.matrix', ['filter_typ' => '', 'filter_kategorie' => '']) }}"
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Typ</label>
+                        <select name="filter_eintrag_typ" onchange="this.form.submit()"
+                                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                            <option value="">Alle</option>
+                            <option value="dienstleistung" @selected(($filterEintragTyp ?? '') === 'dienstleistung')>Nur Dienstleistungen</option>
+                            <option value="voraussetzung"  @selected(($filterEintragTyp ?? '') === 'voraussetzung')>Nur Betriebsvoraussetzungen</option>
+                        </select>
+                    </div>
+                    @if ($filterTyp || $filterKategorie || $filterEintragTyp)
+                        <a href="{{ route('schulen.matrix', ['filter_typ' => '', 'filter_kategorie' => '', 'filter_eintrag_typ' => '']) }}"
                            class="text-xs text-indigo-600 hover:underline self-end pb-1">Filter zurücksetzen</a>
                     @endif
                 </form>
@@ -191,6 +200,7 @@
                                             @endphp
                                             <tr class="hover:bg-gray-50">
                                                 <td class="sticky left-0 z-10 bg-white border border-gray-200 px-3 py-1.5 text-gray-800 font-medium min-w-[220px]">
+                                                    @include('schulen::dienstleistungen._voraussetzung_icon', ['dienst' => $dienst])
                                                     <a href="{{ route('schulen.dienste.show', $dienst) }}"
                                                        class="hover:text-indigo-600">{{ $dienst->name }}</a>
                                                     @if ($dienst->dokumentation_url)
@@ -255,6 +265,7 @@
                                             @endphp
                                             <tr class="hover:bg-gray-50">
                                                 <td class="sticky left-0 z-10 bg-white border border-gray-200 px-3 py-1.5 text-gray-800 font-medium">
+                                                    @include('schulen::dienstleistungen._voraussetzung_icon', ['dienst' => $dienst])
                                                     <a href="{{ route('schulen.dienste.show', $dienst) }}"
                                                        class="hover:text-indigo-600">{{ $dienst->name }}</a>
                                                     @if ($dienst->dokumentation_url)

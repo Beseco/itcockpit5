@@ -20,16 +20,18 @@ class MatrixController extends Controller
     {
         // Filter in Session speichern (leere Werte überschreiben bewusst → Reset funktioniert)
         if ($request->isMethod('GET')) {
-            if ($request->has('filter_typ') || $request->has('filter_kategorie')) {
+            if ($request->has('filter_typ') || $request->has('filter_kategorie') || $request->has('filter_eintrag_typ')) {
                 session([
-                    'schulen_matrix_filter_typ'       => $request->get('filter_typ', ''),
-                    'schulen_matrix_filter_kategorie' => $request->get('filter_kategorie', ''),
+                    'schulen_matrix_filter_typ'         => $request->get('filter_typ', ''),
+                    'schulen_matrix_filter_kategorie'   => $request->get('filter_kategorie', ''),
+                    'schulen_matrix_filter_eintrag_typ' => $request->get('filter_eintrag_typ', ''),
                 ]);
             }
         }
 
-        $filterTyp       = $request->get('filter_typ',       session('schulen_matrix_filter_typ', ''));
-        $filterKategorie = $request->get('filter_kategorie', session('schulen_matrix_filter_kategorie', ''));
+        $filterTyp        = $request->get('filter_typ',         session('schulen_matrix_filter_typ', ''));
+        $filterKategorie  = $request->get('filter_kategorie',   session('schulen_matrix_filter_kategorie', ''));
+        $filterEintragTyp = $request->get('filter_eintrag_typ', session('schulen_matrix_filter_eintrag_typ', ''));
 
         $schulenQuery = Schule::with('schulTyp')->orderBy('schul_typ_id')->orderBy('sort_order')->orderBy('name');
         if (filled($filterTyp)) {
@@ -41,6 +43,11 @@ class MatrixController extends Controller
             ->orderBy('sort_order')->orderBy('name');
         if (filled($filterKategorie)) {
             $diensteQuery->where('dienst_kategorie_id', (int) $filterKategorie);
+        }
+        if ($filterEintragTyp === 'dienstleistung') {
+            $diensteQuery->where('betriebsvoraussetzung', false);
+        } elseif ($filterEintragTyp === 'voraussetzung') {
+            $diensteQuery->where('betriebsvoraussetzung', true);
         }
         $dienstleistungen = $diensteQuery->get();
 
@@ -62,7 +69,7 @@ class MatrixController extends Controller
         return view('schulen::matrix.index', compact(
             'schulen', 'dienstleistungen', 'pivots',
             'kategorien', 'schulTypen', 'schulenGruppen', 'diensteGruppen',
-            'filterTyp', 'filterKategorie'
+            'filterTyp', 'filterKategorie', 'filterEintragTyp'
         ));
     }
 

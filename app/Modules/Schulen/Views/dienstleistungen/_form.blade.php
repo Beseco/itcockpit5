@@ -80,6 +80,20 @@
         <x-input-label for="is_active" value="Dienstleistung ist aktiv (erscheint in Matrix)" />
     </div>
 
+    {{-- Klassifizierung als Betriebsvoraussetzung --}}
+    <div class="flex items-start gap-3 border border-gray-200 rounded-lg p-4 bg-gray-50">
+        <input type="hidden" name="betriebsvoraussetzung" value="0">
+        <input type="checkbox" id="betriebsvoraussetzung" name="betriebsvoraussetzung" value="1"
+               class="mt-0.5 rounded border-gray-300 text-gray-600 shadow-sm focus:ring-gray-500"
+               @checked(old('betriebsvoraussetzung', $dienstleistung?->betriebsvoraussetzung ?? false))>
+        <div>
+            <x-input-label for="betriebsvoraussetzung" value="Betriebsvoraussetzung (keine Dienstleistung)" />
+            <p class="text-xs text-gray-400 mt-0.5">
+                Markiert diesen Eintrag als Voraussetzung, die erfüllt sein muss, damit Dienstleistungen erbracht werden können.
+            </p>
+        </div>
+    </div>
+
     {{-- ── Dienstleister-Zuweisung ───────────────────────────────────────── --}}
     @if(isset($alleDienstleister) && $alleDienstleister->isNotEmpty())
     @php
@@ -156,6 +170,80 @@
             </div>
         </div>
 
+    </div>
+    @endif
+
+    {{-- ── Erforderliche Betriebsvoraussetzungen ─────────────────────────── --}}
+    @if(isset($alleVoraussetzungen) && $alleVoraussetzungen->isNotEmpty())
+    @php
+        $selectedVorIds = collect(old('voraussetzung_ids',
+            $dienstleistung?->voraussetzungen?->pluck('id')->toArray() ?? []
+        ))->map(fn($v) => (int)$v)->toArray();
+
+        $allVorJson = $alleVoraussetzungen->map(fn($v) => [
+            'id'   => $v->id,
+            'name' => $v->name,
+            'typ'  => $v->kategorie?->name ?? '',
+        ])->values()->toJson();
+
+        $selectedVorJson = $alleVoraussetzungen
+            ->whereIn('id', $selectedVorIds)
+            ->map(fn($v) => [
+                'id'   => $v->id,
+                'name' => $v->name,
+                'typ'  => $v->kategorie?->name ?? '',
+            ])->values()->toJson();
+    @endphp
+
+    <div x-data="dienstleisterPicker({{ $allVorJson }}, {{ $selectedVorJson }})"
+         class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+
+        <h4 class="text-sm font-semibold text-gray-700 mb-1">Erforderliche Betriebsvoraussetzungen</h4>
+        <p class="text-xs text-gray-400 mb-3">Welche Betriebsvoraussetzungen müssen für diese Dienstleistung erfüllt sein? (Nur zur Dokumentation/Anzeige.)</p>
+
+        <div class="flex flex-wrap gap-2 mb-3" x-show="selected.length > 0">
+            <template x-for="item in selected" :key="item.id">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-200 text-gray-800 text-xs font-medium rounded-full">
+                    <span x-text="item.name"></span>
+                    <button type="button" @click="remove(item.id)"
+                            class="hover:text-gray-600 text-gray-400 leading-none">&times;</button>
+                    <input type="hidden" name="voraussetzung_ids[]" :value="item.id">
+                </span>
+            </template>
+        </div>
+
+        <div class="relative">
+            <input type="text"
+                   x-model="query"
+                   @focus="open = true"
+                   @keydown.escape="open = false"
+                   @keydown.arrow-down.prevent="focusNext(1)"
+                   @keydown.arrow-up.prevent="focusNext(-1)"
+                   @keydown.enter.prevent="addFocused()"
+                   @click.away="open = false"
+                   placeholder="Betriebsvoraussetzung suchen und hinzufügen…"
+                   autocomplete="off"
+                   class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+
+            <div x-show="open && filtered.length > 0"
+                 x-cloak
+                 class="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden max-h-52 overflow-y-auto">
+                <template x-for="(item, i) in filtered" :key="item.id">
+                    <button type="button"
+                            @click="add(item); query = ''; open = false"
+                            :class="i === focusedIndex ? 'bg-indigo-50' : 'hover:bg-gray-50'"
+                            class="w-full text-left px-4 py-2.5 text-sm border-b border-gray-50 last:border-0 flex items-center justify-between">
+                        <span>
+                            <span class="font-medium text-gray-800" x-text="item.name"></span>
+                            <span x-show="item.typ" class="ml-1.5 text-xs text-gray-400" x-text="'· ' + item.typ"></span>
+                        </span>
+                        <svg class="w-4 h-4 text-indigo-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                    </button>
+                </template>
+            </div>
+        </div>
     </div>
     @endif
 

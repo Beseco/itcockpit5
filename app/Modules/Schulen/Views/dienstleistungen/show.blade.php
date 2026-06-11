@@ -2,7 +2,13 @@
     <x-slot name="header">
         <div class="flex items-center gap-3 flex-wrap">
             <a href="{{ route('schulen.dienste.index') }}" class="text-gray-400 hover:text-gray-600">← Dienstleistungen</a>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">{{ $dienstleistung->name }}</h2>
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight flex items-center">
+                @include('schulen::dienstleistungen._voraussetzung_icon', ['dienst' => $dienstleistung])
+                {{ $dienstleistung->name }}
+            </h2>
+            @if ($dienstleistung->betriebsvoraussetzung)
+                <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-200 text-gray-600">Betriebsvoraussetzung</span>
+            @endif
             @if (!$dienstleistung->is_active)
                 <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-gray-100 text-gray-500">Inaktiv</span>
             @endif
@@ -226,6 +232,34 @@
             </div>
             @endif
 
+            {{-- Erforderliche Betriebsvoraussetzungen --}}
+            @if($dienstleistung->voraussetzungen->isNotEmpty())
+            <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                    <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                        Erforderliche Betriebsvoraussetzungen
+                        <span class="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-200 text-gray-600">
+                            {{ $dienstleistung->voraussetzungen->count() }}
+                        </span>
+                    </h3>
+                </div>
+                <ul class="divide-y divide-gray-50">
+                    @foreach($dienstleistung->voraussetzungen as $vor)
+                    <li class="px-6 py-3 flex items-center gap-2">
+                        @include('schulen::dienstleistungen._voraussetzung_icon', ['dienst' => $vor])
+                        <a href="{{ route('schulen.dienste.show', $vor) }}"
+                           class="font-medium text-gray-800 hover:text-indigo-600 text-sm">
+                            {{ $vor->name }}
+                        </a>
+                        @if($vor->kategorie)
+                            <span class="ml-1 text-xs text-gray-400">· {{ $vor->kategorie->name }}</span>
+                        @endif
+                    </li>
+                    @endforeach
+                </ul>
+            </div>
+            @endif
+
             {{-- Schulen die den Dienst nutzen --}}
             <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
@@ -248,6 +282,9 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Typ</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Stunden/Jahr</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">VZE</th>
+                                @if ($dienstleistung->voraussetzungen->isNotEmpty())
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Betriebsvoraussetzungen</th>
+                                @endif
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Notiz</th>
                             </tr>
                         </thead>
@@ -277,6 +314,19 @@
                                     <td class="px-6 py-3 text-right font-semibold text-green-700">
                                         {{ number_format($vzeSchule, 3, ',', '.') }}
                                     </td>
+                                    @if ($dienstleistung->voraussetzungen->isNotEmpty())
+                                        <td class="px-6 py-3">
+                                            <div class="flex flex-wrap gap-1">
+                                                @foreach ($dienstleistung->voraussetzungen as $vor)
+                                                    @php $ok = !empty($erfuellt[$schule->id][$vor->id]); @endphp
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium {{ $ok ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600' }}"
+                                                          title="{{ $vor->name }}: {{ $ok ? 'erfüllt' : 'nicht erfüllt' }}">
+                                                        {{ $ok ? '✓' : '✗' }} {{ \Illuminate\Support\Str::limit($vor->name, 22) }}
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        </td>
+                                    @endif
                                     <td class="px-6 py-3 text-gray-400 text-xs italic">
                                         {{ $schule->pivot->notizen ?? '' }}
                                     </td>

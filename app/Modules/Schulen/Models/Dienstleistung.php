@@ -14,11 +14,13 @@ class Dienstleistung extends Model
     protected $fillable = [
         'dienst_kategorie_id', 'name', 'beschreibung', 'dokumentation_url',
         'stunden_modus', 'stunden_wert', 'sort_order', 'is_active',
+        'betriebsvoraussetzung',
     ];
 
     protected $casts = [
-        'is_active'   => 'boolean',
-        'stunden_wert' => 'float',
+        'is_active'             => 'boolean',
+        'betriebsvoraussetzung' => 'boolean',
+        'stunden_wert'          => 'float',
     ];
 
     /** Netto-Jahresstunden für 1 VZE (Tarifbeschäftigte Bayern) */
@@ -43,6 +45,27 @@ class Dienstleistung extends Model
     public function zustaendigkeiten(): HasMany
     {
         return $this->hasMany(DienstleistungZustaendigkeit::class)->orderBy('sort_order');
+    }
+
+    /** Für diese Dienstleistung erforderliche Betriebsvoraussetzungen (Self-Relation). */
+    public function voraussetzungen(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Dienstleistung::class,
+            'dienstleistung_voraussetzung',
+            'dienstleistung_id',
+            'voraussetzung_id',
+        )->orderBy('name');
+    }
+
+    public function scopeNurDienstleistungen($query)
+    {
+        return $query->where('betriebsvoraussetzung', false);
+    }
+
+    public function scopeNurVoraussetzungen($query)
+    {
+        return $query->where('betriebsvoraussetzung', true);
     }
 
     public function schulen(): BelongsToMany
