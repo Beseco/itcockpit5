@@ -22,7 +22,7 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-2xl mx-auto sm:px-6 lg:px-8 space-y-6">
+        <div class="max-w-5xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
             {{-- Details --}}
             <div class="bg-white shadow-sm sm:rounded-lg overflow-hidden">
@@ -275,6 +275,7 @@
                 @if ($aktivePivots->isEmpty())
                     <div class="px-6 py-5 text-sm text-gray-400">Keine Schule nutzt diesen Dienst aktuell aktiv.</div>
                 @else
+                    <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-100 text-sm">
                         <thead class="bg-gray-50">
                             <tr>
@@ -319,9 +320,9 @@
                                             <div class="flex flex-wrap gap-1">
                                                 @foreach ($dienstleistung->voraussetzungen as $vor)
                                                     @php $ok = !empty($erfuellt[$schule->id][$vor->id]); @endphp
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium {{ $ok ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600' }}"
+                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap {{ $ok ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600' }}"
                                                           title="{{ $vor->name }}: {{ $ok ? 'erfüllt' : 'nicht erfüllt' }}">
-                                                        {{ $ok ? '✓' : '✗' }} {{ \Illuminate\Support\Str::limit($vor->name, 22) }}
+                                                        {{ $ok ? '✓' : '✗' }} {{ \Illuminate\Support\Str::limit($vor->name, 40) }}
                                                     </span>
                                                 @endforeach
                                             </div>
@@ -334,6 +335,7 @@
                             @endforeach
                         </tbody>
                     </table>
+                    </div>
                 @endif
             </div>
 
