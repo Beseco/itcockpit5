@@ -202,7 +202,8 @@
                                                 <td class="sticky left-0 z-10 bg-white border border-gray-200 px-3 py-1.5 text-gray-800 font-medium min-w-[220px]">
                                                     @include('schulen::dienstleistungen._voraussetzung_icon', ['dienst' => $dienst])
                                                     <a href="{{ route('schulen.dienste.show', $dienst) }}"
-                                                       class="hover:text-indigo-600">{{ $dienst->name }}</a>
+                                                       @if($dienst->beschreibung) title="{{ $dienst->beschreibung }}" @endif
+                                                       class="hover:text-indigo-600 {{ $dienst->beschreibung ? 'cursor-help decoration-dotted underline-offset-2 hover:underline' : '' }}">{{ $dienst->name }}</a>
                                                     @if ($dienst->dokumentation_url)
                                                         <a href="{{ $dienst->dokumentation_url }}" target="_blank" rel="noopener"
                                                            title="Dokumentation öffnen"
@@ -267,7 +268,8 @@
                                                 <td class="sticky left-0 z-10 bg-white border border-gray-200 px-3 py-1.5 text-gray-800 font-medium">
                                                     @include('schulen::dienstleistungen._voraussetzung_icon', ['dienst' => $dienst])
                                                     <a href="{{ route('schulen.dienste.show', $dienst) }}"
-                                                       class="hover:text-indigo-600">{{ $dienst->name }}</a>
+                                                       @if($dienst->beschreibung) title="{{ $dienst->beschreibung }}" @endif
+                                                       class="hover:text-indigo-600 {{ $dienst->beschreibung ? 'cursor-help decoration-dotted underline-offset-2 hover:underline' : '' }}">{{ $dienst->name }}</a>
                                                     @if ($dienst->dokumentation_url)
                                                         <a href="{{ $dienst->dokumentation_url }}" target="_blank" rel="noopener"
                                                            title="Dokumentation öffnen"
