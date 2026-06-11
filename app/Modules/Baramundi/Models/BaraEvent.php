@@ -23,6 +23,7 @@ class BaraEvent extends Model
         'download_ok'       => 'Download erfolgreich',
         'download_failed'   => 'Download fehlgeschlagen',
         'config_changed'    => 'Konfiguration geändert',
+        'file_provided'     => 'Datei bereitgestellt',
     ];
 
     public const TYPE_COLORS = [
@@ -32,6 +33,7 @@ class BaraEvent extends Model
         'download_ok'       => 'bg-green-100 text-green-700',
         'download_failed'   => 'bg-red-100 text-red-700',
         'config_changed'    => 'bg-gray-100 text-gray-600',
+        'file_provided'     => 'bg-green-100 text-green-700',
     ];
 
     public function package(): BelongsTo

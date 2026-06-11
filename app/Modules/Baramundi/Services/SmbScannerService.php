@@ -67,6 +67,33 @@ class SmbScannerService
     }
 
     /**
+     * Prüft, ob im Versionsordner mindestens eine Nicht-README-Datei mit
+     * Größe > 0 Byte existiert (= Installationsdatei wurde bereitgestellt).
+     */
+    public function hasNonEmptyFile(WatchedPackage $pkg, string $version): bool
+    {
+        if ($this->isWindows()) {
+            return $this->hasNonEmptyFileWindows($pkg->getUncPath(), $version);
+        }
+
+        ['server' => $server, 'share' => $share, 'subpath' => $subpath] = $this->parseUncPath($pkg->getUncPath());
+        $versionPath = ($subpath ? str_replace('\\', '/', $subpath) . '/' : '') . $version;
+        $cmd = $this->buildSmbclientCmd($server, $share, '-c ' . escapeshellarg("ls {$versionPath}"));
+        exec($cmd . ' 2>&1', $out, $ret);
+
+        if ($ret !== 0) {
+            return false;
+        }
+
+        foreach ($this->parseSmbclientLsFiles($out) as $file) {
+            if (!str_starts_with(strtolower($file['name']), 'readme') && $file['size'] > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Testet einen UNC-Pfad mit den gespeicherten Zugangsdaten.
      * Gibt ['ok' => bool, 'message' => string] zurück.
      */
@@ -276,5 +303,70 @@ class SmbScannerService
         // Erlaubt: 15.78.3  |  15.78.3-x64  |  8.0.451  |  2026.1.0-arm64
         // Blockiert: 15.x-x64  |  README  |  backup_old
         return (bool) preg_match('/^\d[\d.]*\.\d+(-[a-zA-Z0-9]+)?$/', $name);
+    }
+
+    /**
+     * Windows: prüft UNC-Verzeichnis auf Nicht-README-Dateien mit Größe > 0.
+     */
+    private function hasNonEmptyFileWindows(string $uncBase, string $version): bool
+    {
+        $path   = rtrim($uncBase, '\\') . '\\' . $version;
+        $handle = @opendir($path);
+        if ($handle === false) {
+            return false;
+        }
+        $found = false;
+        while (($entry = readdir($handle)) !== false) {
+            if ($entry === '.' || $entry === '..') {
+                continue;
+            }
+            $fullPath = $path . DIRECTORY_SEPARATOR . $entry;
+            if (@is_file($fullPath)
+                && !str_starts_with(strtolower($entry), 'readme')
+                && @filesize($fullPath) > 0
+            ) {
+                $found = true;
+                break;
+            }
+        }
+        closedir($handle);
+        return $found;
+    }
+
+    /**
+     * Parst smbclient-ls-Ausgabe und gibt Dateien (nicht Verzeichnisse)
+     * mit Name und Größe zurück.
+     *
+     * Smbclient-Format:
+     *   "  setup.msi                     A   8192  Mon Jun  2 14:23 2026"
+     *   "  readme.txt                    A      0  Mon Jun  2 14:00 2026"
+     *
+     * @return array<int, array{name: string, size: int}>
+     */
+    private function parseSmbclientLsFiles(array $lines): array
+    {
+        $files = [];
+        foreach ($lines as $line) {
+            if (!preg_match('/^\s{2}/', $line)) {
+                continue;
+            }
+            if (str_contains($line, 'blocks of size')) {
+                continue;
+            }
+            // Verzeichnisse (Attribut D) überspringen
+            if (preg_match('/\bD\b/', $line)) {
+                continue;
+            }
+            // Name + Größe extrahieren:
+            // "  filename   [AHNRS]*   SIZE   date"
+            $content = substr($line, 2);
+            if (preg_match('/^(.+?)\s{2,}[AHNRS]*\s+(\d+)\s+/', $content, $m)) {
+                $name = trim($m[1]);
+                if ($name !== '.' && $name !== '..') {
+                    $files[] = ['name' => $name, 'size' => (int) $m[2]];
+                }
+            }
+        }
+        return $files;
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Modules\Baramundi\Console\Commands;
 
+use App\Modules\Baramundi\Mail\FileProvidedMail;
 use App\Modules\Baramundi\Mail\NewVersionDetectedMail;
 use App\Modules\Baramundi\Models\BaraEvent;
 use App\Modules\Baramundi\Models\BaraSettings;
@@ -130,12 +131,9 @@ class BaraScanCommand extends Command
 
         if (!$this->scanner->isReachable($pkg)) {
             $this->warn("    UNC nicht erreichbar: {$pkg->getUncPath()}");
-
             $pkg->update(['status' => 'smb_unreachable', 'last_scan' => now()]);
-
             $this->logEvent($pkg, 'smb_unreachable', null,
                 "UNC-Pfad nicht erreichbar: {$pkg->getUncPath()}");
-
             Log::warning('Baramundi: SMB nicht erreichbar', [
                 'package' => $pkg->name,
                 'path'    => $pkg->getUncPath(),
@@ -166,44 +164,87 @@ class BaraScanCommand extends Command
 
         $this->line("    Neueste Version: {$newest}");
 
-        if (!$this->scanner->isNewerThan($newest, $pkg->last_known_version)) {
-            $known = $pkg->last_known_version ?? 'keine';
-        $this->line("    Keine neue Version (bekannt: {$known}).");
-            if ($pkg->status === 'smb_unreachable') {
-                $pkg->update(['status' => 'ok']);
+        // ── Pfad A: Neue (unbekannte) Version entdeckt ──────────────────────────
+        if ($this->scanner->isNewerThan($newest, $pkg->last_known_version)) {
+            $prev = $pkg->last_known_version ?? 'unbekannt';
+            $hasFile = $this->scanner->hasNonEmptyFile($pkg, $newest);
+            $this->info("    NEUE VERSION: {$newest} (vorher: {$prev})" . ($hasFile ? ' – Datei vorhanden' : ' – Datei fehlt noch'));
+
+            if ($hasFile) {
+                // Direkt bereit: Datei bereits im neuen Ordner.
+                $wasAwaitingFile = $pkg->status === 'new_version';
+                $pkg->update([
+                    'last_known_version' => $newest,
+                    'last_detected'      => now(),
+                    'status'             => 'ok',
+                ]);
+                $this->logEvent($pkg, 'file_provided', $newest,
+                    "Version {$newest} erkannt und Installationsdatei sofort vorhanden.");
+                // E-Mail nur wenn vorher new_version (vermeidet Doppelmail bei erstem Scan)
+                if ($wasAwaitingFile) {
+                    $this->sendMail($pkg, $settings, new FileProvidedMail($pkg, $newest), $newest);
+                }
+            } else {
+                // Neuer Ordner, Datei noch 0 KB – Admin muss Datei kopieren.
+                $alreadyKnownAsNew = $pkg->status === 'new_version'
+                    && $pkg->last_known_version === $newest;
+                $pkg->update([
+                    'last_known_version' => $newest,
+                    'last_detected'      => now(),
+                    'status'             => 'new_version',
+                ]);
+                $this->logEvent($pkg, 'version_detected', $newest,
+                    "Neue Version erkannt: {$newest} in {$pkg->getUncPath()}\\{$newest} – Installationsdatei fehlt noch.");
+                // E-Mail nur einmalig (nicht bei jedem Scan-Durchlauf)
+                if (!$alreadyKnownAsNew) {
+                    $this->sendMail($pkg, $settings, new NewVersionDetectedMail($pkg, $newest), $newest);
+                }
+            }
+
+            if (!$this->option('no-download') && $pkg->download_type !== 'none') {
+                $this->triggerDownload($pkg, $newest);
             }
             return;
         }
 
-        $prev = $pkg->last_known_version ?? 'unbekannt';
-        $this->info("    NEUE VERSION: {$newest} (vorher: {$prev})");
+        // ── Pfad B: Bekannte Version – prüfen ob Datei inzwischen bereitgestellt ─
+        $known = $pkg->last_known_version;
+        $this->line("    Keine neue Version (bekannt: {$known}).");
 
-        $pkg->update([
-            'last_known_version' => $newest,
-            'last_detected'      => now(),
-            'status'             => 'new_version',
-        ]);
-
-        $this->logEvent($pkg, 'version_detected', $newest,
-            "Neue Version erkannt: {$newest} in {$pkg->getUncPath()}\\{$newest}");
-
-        if ($pkg->email_enabled && $settings->notification_email) {
-            try {
-                Mail::to($settings->notification_email)
-                    ->send(new NewVersionDetectedMail($pkg, $newest));
-                $this->line("    E-Mail gesendet an {$settings->notification_email}");
-            } catch (\Throwable $e) {
-                $this->warn("    E-Mail-Fehler: {$e->getMessage()}");
-                Log::error('Baramundi: E-Mail-Versand fehlgeschlagen', [
-                    'package' => $pkg->name,
-                    'version' => $newest,
-                    'error'   => $e->getMessage(),
-                ]);
+        if ($pkg->status === 'new_version' && $known !== null) {
+            $hasFile = $this->scanner->hasNonEmptyFile($pkg, $known);
+            if ($hasFile) {
+                $this->info("    Installationsdatei für {$known} jetzt vorhanden – Status → OK");
+                $pkg->update(['status' => 'ok']);
+                $this->logEvent($pkg, 'file_provided', $known,
+                    "Installationsdatei für Version {$known} bereitgestellt.");
+                $this->sendMail($pkg, $settings, new FileProvidedMail($pkg, $known), $known);
+            } else {
+                $this->line("    Datei für {$known} noch nicht vorhanden (0 KB).");
             }
+            return;
         }
 
-        if (!$this->option('no-download') && $pkg->download_type !== 'none') {
-            $this->triggerDownload($pkg, $newest);
+        if ($pkg->status === 'smb_unreachable') {
+            $pkg->update(['status' => 'ok']);
+        }
+    }
+
+    private function sendMail(WatchedPackage $pkg, BaraSettings $settings, \Illuminate\Mail\Mailable $mail, string $version): void
+    {
+        if (!$pkg->email_enabled || !$settings->notification_email) {
+            return;
+        }
+        try {
+            Mail::to($settings->notification_email)->send($mail);
+            $this->line("    E-Mail gesendet an {$settings->notification_email}");
+        } catch (\Throwable $e) {
+            $this->warn("    E-Mail-Fehler: {$e->getMessage()}");
+            Log::error('Baramundi: E-Mail-Versand fehlgeschlagen', [
+                'package' => $pkg->name,
+                'version' => $version,
+                'error'   => $e->getMessage(),
+            ]);
         }
     }
 
