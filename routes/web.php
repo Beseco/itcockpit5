@@ -16,6 +16,7 @@ use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\AccountCodeController;
 use App\Http\Controllers\CostCenterController;
 use App\Http\Controllers\AnsprechpartnerFunktionController;
+use App\Http\Controllers\CtiLookupController;
 use App\Http\Controllers\DienstleisterController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
@@ -64,6 +65,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // CTI Screen-Pop für eingehende Teams-Anrufe (/lookup?phone=+49...)
+    Route::get('/lookup', [CtiLookupController::class, 'show'])->name('lookup');
     
     // Help-Seiten
     Route::get('/dashboard/help',            fn() => view('dashboard-help'))->name('dashboard.help');

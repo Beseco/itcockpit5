@@ -91,7 +91,7 @@
                 <div>
                     <x-input-label for="telefon" value="Telefon" />
                     <x-text-input id="telefon" name="telefon" type="text" class="mt-1 block w-full"
-                                  value="{{ old('telefon', $dienstleister->telefon ?? '') }}" />
+                                  value="{{ old('telefon', $dienstleister->telefon ?? request('telefon', '')) }}" />
                 </div>
 
                 <div>
