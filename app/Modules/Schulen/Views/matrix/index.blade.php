@@ -221,11 +221,13 @@
                                                         @can('schulen.edit')
                                                             <button type="button"
                                                                 @click="openModal({{ $schule->id }}, {{ $dienst->id }}, '{{ $status }}', @js($schule->name), @js($dienst->name), {{ $pivot && $pivot->stunden_override !== null ? $pivot->stunden_override : 'null' }}, @js($pivot?->notizen ?? ''))"
-                                                                class="inline-flex items-center justify-center w-8 h-8 rounded hover:ring-2 hover:ring-indigo-400 transition {{ $colors }}">
+                                                                @if($pivot?->notizen) title="{{ $pivot->notizen }}" @endif
+                                                                class="inline-flex items-center justify-center w-8 h-8 rounded hover:ring-2 hover:ring-indigo-400 transition {{ $colors }} {{ $pivot?->notizen ? 'ring-1 ring-offset-1 ring-gray-400' : '' }}">
                                                                 {{ $icon }}
                                                             </button>
                                                         @else
-                                                            <span class="inline-flex items-center justify-center w-8 h-8 rounded {{ $colors }}">
+                                                            <span @if($pivot?->notizen) title="{{ $pivot->notizen }}" @endif
+                                                                  class="inline-flex items-center justify-center w-8 h-8 rounded {{ $colors }} {{ $pivot?->notizen ? 'ring-1 ring-offset-1 ring-gray-400' : '' }}">
                                                                 {{ $icon }}
                                                             </span>
                                                         @endcan
@@ -287,11 +289,13 @@
                                                         @can('schulen.edit')
                                                             <button type="button"
                                                                 @click="openModal({{ $schule->id }}, {{ $dienst->id }}, '{{ $status }}', @js($schule->name), @js($dienst->name), {{ $pivot && $pivot->stunden_override !== null ? $pivot->stunden_override : 'null' }}, @js($pivot?->notizen ?? ''))"
-                                                                class="inline-flex items-center justify-center w-8 h-8 rounded hover:ring-2 hover:ring-indigo-400 transition {{ $colors }}">
+                                                                @if($pivot?->notizen) title="{{ $pivot->notizen }}" @endif
+                                                                class="inline-flex items-center justify-center w-8 h-8 rounded hover:ring-2 hover:ring-indigo-400 transition {{ $colors }} {{ $pivot?->notizen ? 'ring-1 ring-offset-1 ring-gray-400' : '' }}">
                                                                 {{ $icon }}
                                                             </button>
                                                         @else
-                                                            <span class="inline-flex items-center justify-center w-8 h-8 rounded {{ $colors }}">
+                                                            <span @if($pivot?->notizen) title="{{ $pivot->notizen }}" @endif
+                                                                  class="inline-flex items-center justify-center w-8 h-8 rounded {{ $colors }} {{ $pivot?->notizen ? 'ring-1 ring-offset-1 ring-gray-400' : '' }}">
                                                                 {{ $icon }}
                                                             </span>
                                                         @endcan
