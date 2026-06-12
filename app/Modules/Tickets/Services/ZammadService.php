@@ -271,7 +271,7 @@ class ZammadService
      * @param string|null $customer  E-Mail des Kunden/Auftraggebers (Zammad-Pflichtfeld).
      *                               Leer → API-User wird als Ersteller genutzt (Zammad-Verhalten je nach Konfiguration).
      */
-    public function createTicket(string $title, string $body, string $group, ?string $customer = null): ?array
+    public function createTicket(string $title, string $body, string $group, ?string $customer = null, array $tags = []): ?array
     {
         $payload = [
             'title'   => $title,
@@ -283,6 +283,7 @@ class ZammadService
                 'type'         => 'note',
                 'internal'     => false,
             ],
+            'tags'    => implode(',', array_merge(['IT Cockpit', 'Baramundi Modul'], $tags)),
         ];
 
         if ($customer) {
