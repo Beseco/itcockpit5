@@ -125,9 +125,23 @@ class User extends Authenticatable
         if ($this->isSuperAdmin()) {
             return true;
         }
-        
+
+        // Hierarchie: config ⊇ edit ⊇ view
+        // Wer "edit" hat, darf auch "view". Wer "config" hat, darf auch "edit" und "view".
+        $satisfiedBy = match ($permission) {
+            'view'   => ["{$module}.view", "{$module}.edit", "{$module}.config"],
+            'edit'   => ["{$module}.edit", "{$module}.config"],
+            'config' => ["{$module}.config"],
+            default  => ["{$module}.{$permission}"],
+        };
+
         try {
-            return $this->hasPermissionTo("{$module}.{$permission}");
+            foreach ($satisfiedBy as $perm) {
+                if ($this->hasPermissionTo($perm)) {
+                    return true;
+                }
+            }
+            return false;
         } catch (\Spatie\Permission\Exceptions\PermissionDoesNotExist $e) {
             return false;
         }
