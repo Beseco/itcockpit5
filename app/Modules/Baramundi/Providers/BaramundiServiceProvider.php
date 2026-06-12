@@ -5,6 +5,7 @@ namespace App\Modules\Baramundi\Providers;
 use App\Modules\Baramundi\Console\Commands\BaraDiagnoseCommand;
 use App\Modules\Baramundi\Console\Commands\BaraMailTestCommand;
 use App\Modules\Baramundi\Console\Commands\BaraScanCommand;
+use App\Modules\Baramundi\Console\Commands\BaraZammadTestCommand;
 use App\Modules\Baramundi\Models\BaraSettings;
 use App\Modules\Baramundi\Services\DownloaderRegistry;
 use App\Modules\Baramundi\Services\Downloaders\BatchDownloader;
@@ -26,7 +27,7 @@ class BaramundiServiceProvider extends ServiceProvider
             return $registry;
         });
 
-        $this->commands([BaraScanCommand::class, BaraDiagnoseCommand::class, BaraMailTestCommand::class]);
+        $this->commands([BaraScanCommand::class, BaraDiagnoseCommand::class, BaraMailTestCommand::class, BaraZammadTestCommand::class]);
     }
 
     public function boot(): void
