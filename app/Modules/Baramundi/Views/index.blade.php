@@ -3,13 +3,13 @@
         <div class="flex items-center justify-between">
             <h2 class="font-semibold text-xl text-gray-800">Baramundi – Paketüberwachung</h2>
             <div class="flex items-center gap-3">
-                @can('module.baramundi.edit')
+                @can('baramundi.edit')
                     <a href="{{ route('baramundi.packages.create') }}"
                        class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700">
                         + Paket hinzufügen
                     </a>
                 @endcan
-                @can('module.baramundi.config')
+                @can('baramundi.config')
                     <a href="{{ route('baramundi.settings') }}"
                        class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50">
                         Einstellungen
@@ -136,7 +136,7 @@
                                                     <span x-text="scanning ? 'Scannt…' : 'Jetzt scannen'"></span>
                                                 </button>
                                             @endif
-                                            @can('module.baramundi.edit')
+                                            @can('baramundi.edit')
                                                 <a href="{{ route('baramundi.packages.edit', $pkg) }}"
                                                    class="text-xs text-gray-500 hover:text-gray-700">Bearbeiten</a>
                                                 <span x-data="{ open: false }">
@@ -168,7 +168,7 @@
                                 <tr>
                                     <td colspan="7" class="px-4 py-10 text-center text-gray-400 text-sm">
                                         Keine Pakete konfiguriert.
-                                        @can('module.baramundi.edit')
+                                        @can('baramundi.edit')
                                             <a href="{{ route('baramundi.packages.create') }}" class="text-indigo-600 hover:underline ml-1">Erstes Paket anlegen</a>
                                         @endcan
                                     </td>

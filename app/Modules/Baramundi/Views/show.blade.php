@@ -8,7 +8,7 @@
                     {{ $pkg->getStatusLabel() }}
                 </span>
             </div>
-            @can('module.baramundi.edit')
+            @can('baramundi.edit')
                 <a href="{{ route('baramundi.packages.edit', $pkg) }}"
                    class="inline-flex items-center px-3 py-2 bg-white border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-50">
                     Bearbeiten
