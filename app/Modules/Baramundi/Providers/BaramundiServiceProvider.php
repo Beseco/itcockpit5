@@ -2,6 +2,7 @@
 
 namespace App\Modules\Baramundi\Providers;
 
+use App\Modules\Baramundi\Console\Commands\BaraDiagnoseCommand;
 use App\Modules\Baramundi\Console\Commands\BaraScanCommand;
 use App\Modules\Baramundi\Models\BaraSettings;
 use App\Modules\Baramundi\Services\DownloaderRegistry;
@@ -24,7 +25,7 @@ class BaramundiServiceProvider extends ServiceProvider
             return $registry;
         });
 
-        $this->commands([BaraScanCommand::class]);
+        $this->commands([BaraScanCommand::class, BaraDiagnoseCommand::class]);
     }
 
     public function boot(): void
