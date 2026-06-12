@@ -264,6 +264,64 @@ class ZammadService
     }
 
     /**
+     * Neues Ticket anlegen.
+     * Gibt das erstellte Ticket-Array (inkl. 'id') zurück oder null bei Fehler.
+     */
+    public function createTicket(string $title, string $body, string $group): ?array
+    {
+        return $this->post('/api/v1/tickets', [
+            'title'   => $title,
+            'group'   => $group,
+            'article' => [
+                'subject'  => $title,
+                'body'     => $body,
+                'type'     => 'note',
+                'internal' => false,
+            ],
+        ]);
+    }
+
+    /**
+     * Einem bestehenden Ticket einen neuen Artikel (Notiz) hinzufügen.
+     */
+    public function addArticle(int $ticketId, string $subject, string $body): ?array
+    {
+        return $this->post('/api/v1/ticket_articles', [
+            'ticket_id' => $ticketId,
+            'subject'   => $subject,
+            'body'      => $body,
+            'type'      => 'note',
+            'internal'  => false,
+        ]);
+    }
+
+    /**
+     * Ticket-ID anhand des exakten Titels suchen (erstes Ergebnis).
+     * Gibt null zurück wenn kein Ticket gefunden.
+     */
+    public function findTicketByTitle(string $title): ?int
+    {
+        $response = $this->request('GET', '/api/v1/tickets/search', [
+            'query'    => 'title:"' . addslashes($title) . '"',
+            'expand'   => 'true',
+            'per_page' => 5,
+            'page'     => 1,
+        ]);
+
+        if (!$response) {
+            return null;
+        }
+
+        $tickets = $this->extractTickets($response);
+        foreach ($tickets as $t) {
+            if (($t['title'] ?? '') === $title) {
+                return (int) $t['id'];
+            }
+        }
+        return null;
+    }
+
+    /**
      * Rohe API-Antwort zurückgeben (für Debugging)
      */
     public function debugSearch(string $email): ?array
@@ -301,12 +359,12 @@ class ZammadService
     }
 
     /**
-     * HTTP-Request an die Zammad-API senden
+     * HTTP-GET-Request an die Zammad-API senden.
      */
     private function request(string $method, string $endpoint, array $query = []): ?array
     {
         $baseUrl = rtrim($this->settings->url, '/');
-        $url = $baseUrl . $endpoint;
+        $url     = $baseUrl . $endpoint;
 
         try {
             $response = Http::withHeaders([
@@ -327,6 +385,39 @@ class ZammadService
             return $response->json();
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
             Log::warning('Zammad nicht erreichbar', ['error' => $e->getMessage()]);
+            return null;
+        }
+    }
+
+    /**
+     * HTTP-POST-Request mit JSON-Body an die Zammad-API senden.
+     */
+    private function post(string $endpoint, array $data): ?array
+    {
+        $baseUrl = rtrim($this->settings->url, '/');
+        $url     = $baseUrl . $endpoint;
+
+        try {
+            $response = Http::withHeaders([
+                    'Authorization' => 'Token token=' . $this->settings->api_token,
+                    'Accept'        => 'application/json',
+                ])
+                ->asJson()
+                ->timeout(15)
+                ->post($url, $data);
+
+            if (!$response->successful()) {
+                Log::warning('Zammad API POST Fehler', [
+                    'status'   => $response->status(),
+                    'endpoint' => $endpoint,
+                    'body'     => $response->body(),
+                ]);
+                return null;
+            }
+
+            return $response->json();
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            Log::warning('Zammad nicht erreichbar (POST)', ['error' => $e->getMessage()]);
             return null;
         }
     }

@@ -12,6 +12,7 @@ class BaraSettings extends Model
         'scan_interval_minutes',
         'email_on_smb_error',
         'notification_email',
+        'zammad_group',
         'smb_domain',
         'smb_username',
         'smb_password',

@@ -29,6 +29,7 @@ class BaraSettingsController extends Controller
             'scan_interval_minutes' => ['required', 'integer', 'min:1', 'max:1440'],
             'email_on_smb_error'    => ['nullable', 'boolean'],
             'notification_email'    => ['nullable', 'email', 'max:255'],
+            'zammad_group'          => ['nullable', 'string', 'max:255'],
         ]);
 
         $settings = BaraSettings::getSingleton();
@@ -36,6 +37,7 @@ class BaraSettingsController extends Controller
             'scan_interval_minutes' => $request->integer('scan_interval_minutes'),
             'email_on_smb_error'    => $request->boolean('email_on_smb_error'),
             'notification_email'    => $request->input('notification_email') ?: null,
+            'zammad_group'          => $request->input('zammad_group') ?: null,
         ])->save();
 
         return redirect()->route('baramundi.settings')

@@ -23,6 +23,7 @@ class WatchedPackage extends Model
         'last_scan',
         'last_detected',
         'status',
+        'zammad_ticket_id',
     ];
 
     protected $casts = [

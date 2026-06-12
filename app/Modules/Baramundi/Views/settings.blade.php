@@ -44,15 +44,29 @@
                     </div>
 
                     <div>
-                        <x-input-label for="notification_email" value="Benachrichtigungs-E-Mail-Adresse" />
+                        <x-input-label for="notification_email" value="Benachrichtigungs-E-Mail-Adresse (Fallback)" />
                         <x-text-input id="notification_email" name="notification_email" type="email"
                                       class="mt-1 block w-full"
                                       value="{{ old('notification_email', $settings->notification_email) }}"
                                       placeholder="it-admin@example.de" />
                         <p class="mt-1 text-xs text-gray-400">
-                            An diese Adresse werden Benachrichtigungen für alle Pakete (sofern aktiviert) versendet.
+                            Wird nur genutzt wenn Zammad nicht konfiguriert ist oder als Fallback.
                         </p>
                         <x-input-error :messages="$errors->get('notification_email')" class="mt-1" />
+                    </div>
+
+                    <div>
+                        <x-input-label for="zammad_group" value="Zammad-Gruppe für Baramundi-Tickets" />
+                        <x-text-input id="zammad_group" name="zammad_group" type="text"
+                                      class="mt-1 block w-full"
+                                      value="{{ old('zammad_group', $settings->zammad_group) }}"
+                                      placeholder="Users" />
+                        <p class="mt-1 text-xs text-gray-400">
+                            Name der Zammad-Gruppe, der neue Tickets zugewiesen werden (z.&nbsp;B. „Users" oder „IT-Support").
+                            Leer lassen → „Users". Erfordert konfigurierte Zammad-Verbindung im
+                            <a href="{{ route('tickets.settings') }}" class="underline">Tickets-Modul</a>.
+                        </p>
+                        <x-input-error :messages="$errors->get('zammad_group')" class="mt-1" />
                     </div>
 
                     <div class="flex items-center gap-2">

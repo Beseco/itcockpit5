@@ -9,6 +9,8 @@ use App\Modules\Baramundi\Models\BaraSettings;
 use App\Modules\Baramundi\Models\WatchedPackage;
 use App\Modules\Baramundi\Services\DownloaderRegistry;
 use App\Modules\Baramundi\Services\SmbScannerService;
+use App\Modules\Tickets\Models\TicketsSettings;
+use App\Modules\Tickets\Services\ZammadService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -180,9 +182,9 @@ class BaraScanCommand extends Command
                 ]);
                 $this->logEvent($pkg, 'file_provided', $newest,
                     "Version {$newest} erkannt und Installationsdatei sofort vorhanden.");
-                // E-Mail nur wenn vorher new_version (vermeidet Doppelmail bei erstem Scan)
+                // Benachrichtigung nur wenn vorher new_version (vermeidet Doppelbenachrichtigung bei erstem Scan)
                 if ($wasAwaitingFile) {
-                    $this->sendMail($pkg, $settings, new FileProvidedMail($pkg, $newest), $newest);
+                    $this->notifyFileProvided($pkg, $settings, $newest);
                 }
             } else {
                 // Neuer Ordner, Datei noch 0 KB – Admin muss Datei kopieren.
@@ -195,9 +197,9 @@ class BaraScanCommand extends Command
                 ]);
                 $this->logEvent($pkg, 'version_detected', $newest,
                     "Neue Version erkannt: {$newest} in {$pkg->getUncPath()}\\{$newest} – Installationsdatei fehlt noch.");
-                // E-Mail nur einmalig (nicht bei jedem Scan-Durchlauf)
+                // Benachrichtigung nur einmalig (nicht bei jedem Scan-Durchlauf)
                 if (!$alreadyKnownAsNew) {
-                    $this->sendMail($pkg, $settings, new NewVersionDetectedMail($pkg, $newest), $newest);
+                    $this->notifyNewVersion($pkg, $settings, $newest);
                 }
             }
 
@@ -218,7 +220,7 @@ class BaraScanCommand extends Command
                 $pkg->update(['status' => 'ok']);
                 $this->logEvent($pkg, 'file_provided', $known,
                     "Installationsdatei für Version {$known} bereitgestellt.");
-                $this->sendMail($pkg, $settings, new FileProvidedMail($pkg, $known), $known);
+                $this->notifyFileProvided($pkg, $settings, $known);
             } else {
                 $this->line("    Datei für {$known} noch nicht vorhanden (0 KB).");
             }
@@ -227,6 +229,130 @@ class BaraScanCommand extends Command
 
         if ($pkg->status === 'smb_unreachable') {
             $pkg->update(['status' => 'ok']);
+        }
+    }
+
+    /**
+     * Benachrichtigung: Neue Version erkannt, Datei fehlt noch.
+     * Bevorzugt Zammad-Ticket; Fallback auf E-Mail.
+     */
+    private function notifyNewVersion(WatchedPackage $pkg, BaraSettings $settings, string $version): void
+    {
+        $title = "IT Cockpit · Baramundi: {$pkg->name} {$version}";
+
+        if ($this->tryZammad($pkg, $settings, $version, $title,
+            "<b>Neue Version erkannt</b><br><br>" .
+            "Paket: <b>{$pkg->name}</b><br>" .
+            "Version: <b>{$version}</b><br>" .
+            "Pfad: {$pkg->getUncPath()}\\{$version}\\<br><br>" .
+            "Baramundi hat den Versionsordner angelegt. Die Installationsdatei (z.&nbsp;B. .msi/.exe) " .
+            "muss noch manuell heruntergeladen und in den Ordner kopiert werden."
+        )) {
+            return;
+        }
+
+        // Fallback: E-Mail
+        $this->sendMail($pkg, $settings, new NewVersionDetectedMail($pkg, $version), $version);
+    }
+
+    /**
+     * Benachrichtigung: Installationsdatei bereitgestellt.
+     * Bevorzugt Follow-up-Artikel im bestehenden Zammad-Ticket; Fallback auf E-Mail.
+     */
+    private function notifyFileProvided(WatchedPackage $pkg, BaraSettings $settings, string $version): void
+    {
+        $title = "IT Cockpit · Baramundi: {$pkg->name} {$version}";
+
+        if ($this->tryZammadArticle($pkg, $settings, $version, $title,
+            "<b>✓ Installationsdatei bereitgestellt</b><br><br>" .
+            "Paket: <b>{$pkg->name}</b><br>" .
+            "Version: <b>{$version}</b><br>" .
+            "Pfad: {$pkg->getUncPath()}\\{$version}\\<br><br>" .
+            "Im Versionsordner ist jetzt mindestens eine Installationsdatei (&gt;0 Byte) vorhanden. " .
+            "Der Status wurde auf <b>OK</b> gesetzt. Die Software-Verteilung kann jetzt greifen."
+        )) {
+            return;
+        }
+
+        $this->sendMail($pkg, $settings, new FileProvidedMail($pkg, $version), $version);
+    }
+
+    /**
+     * Versucht ein Zammad-Ticket zu erstellen (neue Version).
+     * Speichert die Ticket-ID am Paket. Gibt false zurück bei Fehler/nicht konfiguriert.
+     */
+    private function tryZammad(WatchedPackage $pkg, BaraSettings $settings, string $version, string $title, string $body): bool
+    {
+        $zammadSettings = TicketsSettings::getSingleton();
+        if (!$zammadSettings->isConfigured()) {
+            return false;
+        }
+
+        $group = $settings->zammad_group ?: 'Users';
+
+        try {
+            $zammad = new ZammadService();
+            $ticket = $zammad->createTicket($title, $body, $group);
+
+            if ($ticket && isset($ticket['id'])) {
+                $pkg->update(['zammad_ticket_id' => $ticket['id']]);
+                $this->line("    Zammad-Ticket #{$ticket['id']} erstellt: {$title}");
+                return true;
+            }
+
+            $this->warn("    Zammad: Ticket konnte nicht erstellt werden.");
+            return false;
+        } catch (\Throwable $e) {
+            Log::error('Baramundi: Zammad-Ticket-Erstellung fehlgeschlagen', [
+                'package' => $pkg->name,
+                'version' => $version,
+                'error'   => $e->getMessage(),
+            ]);
+            return false;
+        }
+    }
+
+    /**
+     * Versucht einen Artikel zum bestehenden Zammad-Ticket hinzuzufügen.
+     * Sucht zuerst per gespeicherter ID, dann per Titelsuche.
+     * Gibt false zurück bei Fehler/nicht konfiguriert.
+     */
+    private function tryZammadArticle(WatchedPackage $pkg, BaraSettings $settings, string $version, string $title, string $body): bool
+    {
+        $zammadSettings = TicketsSettings::getSingleton();
+        if (!$zammadSettings->isConfigured()) {
+            return false;
+        }
+
+        try {
+            $zammad   = new ZammadService();
+            $ticketId = $pkg->zammad_ticket_id;
+
+            // Fallback: Titel-Suche wenn keine ID gespeichert
+            if (!$ticketId) {
+                $ticketId = $zammad->findTicketByTitle($title);
+            }
+
+            if (!$ticketId) {
+                $this->warn("    Zammad: Kein bestehendes Ticket gefunden – erstelle neues.");
+                return $this->tryZammad($pkg, $settings, $version, $title, $body);
+            }
+
+            $article = $zammad->addArticle($ticketId, $title, $body);
+            if ($article) {
+                $this->line("    Zammad-Ticket #{$ticketId}: Notiz hinzugefügt.");
+                return true;
+            }
+
+            $this->warn("    Zammad: Artikel konnte nicht hinzugefügt werden (Ticket #{$ticketId}).");
+            return false;
+        } catch (\Throwable $e) {
+            Log::error('Baramundi: Zammad-Artikel fehlgeschlagen', [
+                'package' => $pkg->name,
+                'version' => $version,
+                'error'   => $e->getMessage(),
+            ]);
+            return false;
         }
     }
 
