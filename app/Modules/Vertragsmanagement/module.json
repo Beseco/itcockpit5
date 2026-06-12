@@ -1,0 +1,6 @@
+{
+    "name": "Vertragsmanagement",
+    "slug": "vertragsmanagement",
+    "version": "1.0.0",
+    "description": "Verwaltung von IT-Verträgen mit Dienstleister-Verknüpfung, PDF-Dokumenten und automatischen Erinnerungs-E-Mails vor Vertragsablauf"
+}
