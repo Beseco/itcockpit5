@@ -7,6 +7,7 @@
         'edit'           => 'Bearbeiten',
         'delete'         => 'Löschen',
         'manage'         => 'Verwalten',
+        'config'         => 'Konfiguration',
     ];
     // Collect which columns actually exist across all modules
     $existingActions = collect($permissionsByModule)->flatMap(fn($actions) => $actions->keys())->unique()->values();

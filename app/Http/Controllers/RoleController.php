@@ -109,7 +109,7 @@ class RoleController extends Controller
 
     private function permissionsByModule(): Collection
     {
-        $columns = ['view', 'view_sensitive', 'create', 'edit', 'delete', 'manage'];
+        $columns = ['view', 'view_sensitive', 'create', 'edit', 'delete', 'manage', 'config'];
         $modules = Module::orderBy('display_name')->get()->keyBy('id');
 
         return Permission::all()
