@@ -298,11 +298,12 @@ class ZammadService
     public function addArticle(int $ticketId, string $subject, string $body): ?array
     {
         return $this->post('/api/v1/ticket_articles', [
-            'ticket_id' => $ticketId,
-            'subject'   => $subject,
-            'body'      => $body,
-            'type'      => 'note',
-            'internal'  => false,
+            'ticket_id'    => $ticketId,
+            'subject'      => $subject,
+            'body'         => $body,
+            'content_type' => 'text/html',
+            'type'         => 'note',
+            'internal'     => false,
         ]);
     }
 
