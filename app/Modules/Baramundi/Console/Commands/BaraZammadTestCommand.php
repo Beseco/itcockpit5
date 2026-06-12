@@ -87,6 +87,16 @@ class BaraZammadTestCommand extends Command
         $this->line("  <fg=green>✓ {$conn['message']}</>");
 
         // ── Schritt 2: Ticket erstellen (simuliert "neue Version erkannt") ────
+        // Customer: aus Zammad-Session ermitteln (der eingeloggte API-User)
+        $customer = null;
+        $me = $zammad->testConnection();
+        // testConnection liefert nur success/message – wir rufen /users/me direkt nochmal ab
+        // um die E-Mail zu bekommen; nutze notification_email als Fallback
+        $customer = $baraSettings->notification_email ?: null;
+
+        $this->info('');
+        $this->line("  Customer (Auftraggeber): " . ($customer ?: '<fg=yellow>(leer – Zammad entscheidet)</>'));
+
         $this->info('');
         $this->line('<fg=cyan>[Schritt 2] Ticket erstellen (simuliert „Neue Version erkannt") …</>');
 
@@ -99,10 +109,13 @@ class BaraZammadTestCommand extends Command
             "noch manuell in den Ordner kopiert werden.<br><br>" .
             "<em>Dies ist ein Testticket, erzeugt durch bara:zammad-test.</em>";
 
-        $ticket = $zammad->createTicket($title, $ticketBody, $group);
+        $ticket = $zammad->createTicket($title, $ticketBody, $group, $customer);
 
         if (!$ticket || empty($ticket['id'])) {
             $this->error("  ✗ Ticket konnte nicht erstellt werden.");
+            if ($zammad->lastError) {
+                $this->line("  <fg=red>API-Fehler:</> {$zammad->lastError}");
+            }
             if ($ticket) {
                 $this->line("  API-Antwort: " . json_encode($ticket, JSON_UNESCAPED_UNICODE));
             }

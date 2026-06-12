@@ -12,6 +12,9 @@ class ZammadService
 {
     private TicketsSettings $settings;
 
+    /** Letzte Fehlerantwort der API (für Debugging im Command). */
+    public ?string $lastError = null;
+
     public function __construct()
     {
         $this->settings = TicketsSettings::getSingleton();
@@ -265,20 +268,28 @@ class ZammadService
 
     /**
      * Neues Ticket anlegen.
-     * Gibt das erstellte Ticket-Array (inkl. 'id') zurück oder null bei Fehler.
+     * @param string|null $customer  E-Mail des Kunden/Auftraggebers (Zammad-Pflichtfeld).
+     *                               Leer → API-User wird als Ersteller genutzt (Zammad-Verhalten je nach Konfiguration).
      */
-    public function createTicket(string $title, string $body, string $group): ?array
+    public function createTicket(string $title, string $body, string $group, ?string $customer = null): ?array
     {
-        return $this->post('/api/v1/tickets', [
+        $payload = [
             'title'   => $title,
             'group'   => $group,
             'article' => [
-                'subject'  => $title,
-                'body'     => $body,
-                'type'     => 'note',
-                'internal' => false,
+                'subject'      => $title,
+                'body'         => $body,
+                'content_type' => 'text/html',
+                'type'         => 'note',
+                'internal'     => false,
             ],
-        ]);
+        ];
+
+        if ($customer) {
+            $payload['customer'] = $customer;
+        }
+
+        return $this->post('/api/v1/tickets', $payload);
     }
 
     /**
@@ -394,6 +405,7 @@ class ZammadService
      */
     private function post(string $endpoint, array $data): ?array
     {
+        $this->lastError = null;
         $baseUrl = rtrim($this->settings->url, '/');
         $url     = $baseUrl . $endpoint;
 
@@ -407,6 +419,7 @@ class ZammadService
                 ->post($url, $data);
 
             if (!$response->successful()) {
+                $this->lastError = "HTTP {$response->status()}: {$response->body()}";
                 Log::warning('Zammad API POST Fehler', [
                     'status'   => $response->status(),
                     'endpoint' => $endpoint,
@@ -417,6 +430,7 @@ class ZammadService
 
             return $response->json();
         } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            $this->lastError = $e->getMessage();
             Log::warning('Zammad nicht erreichbar (POST)', ['error' => $e->getMessage()]);
             return null;
         }

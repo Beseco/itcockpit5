@@ -292,7 +292,7 @@ class BaraScanCommand extends Command
 
         try {
             $zammad = new ZammadService();
-            $ticket = $zammad->createTicket($title, $body, $group);
+            $ticket = $zammad->createTicket($title, $body, $group, $settings->notification_email ?: null);
 
             if ($ticket && isset($ticket['id'])) {
                 $pkg->update(['zammad_ticket_id' => $ticket['id']]);
