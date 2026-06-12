@@ -77,7 +77,8 @@ class SmbScannerService
         }
 
         ['server' => $server, 'share' => $share, 'subpath' => $subpath] = $this->parseUncPath($pkg->getUncPath());
-        $versionPath = ($subpath ? str_replace('\\', '/', $subpath) . '/' : '') . $version;
+        // Wildcard /* nötig – ohne sie gibt smbclient den Ordner selbst zurück, nicht seinen Inhalt.
+        $versionPath = ($subpath ? str_replace('\\', '/', $subpath) . '/' : '') . $version . '/*';
         $cmd = $this->buildSmbclientCmd($server, $share, '-c ' . escapeshellarg("ls {$versionPath}"));
         exec($cmd . ' 2>&1', $out, $ret);
 

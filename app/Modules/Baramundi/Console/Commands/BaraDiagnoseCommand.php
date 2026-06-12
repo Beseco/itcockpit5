@@ -255,7 +255,8 @@ class BaraDiagnoseCommand extends Command
         $server   = $parts[0] ?? '';
         $share    = $parts[1] ?? '';
         $subpath  = $parts[2] ?? '';
-        $vPath    = ($subpath ? str_replace('\\', '/', $subpath) . '/' : '') . $version;
+        // Wildcard /* nötig – ohne sie gibt smbclient den Ordner selbst zurück, nicht seinen Inhalt.
+        $vPath    = ($subpath ? str_replace('\\', '/', $subpath) . '/' : '') . $version . '/*';
 
         $target = escapeshellarg("//{$server}/{$share}");
         if ($settings->hasSmbCredentials()) {
