@@ -21,7 +21,7 @@ class NewVersionDetectedMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "Neue Baramundi-Version erkannt: {$this->package->name}"
+            subject: "IT Cockpit · Baramundi: {$this->package->name} {$this->version}"
         );
     }
 

@@ -21,7 +21,7 @@ class FileProvidedMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "Installationsdatei bereitgestellt: {$this->package->name} {$this->version}"
+            subject: "IT Cockpit · Baramundi: {$this->package->name} {$this->version}"
         );
     }
 
