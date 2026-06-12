@@ -14,6 +14,11 @@ Route::middleware(['auth', 'module.permission:baramundi,config'])->group(functio
     Route::post('/settings/test-mail',         [BaraSettingsController::class, 'testMail'])->name('settings.test-mail');
 });
 
+// Hilfe (kein Auth nötig – nur registrierte Nutzer sehen die Sidebar)
+Route::middleware('auth')->group(function () {
+    Route::get('/help', fn() => view('baramundi::help'))->name('help');
+});
+
 // Events
 Route::middleware(['auth', 'module.permission:baramundi,view'])->group(function () {
     Route::get('/events', [BaraEventController::class, 'index'])->name('events');

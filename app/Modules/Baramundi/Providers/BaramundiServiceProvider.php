@@ -40,7 +40,7 @@ class BaramundiServiceProvider extends ServiceProvider
         $hookManager->registerSidebarItem('baramundi', [
             'label'      => 'Baramundi',
             'route'      => 'baramundi.index',
-            'icon'       => 'heroicon-o-arrow-down-tray',
+            'icon'       => 'heroicon-o-archive-box-arrow-down',
             'permission' => 'baramundi.view',
             'module'     => 'baramundi',
         ]);
