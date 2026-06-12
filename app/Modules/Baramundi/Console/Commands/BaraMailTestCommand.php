@@ -64,8 +64,10 @@ class BaraMailTestCommand extends Command
             ],
         ];
 
+        $count = count($mails);
+
         $this->info('');
-        $this->info("Sende {$count = count($mails)} Test-Mail(s) an: {$to}");
+        $this->info("Sende {$count} Test-Mail(s) an: {$to}");
         $this->line("Paket:   {$pkg->name}");
         $this->line("Version: {$version}");
         $this->info('');
